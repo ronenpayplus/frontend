@@ -1,0 +1,27 @@
+.company-create-page {
+  max-width: 900px;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.breadcrumb-link {
+  background: none;
+  color: var(--color-primary);
+  font-weight: 500;
+  padding: 0;
+}
+
+.breadcrumb-link:hover {
+  text-decoration: underline;
+}
+
+.breadcrumb-sep {
+  color: var(--color-text-muted);
+}

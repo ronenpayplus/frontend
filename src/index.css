@@ -1,0 +1,106 @@
+@font-face {
+  font-family: 'Almoni';
+  src: url('/fonts/almoni-dl-aaa-400.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Almoni';
+  src: url('/fonts/almoni-regular-aaa.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Almoni';
+  src: url('/fonts/almoni-medium-aaa.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Almoni';
+  src: url('/fonts/almoni-demibold-aaa.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Almoni';
+  src: url('/fonts/almoni-bold-aaa.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --color-primary: #1fba6a;
+  --color-primary-hover: #18a35c;
+  --color-primary-light: #e8f9f0;
+  --color-danger: #e74c3c;
+  --color-danger-hover: #c0392b;
+  --color-warning: #f39c12;
+  --color-info: #3498db;
+  --color-bg: #f5f6f8;
+  --color-white: #ffffff;
+  --color-border: #e2e5ea;
+  --color-border-light: #f0f1f3;
+  --color-text: #2c3e50;
+  --color-text-secondary: #7f8c9b;
+  --color-text-muted: #b0b8c4;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --transition: 0.2s ease;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 14px;
+}
+
+body {
+  font-family: 'Almoni', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}

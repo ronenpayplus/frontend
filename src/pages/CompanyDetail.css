@@ -1,0 +1,105 @@
+.company-detail-page {
+  max-width: 1000px;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  gap: 20px;
+}
+
+.detail-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.detail-uuid {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  direction: ltr;
+  text-align: right;
+}
+
+.detail-header-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.blocked-badge {
+  background: var(--color-danger);
+  color: white;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.btn-danger-outline {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.btn-danger-outline:hover {
+  background: #fde8e8;
+}
+
+.detail-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detail-card {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border-light);
+  padding: 24px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-item.span-full {
+  grid-column: 1 / -1;
+}
+
+.detail-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.detail-value {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.detail-value.mono {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+}
+
+.detail-value.ltr {
+  direction: ltr;
+  text-align: right;
+}
