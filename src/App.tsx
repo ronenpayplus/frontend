@@ -4,6 +4,7 @@ import CompaniesList from './pages/CompaniesList';
 import CompanyCreate from './pages/CompanyCreate';
 import CompanyDetail from './pages/CompanyDetail';
 import CompanyEdit from './pages/CompanyEdit';
+import CompanyLegalEntities from './pages/CompanyLegalEntities';
 
 export default function App() {
   return (
@@ -15,6 +16,8 @@ export default function App() {
           <Route path="/companies/new" element={<CompanyCreate />} />
           <Route path="/companies/:uuid" element={<CompanyDetail />} />
           <Route path="/companies/:uuid/edit" element={<CompanyEdit />} />
+          <Route path="/legal-entities" element={<CompanyLegalEntities />} />
+          <Route path="/companies/:uuid/legal-entities" element={<CompanyLegalEntities />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -20,6 +20,17 @@ export default function Layout() {
             </svg>
             <span>חברות</span>
           </NavLink>
+          <NavLink
+            to="/legal-entities"
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <line x1="7" y1="9" x2="17" y2="9" />
+              <line x1="7" y1="13" x2="17" y2="13" />
+            </svg>
+            <span>ישויות משפטיות</span>
+          </NavLink>
         </nav>
       </aside>
       <main className="main-content">

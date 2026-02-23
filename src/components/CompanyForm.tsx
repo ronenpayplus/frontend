@@ -57,6 +57,35 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const autoFill = () => {
+    const rand = Math.floor(Math.random() * 9000) + 1000;
+    setForm({
+      name: `חברת טסט ${rand}`,
+      number: `TST-${rand}`,
+      status: 'NEW',
+      company_type: 'operating_company',
+      business_type: 'company',
+      platform_account_type: 'standard',
+      contract_type: 'direct',
+      default_currency: 'ILS',
+      default_country: 'IL',
+      timezone: 'Asia/Jerusalem',
+      mcc: '5411',
+      high_risk_merchant: false,
+      is_blocked: false,
+      risk_profile: 'low',
+      kyc_status: '',
+      aml_status: '',
+      website: `https://test-${rand}.co.il`,
+      support_email: `support@test-${rand}.co.il`,
+      support_phone: `+972-3-${rand}-000`,
+      volume_tier: 'growth',
+      monthly_volume_limit: 500000,
+      message_for_client: 'ברוכים הבאים למערכת',
+    });
+    setErrors({});
+  };
+
   const set = (field: string, value: string | boolean | number) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -98,11 +127,22 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
       delete data.aml_status;
     }
 
-    await onSubmit(data as CreateCompanyRequest | UpdateCompanyRequest);
+    await onSubmit(data as unknown as CreateCompanyRequest | UpdateCompanyRequest);
   };
 
   return (
     <form className="company-form" onSubmit={handleSubmit}>
+      {!isEdit && (
+        <div className="auto-fill-bar">
+          <button type="button" className="btn btn-auto-fill" onClick={autoFill}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+            </svg>
+            מילוי אוטומטי לבדיקה
+          </button>
+        </div>
+      )}
+
       <div className="form-section">
         <h3 className="section-title">פרטי חברה</h3>
         <div className="form-grid">
