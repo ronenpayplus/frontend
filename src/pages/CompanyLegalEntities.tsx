@@ -321,6 +321,17 @@ export default function CompanyLegalEntities() {
                       </td>
                       <td className="cell-actions">
                         <button
+                          className="btn btn-outline btn-sm"
+                          title="ניהול סוחרים"
+                          onClick={() =>
+                            navigate(
+                              `/legal-entities/${entity.uuid}/merchants?company_uuid=${selectedCompanyUUID}`,
+                            )
+                          }
+                        >
+                          סוחרים
+                        </button>
+                        <button
                           className="action-btn edit"
                           title="עריכה"
                           onClick={() => {
