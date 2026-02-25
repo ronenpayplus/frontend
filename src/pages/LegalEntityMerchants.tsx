@@ -8,6 +8,7 @@ import {
 } from '../api/merchants';
 import { listCompanies } from '../api/companies';
 import { getLegalEntity, listLegalEntities } from '../api/legalEntities';
+import type { Company } from '../types/company';
 import type { LegalEntity } from '../types/legalEntity';
 import type { CreateMerchantRequest, Merchant, UpdateMerchantRequest } from '../types/merchant';
 import { MERCHANT_BUSINESS_MODEL_LABELS } from '../types/merchant';
@@ -25,7 +26,9 @@ export default function LegalEntityMerchants() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toasts, addToast, removeToast } = useToast();
 
+  const selectedCompanyUUID = searchParams.get('company_uuid') || '';
   const selectedLegalEntityUUID = routeLegalEntityUUID || searchParams.get('legal_entity_uuid') || '';
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
   const [selectedLegalEntity, setSelectedLegalEntity] = useState<LegalEntity | null>(null);
   const [items, setItems] = useState<Merchant[]>([]);
@@ -38,40 +41,20 @@ export default function LegalEntityMerchants() {
   const page = Number(searchParams.get('page')) || 1;
 
   useEffect(() => {
-    const loadLegalEntities = async () => {
-      try {
-        const companyUUID = searchParams.get('company_uuid') || '';
+    listCompanies({ page: 1, page_size: 300 })
+      .then((data) => setCompanies(data.companies || []))
+      .catch(() => setCompanies([]));
+  }, []);
 
-        if (companyUUID) {
-          const data = await listLegalEntities({ company_uuid: companyUUID, page: 1, page_size: 200 });
-          setLegalEntities(data.legal_entities || []);
-          return;
-        }
-
-        // When no specific company filter is provided, aggregate legal entities
-        // from all companies so the selector still has options.
-        const companiesData = await listCompanies({ page: 1, page_size: 200 });
-        const unique = new Map<string, LegalEntity>();
-
-        await Promise.all(
-          (companiesData.companies || []).map(async (company) => {
-            try {
-              const data = await listLegalEntities({ company_uuid: company.uuid, page: 1, page_size: 200 });
-              (data.legal_entities || []).forEach((le) => unique.set(le.uuid, le));
-            } catch {
-              // Keep going even if one company fails.
-            }
-          }),
-        );
-
-        setLegalEntities(Array.from(unique.values()));
-      } catch {
-        setLegalEntities([]);
-      }
-    };
-
-    loadLegalEntities();
-  }, [searchParams]);
+  useEffect(() => {
+    if (!selectedCompanyUUID) {
+      setLegalEntities([]);
+      return;
+    }
+    listLegalEntities({ company_uuid: selectedCompanyUUID, page: 1, page_size: 300 })
+      .then((data) => setLegalEntities(data.legal_entities || []))
+      .catch(() => setLegalEntities([]));
+  }, [selectedCompanyUUID]);
 
   useEffect(() => {
     if (!selectedLegalEntityUUID) {
@@ -87,19 +70,21 @@ export default function LegalEntityMerchants() {
 
   useEffect(() => {
     if (!selectedLegalEntity) return;
+    const params = new URLSearchParams(searchParams);
+    if (selectedLegalEntity.company_uuid && selectedLegalEntity.company_uuid !== selectedCompanyUUID) {
+      params.set('company_uuid', selectedLegalEntity.company_uuid);
+    }
+    if (!params.get('legal_entity_uuid') && selectedLegalEntity.uuid) {
+      params.set('legal_entity_uuid', selectedLegalEntity.uuid);
+    }
+    if (params.toString() !== searchParams.toString()) {
+      setSearchParams(params);
+    }
     setLegalEntities((prev) => {
       if (prev.some((x) => x.uuid === selectedLegalEntity.uuid)) return prev;
       return [selectedLegalEntity, ...prev];
     });
-  }, [selectedLegalEntity]);
-
-  useEffect(() => {
-    if (routeLegalEntityUUID || selectedLegalEntityUUID || legalEntities.length === 0) return;
-    const params = new URLSearchParams(searchParams);
-    params.set('legal_entity_uuid', legalEntities[0].uuid);
-    params.set('page', '1');
-    setSearchParams(params);
-  }, [routeLegalEntityUUID, selectedLegalEntityUUID, legalEntities, searchParams, setSearchParams]);
+  }, [selectedLegalEntity, selectedCompanyUUID, searchParams, setSearchParams]);
 
   const fetchMerchants = useCallback(async () => {
     if (!selectedLegalEntityUUID) {
@@ -140,6 +125,7 @@ export default function LegalEntityMerchants() {
     e.preventDefault();
     const params = new URLSearchParams(searchParams);
     params.set('page', '1');
+    if (selectedCompanyUUID) params.set('company_uuid', selectedCompanyUUID);
     if (selectedLegalEntityUUID) params.set('legal_entity_uuid', selectedLegalEntityUUID);
     if (search) params.set('search', search);
     setSearchParams(params);
@@ -243,6 +229,29 @@ export default function LegalEntityMerchants() {
           <div className="filter-group">
             <select
               className="input"
+              value={selectedCompanyUUID}
+              onChange={(e) => {
+                const params = new URLSearchParams(searchParams);
+                if (e.target.value) params.set('company_uuid', e.target.value);
+                else params.delete('company_uuid');
+                if (!routeLegalEntityUUID) params.delete('legal_entity_uuid');
+                params.set('page', '1');
+                setSearchParams(params);
+                setShowCreate(false);
+                setEditing(null);
+              }}
+            >
+              <option value="">בחר חברה</option>
+              {companies.map((company) => (
+                <option key={company.uuid} value={company.uuid}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-group">
+            <select
+              className="input"
               value={selectedLegalEntityUUID}
               onChange={(e) => {
                 const params = new URLSearchParams(searchParams);
@@ -253,7 +262,7 @@ export default function LegalEntityMerchants() {
                 setShowCreate(false);
                 setEditing(null);
               }}
-              disabled={!!routeLegalEntityUUID}
+              disabled={!selectedCompanyUUID || !!routeLegalEntityUUID}
             >
               <option value="">בחר ישות משפטית</option>
               {legalEntities.map((le) => (

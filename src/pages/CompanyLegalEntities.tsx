@@ -31,7 +31,7 @@ export default function CompanyLegalEntities() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toasts, addToast, removeToast } = useToast();
 
-  const selectedCompanyUUID = routeCompanyUUID || searchParams.get('company_uuid') || '';
+  const selectedCompanyUUID = searchParams.get('company_uuid') || routeCompanyUUID || '';
   const [companies, setCompanies] = useState<Company[]>([]);
   const [items, setItems] = useState<LegalEntity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,16 +65,50 @@ export default function CompanyLegalEntities() {
   }, []);
 
   const fetchEntities = useCallback(async () => {
-    if (!selectedCompanyUUID) {
+    let companyUUIDForQuery = selectedCompanyUUID;
+    let legalEntitySearch = search || undefined;
+    const searchTerm = search.trim();
+
+    if (!companyUUIDForQuery && searchTerm) {
+      try {
+        const companiesData = await listCompanies({
+          search: searchTerm,
+          page: 1,
+          page_size: 50,
+        });
+        const resolvedCompany =
+          companiesData.companies.find((company) => company.number === searchTerm)
+          || companiesData.companies.find((company) => company.name === searchTerm)
+          || companiesData.companies[0];
+
+        if (resolvedCompany?.uuid) {
+          companyUUIDForQuery = resolvedCompany.uuid;
+          // When search is used to resolve company context, do not also filter legal entities by the same term.
+          legalEntitySearch = undefined;
+          const params = new URLSearchParams(searchParams);
+          params.set('company_uuid', resolvedCompany.uuid);
+          params.set('page', String(page));
+          if (searchTerm) params.set('search', searchTerm);
+          if (params.toString() !== searchParams.toString()) {
+            setSearchParams(params);
+          }
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    if (!companyUUIDForQuery) {
       setItems([]);
       setLoading(false);
       return;
     }
+
     setLoading(true);
     try {
       const data = await listLegalEntities({
-        company_uuid: selectedCompanyUUID,
-        search: search || undefined,
+        company_uuid: companyUUIDForQuery,
+        search: legalEntitySearch,
         page,
         page_size: 10,
       });
@@ -86,7 +120,7 @@ export default function CompanyLegalEntities() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCompanyUUID, search, page, addToast]);
+  }, [selectedCompanyUUID, search, page, addToast, searchParams, setSearchParams]);
 
   useEffect(() => {
     fetchEntities();
@@ -177,7 +211,12 @@ export default function CompanyLegalEntities() {
     } else {
       params.delete('company_uuid');
     }
-    setSearchParams(params);
+    if (routeCompanyUUID) {
+      const query = params.toString();
+      navigate(query ? `/legal-entities?${query}` : '/legal-entities');
+    } else {
+      setSearchParams(params);
+    }
     setShowCreate(false);
     setEditing(null);
   };
@@ -256,7 +295,6 @@ export default function CompanyLegalEntities() {
               className="input"
               value={selectedCompanyUUID}
               onChange={(e) => handleCompanyChange(e.target.value)}
-              disabled={!!routeCompanyUUID}
             >
               <option value="">בחר חברה</option>
               {companies.map((company) => (

@@ -8,6 +8,7 @@ import {
 } from '../api/beneficialOwners';
 import { listCompanies } from '../api/companies';
 import { getLegalEntity, listLegalEntities } from '../api/legalEntities';
+import type { Company } from '../types/company';
 import type { LegalEntity } from '../types/legalEntity';
 import type {
   BeneficialOwner,
@@ -62,7 +63,9 @@ export default function BeneficialOwnersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toasts, addToast, removeToast } = useToast();
 
+  const selectedCompanyUUID = searchParams.get('company_uuid') || '';
   const selectedLegalEntityUUID = routeLegalEntityUUID || searchParams.get('legal_entity_uuid') || '';
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
   const [selectedLegalEntity, setSelectedLegalEntity] = useState<LegalEntity | null>(null);
   const [items, setItems] = useState<BeneficialOwner[]>([]);
@@ -77,34 +80,20 @@ export default function BeneficialOwnersPage() {
   const [form, setForm] = useState<BeneficialOwnerFormState>(defaultForm);
 
   useEffect(() => {
-    const loadLegalEntities = async () => {
-      try {
-        const companyUUID = searchParams.get('company_uuid') || '';
-        if (companyUUID) {
-          const data = await listLegalEntities({ company_uuid: companyUUID, page: 1, page_size: 200 });
-          setLegalEntities(data.legal_entities || []);
-          return;
-        }
+    listCompanies({ page: 1, page_size: 300 })
+      .then((data) => setCompanies(data.companies || []))
+      .catch(() => setCompanies([]));
+  }, []);
 
-        const companiesData = await listCompanies({ page: 1, page_size: 200 });
-        const unique = new Map<string, LegalEntity>();
-        await Promise.all(
-          (companiesData.companies || []).map(async (company) => {
-            try {
-              const data = await listLegalEntities({ company_uuid: company.uuid, page: 1, page_size: 200 });
-              (data.legal_entities || []).forEach((le) => unique.set(le.uuid, le));
-            } catch {
-              // Continue even if one company cannot load legal entities.
-            }
-          }),
-        );
-        setLegalEntities(Array.from(unique.values()));
-      } catch {
-        setLegalEntities([]);
-      }
-    };
-    loadLegalEntities();
-  }, [searchParams]);
+  useEffect(() => {
+    if (!selectedCompanyUUID) {
+      setLegalEntities([]);
+      return;
+    }
+    listLegalEntities({ company_uuid: selectedCompanyUUID, page: 1, page_size: 300 })
+      .then((data) => setLegalEntities(data.legal_entities || []))
+      .catch(() => setLegalEntities([]));
+  }, [selectedCompanyUUID]);
 
   useEffect(() => {
     if (!selectedLegalEntityUUID) {
@@ -118,18 +107,21 @@ export default function BeneficialOwnersPage() {
 
   useEffect(() => {
     if (!selectedLegalEntity) return;
+    const params = new URLSearchParams(searchParams);
+    if (selectedLegalEntity.company_uuid && selectedLegalEntity.company_uuid !== selectedCompanyUUID) {
+      params.set('company_uuid', selectedLegalEntity.company_uuid);
+    }
+    if (!params.get('legal_entity_uuid') && selectedLegalEntity.uuid) {
+      params.set('legal_entity_uuid', selectedLegalEntity.uuid);
+    }
+    if (params.toString() !== searchParams.toString()) {
+      setSearchParams(params);
+    }
     setLegalEntities((prev) => {
       if (prev.some((x) => x.uuid === selectedLegalEntity.uuid)) return prev;
       return [selectedLegalEntity, ...prev];
     });
-  }, [selectedLegalEntity]);
-
-  useEffect(() => {
-    if (routeLegalEntityUUID || selectedLegalEntityUUID || legalEntities.length === 0) return;
-    const params = new URLSearchParams(searchParams);
-    params.set('legal_entity_uuid', legalEntities[0].uuid);
-    setSearchParams(params);
-  }, [routeLegalEntityUUID, selectedLegalEntityUUID, legalEntities, searchParams, setSearchParams]);
+  }, [selectedLegalEntity, selectedCompanyUUID, searchParams, setSearchParams]);
 
   const fetchItems = useCallback(async () => {
     if (!selectedLegalEntityUUID) {
@@ -334,6 +326,22 @@ export default function BeneficialOwnersPage() {
           <div className="filter-group">
             <select
               className="input"
+              value={selectedCompanyUUID}
+              onChange={(e) => {
+                const params = new URLSearchParams(searchParams);
+                if (e.target.value) params.set('company_uuid', e.target.value);
+                else params.delete('company_uuid');
+                if (!routeLegalEntityUUID) params.delete('legal_entity_uuid');
+                setSearchParams(params);
+              }}
+            >
+              <option value="">בחר חברה</option>
+              {companies.map((company) => <option key={company.uuid} value={company.uuid}>{company.name}</option>)}
+            </select>
+          </div>
+          <div className="filter-group">
+            <select
+              className="input"
               value={selectedLegalEntityUUID}
               onChange={(e) => {
                 const params = new URLSearchParams(searchParams);
@@ -341,7 +349,7 @@ export default function BeneficialOwnersPage() {
                 else params.delete('legal_entity_uuid');
                 setSearchParams(params);
               }}
-              disabled={!!routeLegalEntityUUID}
+              disabled={!selectedCompanyUUID || !!routeLegalEntityUUID}
             >
               <option value="">בחר ישות משפטית</option>
               {legalEntities.map((le) => <option key={le.uuid} value={le.uuid}>{le.legal_name}</option>)}

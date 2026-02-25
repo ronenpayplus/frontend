@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { createTerminal, deleteTerminal, listTerminals, updateTerminal } from '../api/terminals';
-import { listTerminalGroups } from '../api/terminalGroups';
-import { listStores } from '../api/stores';
+import { getTerminalGroup, listTerminalGroups } from '../api/terminalGroups';
+import { getStore, listStores } from '../api/stores';
 import { listMerchantAccounts } from '../api/merchantAccounts';
 import { listCompanies } from '../api/companies';
 import { listLegalEntities } from '../api/legalEntities';
@@ -42,8 +42,8 @@ export default function TerminalsPage() {
   const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [allMerchantAccounts, setAllMerchantAccounts] = useState<MerchantAccount[]>([]);
-  const [allStores, setAllStores] = useState<Store[]>([]);
-  const [allTerminalGroups, setAllTerminalGroups] = useState<TerminalGroup[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [terminalGroups, setTerminalGroups] = useState<TerminalGroup[]>([]);
   const [items, setItems] = useState<Terminal[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -72,26 +72,10 @@ export default function TerminalsPage() {
       }),
     [allMerchantAccounts, selectedCompanyUUID, selectedLegalEntityUUID, selectedMerchantUUID],
   );
-  const stores = useMemo(
-    () =>
-      allStores.filter((store) => {
-        if (selectedMerchantAccountUUID && store.merchant_account_uuid !== selectedMerchantAccountUUID) return false;
-        return true;
-      }),
-    [allStores, selectedMerchantAccountUUID],
-  );
-  const terminalGroups = useMemo(
-    () =>
-      allTerminalGroups.filter((group) => {
-        if (selectedStoreUUID && group.store_uuid !== selectedStoreUUID) return false;
-        return true;
-      }),
-    [allTerminalGroups, selectedStoreUUID],
-  );
-  const selectedTerminalGroup = allTerminalGroups.find((g) => g.uuid === selectedTerminalGroupUUID) || null;
-  const selectedStore = allStores.find((s) => s.uuid === selectedTerminalGroup?.store_uuid) || null;
+  const selectedTerminalGroup = terminalGroups.find((g) => g.uuid === selectedTerminalGroupUUID) || null;
+  const selectedStore = stores.find((s) => s.uuid === (selectedStoreUUID || selectedTerminalGroup?.store_uuid || '')) || null;
   const selectedStoreAccount =
-    allMerchantAccounts.find((a) => a.uuid === selectedStore?.merchant_account_uuid) || null;
+    allMerchantAccounts.find((a) => a.uuid === (selectedStore?.merchant_account_uuid || selectedMerchantAccountUUID)) || null;
 
   useEffect(() => {
     listCompanies({ page: 1, page_size: 300 })
@@ -126,16 +110,64 @@ export default function TerminalsPage() {
   }, []);
 
   useEffect(() => {
-    listStores({ page: 1, page_size: 500 })
-      .then((data) => setAllStores(data.stores || []))
-      .catch(() => setAllStores([]));
-  }, []);
+    if (!selectedMerchantAccountUUID) {
+      setStores([]);
+      return;
+    }
+    listStores({ merchant_account_uuid: selectedMerchantAccountUUID, page: 1, page_size: 500 })
+      .then((data) => setStores(data.stores || []))
+      .catch(() => setStores([]));
+  }, [selectedMerchantAccountUUID]);
 
   useEffect(() => {
-    listTerminalGroups({ page: 1, page_size: 500 })
-      .then((data) => setAllTerminalGroups(data.terminal_groups || []))
-      .catch(() => setAllTerminalGroups([]));
-  }, []);
+    if (!selectedStoreUUID) {
+      setTerminalGroups([]);
+      return;
+    }
+    listTerminalGroups({ store_uuid: selectedStoreUUID, page: 1, page_size: 500 })
+      .then((data) => setTerminalGroups(data.terminal_groups || []))
+      .catch(() => setTerminalGroups([]));
+  }, [selectedStoreUUID]);
+
+  useEffect(() => {
+    if (!selectedStoreUUID) return;
+    if (stores.some((store) => store.uuid === selectedStoreUUID)) return;
+    getStore(selectedStoreUUID)
+      .then((data) => {
+        const store = data.store;
+        if (!store?.uuid) return;
+        setStores((prev) => (prev.some((x) => x.uuid === store.uuid) ? prev : [store, ...prev]));
+        if (store.merchant_account_uuid && store.merchant_account_uuid !== selectedMerchantAccountUUID) {
+          const params = new URLSearchParams(searchParams);
+          params.set('merchant_account_uuid', store.merchant_account_uuid);
+          params.set('store_uuid', store.uuid);
+          setSearchParams(params);
+        }
+      })
+      .catch(() => {
+        // ignore store fallback failure
+      });
+  }, [selectedStoreUUID, stores, selectedMerchantAccountUUID, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if (!selectedTerminalGroupUUID) return;
+    if (terminalGroups.some((group) => group.uuid === selectedTerminalGroupUUID)) return;
+    getTerminalGroup(selectedTerminalGroupUUID)
+      .then((data) => {
+        const group = data.terminal_group;
+        if (!group?.uuid) return;
+        setTerminalGroups((prev) => (prev.some((x) => x.uuid === group.uuid) ? prev : [group, ...prev]));
+        if (group.store_uuid && group.store_uuid !== selectedStoreUUID) {
+          const params = new URLSearchParams(searchParams);
+          params.set('store_uuid', group.store_uuid);
+          params.set('terminal_group_uuid', group.uuid);
+          setSearchParams(params);
+        }
+      })
+      .catch(() => {
+        // ignore terminal-group fallback failure
+      });
+  }, [selectedTerminalGroupUUID, terminalGroups, selectedStoreUUID, searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!selectedTerminalGroup || !selectedStore || !selectedStoreAccount) return;
