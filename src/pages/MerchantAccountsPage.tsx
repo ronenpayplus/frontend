@@ -11,6 +11,7 @@ import {
 } from '../api/merchantAccounts';
 import type { Merchant } from '../types/merchant';
 import type { LegalEntity } from '../types/legalEntity';
+import type { Company } from '../types/company';
 import type {
   CreateMerchantAccountRequest,
   MerchantAccount,
@@ -32,6 +33,10 @@ export default function MerchantAccountsPage() {
   const selectedMerchantUUID = routeMerchantUUID || searchParams.get('merchant_uuid') || '';
   const fallbackLegalEntityUUID = searchParams.get('legal_entity_uuid') || '';
   const fallbackCompanyUUID = searchParams.get('company_uuid') || '';
+  const selectedCompanyUUID = searchParams.get('company_uuid') || '';
+  const selectedLegalEntityUUID = searchParams.get('legal_entity_uuid') || '';
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
   const [selectedLegalEntity, setSelectedLegalEntity] = useState<LegalEntity | null>(null);
@@ -62,51 +67,32 @@ export default function MerchantAccountsPage() {
   });
 
   useEffect(() => {
-    const loadMerchants = async () => {
-      try {
-        const direct = await listMerchants({ page: 1, page_size: 300 });
-        if ((direct.merchants || []).length > 0) {
-          setMerchants(direct.merchants || []);
-          return;
-        }
-
-        // Fallback for environments where list requires legal_entity_uuid.
-        const companiesData = await listCompanies({ page: 1, page_size: 200 });
-        const unique = new Map<string, Merchant>();
-        await Promise.all(
-          (companiesData.companies || []).map(async (company) => {
-            try {
-              const legalEntities = await listLegalEntities({
-                company_uuid: company.uuid,
-                page: 1,
-                page_size: 200,
-              });
-              await Promise.all(
-                (legalEntities.legal_entities || []).map(async (le) => {
-                  try {
-                    const merchantsData = await listMerchants({
-                      legal_entity_uuid: le.uuid,
-                      page: 1,
-                      page_size: 200,
-                    });
-                    (merchantsData.merchants || []).forEach((m) => unique.set(m.uuid, m));
-                  } catch {
-                    // continue
-                  }
-                }),
-              );
-            } catch {
-              // continue
-            }
-          }),
-        );
-        setMerchants(Array.from(unique.values()));
-      } catch {
-        setMerchants([]);
-      }
-    };
-    loadMerchants();
+    listCompanies({ page: 1, page_size: 300 })
+      .then((data) => setCompanies(data.companies || []))
+      .catch(() => setCompanies([]));
   }, []);
+
+  useEffect(() => {
+    const companyUUID = selectedCompanyUUID || fallbackCompanyUUID;
+    if (!companyUUID) {
+      setLegalEntities([]);
+      return;
+    }
+    listLegalEntities({ company_uuid: companyUUID, page: 1, page_size: 300 })
+      .then((data) => setLegalEntities(data.legal_entities || []))
+      .catch(() => setLegalEntities([]));
+  }, [selectedCompanyUUID, fallbackCompanyUUID]);
+
+  useEffect(() => {
+    const legalEntityUUID = selectedLegalEntityUUID || fallbackLegalEntityUUID;
+    if (!legalEntityUUID) {
+      setMerchants([]);
+      return;
+    }
+    listMerchants({ legal_entity_uuid: legalEntityUUID, page: 1, page_size: 300 })
+      .then((data) => setMerchants(data.merchants || []))
+      .catch(() => setMerchants([]));
+  }, [selectedLegalEntityUUID, fallbackLegalEntityUUID]);
 
   useEffect(() => {
     const fromList = merchants.find((m) => m.uuid === selectedMerchantUUID) || null;
@@ -135,6 +121,16 @@ export default function MerchantAccountsPage() {
 
   const resolvedLegalEntityUUID = selectedMerchant?.legal_entity_uuid || fallbackLegalEntityUUID;
   const resolvedCompanyUUID = selectedLegalEntity?.company_uuid || fallbackCompanyUUID;
+
+  useEffect(() => {
+    if (!selectedMerchant || !selectedLegalEntity) return;
+    const params = new URLSearchParams(searchParams);
+    if (selectedLegalEntity.company_uuid) params.set('company_uuid', selectedLegalEntity.company_uuid);
+    if (selectedMerchant.legal_entity_uuid) params.set('legal_entity_uuid', selectedMerchant.legal_entity_uuid);
+    if (params.toString() !== searchParams.toString()) {
+      setSearchParams(params);
+    }
+  }, [selectedMerchant, selectedLegalEntity, searchParams, setSearchParams]);
 
   useEffect(() => {
     if (routeMerchantUUID || selectedMerchantUUID || merchants.length === 0) return;
@@ -354,12 +350,43 @@ export default function MerchantAccountsPage() {
       <div className="card filters-card">
         <form className="filters-form" onSubmit={(e) => { e.preventDefault(); fetchItems(); }}>
           <div className="filter-group">
+            <select className="input" value={selectedCompanyUUID} onChange={(e) => {
+              const params = new URLSearchParams(searchParams);
+              if (e.target.value) params.set('company_uuid', e.target.value); else params.delete('company_uuid');
+              params.delete('legal_entity_uuid');
+              if (!routeMerchantUUID) params.delete('merchant_uuid');
+              setSearchParams(params);
+            }}>
+              <option value="">בחר חברה</option>
+              {companies.map((company) => <option key={company.uuid} value={company.uuid}>{company.name}</option>)}
+            </select>
+          </div>
+          <div className="filter-group">
+            <select
+              className="input"
+              value={selectedLegalEntityUUID}
+              onChange={(e) => {
+                const params = new URLSearchParams(searchParams);
+                if (e.target.value) params.set('legal_entity_uuid', e.target.value); else params.delete('legal_entity_uuid');
+                if (!routeMerchantUUID) params.delete('merchant_uuid');
+                setSearchParams(params);
+              }}
+              disabled={!selectedCompanyUUID && !fallbackCompanyUUID}
+            >
+              <option value="">בחר ישות משפטית</option>
+              {legalEntities.map((entity) => <option key={entity.uuid} value={entity.uuid}>{entity.legal_name}</option>)}
+            </select>
+          </div>
+          <div className="filter-group">
             <select className="input" value={selectedMerchantUUID} onChange={(e) => {
               const params = new URLSearchParams(searchParams);
               if (e.target.value) params.set('merchant_uuid', e.target.value); else params.delete('merchant_uuid');
               setSearchParams(params);
-            }} disabled={!!routeMerchantUUID}>
+            }} disabled={!!routeMerchantUUID || (!selectedLegalEntityUUID && !fallbackLegalEntityUUID)}>
               <option value="">בחר סוחר</option>
+              {selectedMerchant && !merchants.some((m) => m.uuid === selectedMerchant.uuid)
+                ? <option value={selectedMerchant.uuid}>{selectedMerchant.name || selectedMerchant.uuid}</option>
+                : null}
               {merchants.map((m) => <option key={m.uuid} value={m.uuid}>{m.name}</option>)}
             </select>
           </div>

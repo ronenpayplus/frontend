@@ -3,7 +3,13 @@ import { useLocation, useNavigate, useParams, useSearchParams } from 'react-rout
 import { createStore, deleteStore, listStores, updateStore } from '../api/stores';
 import { listMerchantAccounts } from '../api/merchantAccounts';
 import { getSubMerchantAccount } from '../api/subMerchantAccounts';
+import { listCompanies } from '../api/companies';
+import { listLegalEntities } from '../api/legalEntities';
+import { listMerchants } from '../api/merchants';
 import type { MerchantAccount } from '../types/merchantAccount';
+import type { Company } from '../types/company';
+import type { LegalEntity } from '../types/legalEntity';
+import type { Merchant } from '../types/merchant';
 import type { CreateStoreRequest, Store, UpdateStoreRequest } from '../types/store';
 import { STORE_CHANNEL_TYPES, STORE_STATUSES, STORE_TYPES } from '../types/store';
 import { MOCK_TIMEZONES } from '../types/company';
@@ -22,9 +28,15 @@ export default function StoresPage() {
 
   const isSubMerchantRoute = location.pathname.startsWith('/sub-merchants/');
   const routeSubMerchantUUID = isSubMerchantRoute ? routeMerchantAccountUUID : '';
+  const selectedCompanyUUID = searchParams.get('company_uuid') || '';
+  const selectedLegalEntityUUID = searchParams.get('legal_entity_uuid') || '';
+  const selectedMerchantUUID = searchParams.get('merchant_uuid') || '';
   const selectedSubMerchantUUID = routeSubMerchantUUID || searchParams.get('sub_merchant_uuid') || '';
   const selectedMerchantAccountUUID = (!isSubMerchantRoute ? routeMerchantAccountUUID : '') || searchParams.get('merchant_account_uuid') || '';
-  const [merchantAccounts, setMerchantAccounts] = useState<MerchantAccount[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
+  const [merchants, setMerchants] = useState<Merchant[]>([]);
+  const [allMerchantAccounts, setAllMerchantAccounts] = useState<MerchantAccount[]>([]);
   const [subMerchantName, setSubMerchantName] = useState('');
   const [items, setItems] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,11 +55,49 @@ export default function StoresPage() {
     phone: '',
     email: '',
   });
+  const merchantAccounts = useMemo(
+    () =>
+      allMerchantAccounts.filter((account) => {
+        if (selectedCompanyUUID && account.company_uuid !== selectedCompanyUUID) return false;
+        if (selectedLegalEntityUUID && account.legal_entity_uuid !== selectedLegalEntityUUID) return false;
+        if (selectedMerchantUUID && account.merchant_uuid !== selectedMerchantUUID) return false;
+        return true;
+      }),
+    [allMerchantAccounts, selectedCompanyUUID, selectedLegalEntityUUID, selectedMerchantUUID],
+  );
+  const selectedMerchantAccount =
+    allMerchantAccounts.find((a) => a.uuid === selectedMerchantAccountUUID) || null;
 
   useEffect(() => {
-    listMerchantAccounts({ page: 1, page_size: 300 })
-      .then((data) => setMerchantAccounts(data.merchant_accounts || []))
-      .catch(() => setMerchantAccounts([]));
+    listCompanies({ page: 1, page_size: 300 })
+      .then((data) => setCompanies(data.companies || []))
+      .catch(() => setCompanies([]));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedCompanyUUID) {
+      setLegalEntities([]);
+      return;
+    }
+    listLegalEntities({ company_uuid: selectedCompanyUUID, page: 1, page_size: 300 })
+      .then((data) => setLegalEntities(data.legal_entities || []))
+      .catch(() => setLegalEntities([]));
+  }, [selectedCompanyUUID]);
+
+  useEffect(() => {
+    if (!selectedLegalEntityUUID) {
+      setMerchants([]);
+      return;
+    }
+    listMerchants({ legal_entity_uuid: selectedLegalEntityUUID, page: 1, page_size: 300 })
+      .then((data) => setMerchants(data.merchants || []))
+      .catch(() => setMerchants([]));
+  }, [selectedLegalEntityUUID]);
+
+  useEffect(() => {
+    listMerchantAccounts({ page: 1, page_size: 500 })
+      .then((data) => setAllMerchantAccounts(data.merchant_accounts || []))
+      .catch(() => setAllMerchantAccounts([]));
   }, []);
 
   useEffect(() => {
@@ -61,14 +111,31 @@ export default function StoresPage() {
         const accountUUID = data.sub_merchant_account.merchant_account_uuid;
         const current = searchParams.get('merchant_account_uuid') || '';
         if (!current || current !== accountUUID) {
+          const account = allMerchantAccounts.find((a) => a.uuid === accountUUID) || null;
           const params = new URLSearchParams(searchParams);
           params.set('merchant_account_uuid', accountUUID);
           params.set('sub_merchant_uuid', selectedSubMerchantUUID);
-          setSearchParams(params);
+          if (account?.company_uuid) params.set('company_uuid', account.company_uuid);
+          if (account?.legal_entity_uuid) params.set('legal_entity_uuid', account.legal_entity_uuid);
+          if (account?.merchant_uuid) params.set('merchant_uuid', account.merchant_uuid);
+          if (params.toString() !== searchParams.toString()) {
+            setSearchParams(params);
+          }
         }
       })
       .catch(() => setSubMerchantName(''));
-  }, [selectedSubMerchantUUID, searchParams, setSearchParams]);
+  }, [selectedSubMerchantUUID, searchParams, setSearchParams, allMerchantAccounts]);
+
+  useEffect(() => {
+    if (!selectedMerchantAccount) return;
+    const params = new URLSearchParams(searchParams);
+    if (selectedMerchantAccount.company_uuid) params.set('company_uuid', selectedMerchantAccount.company_uuid);
+    if (selectedMerchantAccount.legal_entity_uuid) params.set('legal_entity_uuid', selectedMerchantAccount.legal_entity_uuid);
+    if (selectedMerchantAccount.merchant_uuid) params.set('merchant_uuid', selectedMerchantAccount.merchant_uuid);
+    if (params.toString() !== searchParams.toString()) {
+      setSearchParams(params);
+    }
+  }, [selectedMerchantAccount, searchParams, setSearchParams]);
 
   useEffect(() => {
     if ((!isSubMerchantRoute && routeMerchantAccountUUID) || selectedMerchantAccountUUID || merchantAccounts.length === 0) return;
@@ -106,8 +173,8 @@ export default function StoresPage() {
   }, [fetchStores]);
 
   const selectedAccountName = useMemo(
-    () => merchantAccounts.find((x) => x.uuid === selectedMerchantAccountUUID)?.name || '',
-    [merchantAccounts, selectedMerchantAccountUUID],
+    () => selectedMerchantAccount?.name || '',
+    [selectedMerchantAccount],
   );
 
   const resetForm = () => setForm({
@@ -254,9 +321,66 @@ export default function StoresPage() {
       <div className="card filters-card">
         <form className="filters-form" onSubmit={(e) => { e.preventDefault(); fetchStores(); }}>
           <div className="filter-group">
+            <select
+              className="input"
+              value={selectedCompanyUUID}
+              onChange={(e) => {
+                const params = new URLSearchParams(searchParams);
+                if (e.target.value) params.set('company_uuid', e.target.value); else params.delete('company_uuid');
+                params.delete('legal_entity_uuid');
+                params.delete('merchant_uuid');
+                params.delete('merchant_account_uuid');
+                setSearchParams(params);
+              }}
+              disabled={!!selectedSubMerchantUUID}
+            >
+              <option value="">בחר חברה</option>
+              {companies.map((company) => <option key={company.uuid} value={company.uuid}>{company.name}</option>)}
+            </select>
+          </div>
+          <div className="filter-group">
+            <select
+              className="input"
+              value={selectedLegalEntityUUID}
+              onChange={(e) => {
+                const params = new URLSearchParams(searchParams);
+                if (e.target.value) params.set('legal_entity_uuid', e.target.value); else params.delete('legal_entity_uuid');
+                params.delete('merchant_uuid');
+                params.delete('merchant_account_uuid');
+                setSearchParams(params);
+              }}
+              disabled={!selectedCompanyUUID || !!selectedSubMerchantUUID}
+            >
+              <option value="">בחר ישות משפטית</option>
+              {legalEntities.map((entity) => <option key={entity.uuid} value={entity.uuid}>{entity.legal_name}</option>)}
+            </select>
+          </div>
+          <div className="filter-group">
+            <select
+              className="input"
+              value={selectedMerchantUUID}
+              onChange={(e) => {
+                const params = new URLSearchParams(searchParams);
+                if (e.target.value) params.set('merchant_uuid', e.target.value); else params.delete('merchant_uuid');
+                params.delete('merchant_account_uuid');
+                setSearchParams(params);
+              }}
+              disabled={!selectedLegalEntityUUID || !!selectedSubMerchantUUID}
+            >
+              <option value="">בחר סוחר</option>
+              {merchants.map((merchant) => <option key={merchant.uuid} value={merchant.uuid}>{merchant.name || merchant.uuid}</option>)}
+            </select>
+          </div>
+          <div className="filter-group">
             <select className="input" value={selectedMerchantAccountUUID} onChange={(e) => {
               const params = new URLSearchParams(searchParams);
               if (e.target.value) params.set('merchant_account_uuid', e.target.value); else params.delete('merchant_account_uuid');
+              if (e.target.value) {
+                const account = allMerchantAccounts.find((a) => a.uuid === e.target.value) || null;
+                if (account?.company_uuid) params.set('company_uuid', account.company_uuid);
+                if (account?.legal_entity_uuid) params.set('legal_entity_uuid', account.legal_entity_uuid);
+                if (account?.merchant_uuid) params.set('merchant_uuid', account.merchant_uuid);
+              }
               setSearchParams(params);
             }} disabled={!!routeMerchantAccountUUID || !!selectedSubMerchantUUID}>
               <option value="">בחר חשבון סוחר</option>

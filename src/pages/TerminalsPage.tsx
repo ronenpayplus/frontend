@@ -2,7 +2,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { createTerminal, deleteTerminal, listTerminals, updateTerminal } from '../api/terminals';
 import { listTerminalGroups } from '../api/terminalGroups';
+import { listStores } from '../api/stores';
+import { listMerchantAccounts } from '../api/merchantAccounts';
+import { listCompanies } from '../api/companies';
+import { listLegalEntities } from '../api/legalEntities';
+import { listMerchants } from '../api/merchants';
 import type { TerminalGroup } from '../types/terminalGroup';
+import type { Store } from '../types/store';
+import type { MerchantAccount } from '../types/merchantAccount';
+import type { Company } from '../types/company';
+import type { LegalEntity } from '../types/legalEntity';
+import type { Merchant } from '../types/merchant';
 import type { CreateTerminalRequest, Terminal, UpdateTerminalRequest } from '../types/terminal';
 import {
   TERMINAL_INTEGRATION_TYPES,
@@ -22,8 +32,18 @@ export default function TerminalsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toasts, addToast, removeToast } = useToast();
 
+  const selectedCompanyUUID = searchParams.get('company_uuid') || '';
+  const selectedLegalEntityUUID = searchParams.get('legal_entity_uuid') || '';
+  const selectedMerchantUUID = searchParams.get('merchant_uuid') || '';
+  const selectedMerchantAccountUUID = searchParams.get('merchant_account_uuid') || '';
+  const selectedStoreUUID = searchParams.get('store_uuid') || '';
   const selectedTerminalGroupUUID = routeTerminalGroupUUID || searchParams.get('terminal_group_uuid') || '';
-  const [terminalGroups, setTerminalGroups] = useState<TerminalGroup[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
+  const [merchants, setMerchants] = useState<Merchant[]>([]);
+  const [allMerchantAccounts, setAllMerchantAccounts] = useState<MerchantAccount[]>([]);
+  const [allStores, setAllStores] = useState<Store[]>([]);
+  const [allTerminalGroups, setAllTerminalGroups] = useState<TerminalGroup[]>([]);
   const [items, setItems] = useState<Terminal[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -42,12 +62,93 @@ export default function TerminalsPage() {
     platform: 'ANDROID',
     assigned_user: '',
   });
+  const merchantAccounts = useMemo(
+    () =>
+      allMerchantAccounts.filter((account) => {
+        if (selectedCompanyUUID && account.company_uuid !== selectedCompanyUUID) return false;
+        if (selectedLegalEntityUUID && account.legal_entity_uuid !== selectedLegalEntityUUID) return false;
+        if (selectedMerchantUUID && account.merchant_uuid !== selectedMerchantUUID) return false;
+        return true;
+      }),
+    [allMerchantAccounts, selectedCompanyUUID, selectedLegalEntityUUID, selectedMerchantUUID],
+  );
+  const stores = useMemo(
+    () =>
+      allStores.filter((store) => {
+        if (selectedMerchantAccountUUID && store.merchant_account_uuid !== selectedMerchantAccountUUID) return false;
+        return true;
+      }),
+    [allStores, selectedMerchantAccountUUID],
+  );
+  const terminalGroups = useMemo(
+    () =>
+      allTerminalGroups.filter((group) => {
+        if (selectedStoreUUID && group.store_uuid !== selectedStoreUUID) return false;
+        return true;
+      }),
+    [allTerminalGroups, selectedStoreUUID],
+  );
+  const selectedTerminalGroup = allTerminalGroups.find((g) => g.uuid === selectedTerminalGroupUUID) || null;
+  const selectedStore = allStores.find((s) => s.uuid === selectedTerminalGroup?.store_uuid) || null;
+  const selectedStoreAccount =
+    allMerchantAccounts.find((a) => a.uuid === selectedStore?.merchant_account_uuid) || null;
 
   useEffect(() => {
-    listTerminalGroups({ page: 1, page_size: 300 })
-      .then((data) => setTerminalGroups(data.terminal_groups || []))
-      .catch(() => setTerminalGroups([]));
+    listCompanies({ page: 1, page_size: 300 })
+      .then((data) => setCompanies(data.companies || []))
+      .catch(() => setCompanies([]));
   }, []);
+
+  useEffect(() => {
+    if (!selectedCompanyUUID) {
+      setLegalEntities([]);
+      return;
+    }
+    listLegalEntities({ company_uuid: selectedCompanyUUID, page: 1, page_size: 300 })
+      .then((data) => setLegalEntities(data.legal_entities || []))
+      .catch(() => setLegalEntities([]));
+  }, [selectedCompanyUUID]);
+
+  useEffect(() => {
+    if (!selectedLegalEntityUUID) {
+      setMerchants([]);
+      return;
+    }
+    listMerchants({ legal_entity_uuid: selectedLegalEntityUUID, page: 1, page_size: 300 })
+      .then((data) => setMerchants(data.merchants || []))
+      .catch(() => setMerchants([]));
+  }, [selectedLegalEntityUUID]);
+
+  useEffect(() => {
+    listMerchantAccounts({ page: 1, page_size: 500 })
+      .then((data) => setAllMerchantAccounts(data.merchant_accounts || []))
+      .catch(() => setAllMerchantAccounts([]));
+  }, []);
+
+  useEffect(() => {
+    listStores({ page: 1, page_size: 500 })
+      .then((data) => setAllStores(data.stores || []))
+      .catch(() => setAllStores([]));
+  }, []);
+
+  useEffect(() => {
+    listTerminalGroups({ page: 1, page_size: 500 })
+      .then((data) => setAllTerminalGroups(data.terminal_groups || []))
+      .catch(() => setAllTerminalGroups([]));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedTerminalGroup || !selectedStore || !selectedStoreAccount) return;
+    const params = new URLSearchParams(searchParams);
+    if (selectedStoreAccount.company_uuid) params.set('company_uuid', selectedStoreAccount.company_uuid);
+    if (selectedStoreAccount.legal_entity_uuid) params.set('legal_entity_uuid', selectedStoreAccount.legal_entity_uuid);
+    if (selectedStoreAccount.merchant_uuid) params.set('merchant_uuid', selectedStoreAccount.merchant_uuid);
+    params.set('merchant_account_uuid', selectedStoreAccount.uuid);
+    params.set('store_uuid', selectedStore.uuid);
+    if (params.toString() !== searchParams.toString()) {
+      setSearchParams(params);
+    }
+  }, [selectedTerminalGroup, selectedStore, selectedStoreAccount, searchParams, setSearchParams]);
 
   useEffect(() => {
     if (routeTerminalGroupUUID || selectedTerminalGroupUUID || terminalGroups.length === 0) return;
@@ -84,8 +185,8 @@ export default function TerminalsPage() {
   }, [fetchItems]);
 
   const selectedGroupName = useMemo(
-    () => terminalGroups.find((x) => x.uuid === selectedTerminalGroupUUID)?.name || '',
-    [terminalGroups, selectedTerminalGroupUUID],
+    () => selectedTerminalGroup?.name || '',
+    [selectedTerminalGroup],
   );
 
   const resetForm = () => setForm({
@@ -221,11 +322,76 @@ export default function TerminalsPage() {
       <div className="card filters-card">
         <form className="filters-form" onSubmit={(e) => { e.preventDefault(); fetchItems(); }}>
           <div className="filter-group">
+            <select className="input" value={selectedCompanyUUID} onChange={(e) => {
+              const params = new URLSearchParams(searchParams);
+              if (e.target.value) params.set('company_uuid', e.target.value); else params.delete('company_uuid');
+              params.delete('legal_entity_uuid');
+              params.delete('merchant_uuid');
+              params.delete('merchant_account_uuid');
+              params.delete('store_uuid');
+              if (!routeTerminalGroupUUID) params.delete('terminal_group_uuid');
+              setSearchParams(params);
+            }}>
+              <option value="">בחר חברה</option>
+              {companies.map((company) => <option key={company.uuid} value={company.uuid}>{company.name}</option>)}
+            </select>
+          </div>
+          <div className="filter-group">
+            <select className="input" value={selectedLegalEntityUUID} onChange={(e) => {
+              const params = new URLSearchParams(searchParams);
+              if (e.target.value) params.set('legal_entity_uuid', e.target.value); else params.delete('legal_entity_uuid');
+              params.delete('merchant_uuid');
+              params.delete('merchant_account_uuid');
+              params.delete('store_uuid');
+              if (!routeTerminalGroupUUID) params.delete('terminal_group_uuid');
+              setSearchParams(params);
+            }} disabled={!selectedCompanyUUID}>
+              <option value="">בחר ישות משפטית</option>
+              {legalEntities.map((entity) => <option key={entity.uuid} value={entity.uuid}>{entity.legal_name}</option>)}
+            </select>
+          </div>
+          <div className="filter-group">
+            <select className="input" value={selectedMerchantUUID} onChange={(e) => {
+              const params = new URLSearchParams(searchParams);
+              if (e.target.value) params.set('merchant_uuid', e.target.value); else params.delete('merchant_uuid');
+              params.delete('merchant_account_uuid');
+              params.delete('store_uuid');
+              if (!routeTerminalGroupUUID) params.delete('terminal_group_uuid');
+              setSearchParams(params);
+            }} disabled={!selectedLegalEntityUUID}>
+              <option value="">בחר סוחר</option>
+              {merchants.map((merchant) => <option key={merchant.uuid} value={merchant.uuid}>{merchant.name || merchant.uuid}</option>)}
+            </select>
+          </div>
+          <div className="filter-group">
+            <select className="input" value={selectedMerchantAccountUUID} onChange={(e) => {
+              const params = new URLSearchParams(searchParams);
+              if (e.target.value) params.set('merchant_account_uuid', e.target.value); else params.delete('merchant_account_uuid');
+              params.delete('store_uuid');
+              if (!routeTerminalGroupUUID) params.delete('terminal_group_uuid');
+              setSearchParams(params);
+            }} disabled={!selectedMerchantUUID}>
+              <option value="">בחר חשבון סוחר</option>
+              {merchantAccounts.map((account) => <option key={account.uuid} value={account.uuid}>{account.name}</option>)}
+            </select>
+          </div>
+          <div className="filter-group">
+            <select className="input" value={selectedStoreUUID} onChange={(e) => {
+              const params = new URLSearchParams(searchParams);
+              if (e.target.value) params.set('store_uuid', e.target.value); else params.delete('store_uuid');
+              if (!routeTerminalGroupUUID) params.delete('terminal_group_uuid');
+              setSearchParams(params);
+            }} disabled={!selectedMerchantAccountUUID}>
+              <option value="">בחר חנות</option>
+              {stores.map((store) => <option key={store.uuid} value={store.uuid}>{store.name}</option>)}
+            </select>
+          </div>
+          <div className="filter-group">
             <select className="input" value={selectedTerminalGroupUUID} onChange={(e) => {
               const params = new URLSearchParams(searchParams);
               if (e.target.value) params.set('terminal_group_uuid', e.target.value); else params.delete('terminal_group_uuid');
               setSearchParams(params);
-            }} disabled={!!routeTerminalGroupUUID}>
+            }} disabled={!!routeTerminalGroupUUID || (!selectedStoreUUID && !selectedTerminalGroupUUID)}>
               <option value="">בחר קבוצת טרמינל</option>
               {terminalGroups.map((g) => <option key={g.uuid} value={g.uuid}>{g.name}</option>)}
             </select>
