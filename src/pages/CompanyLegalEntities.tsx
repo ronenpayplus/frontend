@@ -322,6 +322,28 @@ export default function CompanyLegalEntities() {
                       <td className="cell-actions">
                         <button
                           className="btn btn-outline btn-sm"
+                          title="ניהול מסמכי ציות"
+                          onClick={() =>
+                            navigate(
+                              `/legal-entities/${entity.uuid}/compliance-documents?company_uuid=${selectedCompanyUUID}`,
+                            )
+                          }
+                        >
+                          מסמכי ציות
+                        </button>
+                        <button
+                          className="btn btn-outline btn-sm"
+                          title="ניהול בעלי שליטה"
+                          onClick={() =>
+                            navigate(
+                              `/legal-entities/${entity.uuid}/beneficial-owners?company_uuid=${selectedCompanyUUID}`,
+                            )
+                          }
+                        >
+                          בעלי שליטה
+                        </button>
+                        <button
+                          className="btn btn-outline btn-sm"
                           title="ניהול סוחרים"
                           onClick={() =>
                             navigate(

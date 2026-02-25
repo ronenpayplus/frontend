@@ -388,6 +388,7 @@ export default function MerchantAccountsPage() {
                     <td>{STATUS_LABELS[item.status] || item.status}</td>
                     <td className="cell-mono">{item.currency}</td>
                     <td className="cell-actions">
+                      <button className="btn btn-outline btn-sm" onClick={() => navigate(`/merchant-accounts/${item.uuid}/sub-merchants?merchant_uuid=${selectedMerchantUUID}`)}>תתי-סוחרים</button>
                       <button className="btn btn-outline btn-sm" onClick={() => navigate(`/merchant-accounts/${item.uuid}/stores?merchant_uuid=${selectedMerchantUUID}`)}>חנויות</button>
                       <button className="action-btn edit" onClick={() => startEdit(item)}>✎</button>
                       <button className="action-btn delete" onClick={() => setDeleteTarget(item)}>🗑</button>

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { createStore, deleteStore, listStores, updateStore } from '../api/stores';
 import { listMerchantAccounts } from '../api/merchantAccounts';
+import { getSubMerchantAccount } from '../api/subMerchantAccounts';
 import type { MerchantAccount } from '../types/merchantAccount';
 import type { CreateStoreRequest, Store, UpdateStoreRequest } from '../types/store';
 import { STORE_CHANNEL_TYPES, STORE_STATUSES, STORE_TYPES } from '../types/store';
@@ -14,12 +15,17 @@ import './CompanyCreate.css';
 
 export default function StoresPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { uuid: routeMerchantAccountUUID } = useParams<{ uuid: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { toasts, addToast, removeToast } = useToast();
 
-  const selectedMerchantAccountUUID = routeMerchantAccountUUID || searchParams.get('merchant_account_uuid') || '';
+  const isSubMerchantRoute = location.pathname.startsWith('/sub-merchants/');
+  const routeSubMerchantUUID = isSubMerchantRoute ? routeMerchantAccountUUID : '';
+  const selectedSubMerchantUUID = routeSubMerchantUUID || searchParams.get('sub_merchant_uuid') || '';
+  const selectedMerchantAccountUUID = (!isSubMerchantRoute ? routeMerchantAccountUUID : '') || searchParams.get('merchant_account_uuid') || '';
   const [merchantAccounts, setMerchantAccounts] = useState<MerchantAccount[]>([]);
+  const [subMerchantName, setSubMerchantName] = useState('');
   const [items, setItems] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -45,11 +51,32 @@ export default function StoresPage() {
   }, []);
 
   useEffect(() => {
-    if (routeMerchantAccountUUID || selectedMerchantAccountUUID || merchantAccounts.length === 0) return;
+    if (!selectedSubMerchantUUID) {
+      setSubMerchantName('');
+      return;
+    }
+    getSubMerchantAccount(selectedSubMerchantUUID)
+      .then((data) => {
+        setSubMerchantName(data.sub_merchant_account.name);
+        const accountUUID = data.sub_merchant_account.merchant_account_uuid;
+        const current = searchParams.get('merchant_account_uuid') || '';
+        if (!current || current !== accountUUID) {
+          const params = new URLSearchParams(searchParams);
+          params.set('merchant_account_uuid', accountUUID);
+          params.set('sub_merchant_uuid', selectedSubMerchantUUID);
+          setSearchParams(params);
+        }
+      })
+      .catch(() => setSubMerchantName(''));
+  }, [selectedSubMerchantUUID, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if ((!isSubMerchantRoute && routeMerchantAccountUUID) || selectedMerchantAccountUUID || merchantAccounts.length === 0) return;
     const params = new URLSearchParams(searchParams);
     params.set('merchant_account_uuid', merchantAccounts[0].uuid);
+    if (selectedSubMerchantUUID) params.set('sub_merchant_uuid', selectedSubMerchantUUID);
     setSearchParams(params);
-  }, [routeMerchantAccountUUID, selectedMerchantAccountUUID, merchantAccounts, searchParams, setSearchParams]);
+  }, [routeMerchantAccountUUID, selectedMerchantAccountUUID, merchantAccounts, searchParams, setSearchParams, selectedSubMerchantUUID, isSubMerchantRoute]);
 
   const fetchStores = useCallback(async () => {
     if (!selectedMerchantAccountUUID) {
@@ -169,15 +196,30 @@ export default function StoresPage() {
   return (
     <div className="companies-page">
       <div className="breadcrumb">
-        <button className="breadcrumb-link" onClick={() => navigate('/merchant-accounts')}>חשבונות סוחר</button>
-        <span className="breadcrumb-sep">/</span>
+        {selectedSubMerchantUUID ? (
+          <>
+            <button className="breadcrumb-link" onClick={() => navigate('/sub-merchants')}>תתי-סוחרים</button>
+            <span className="breadcrumb-sep">/</span>
+          </>
+        ) : (
+          <>
+            <button className="breadcrumb-link" onClick={() => navigate('/merchant-accounts')}>חשבונות סוחר</button>
+            <span className="breadcrumb-sep">/</span>
+          </>
+        )}
         <span>חנויות</span>
       </div>
 
       <div className="page-header">
         <div>
           <h1 className="page-title">חנויות</h1>
-          <p className="page-subtitle">{selectedAccountName ? `חשבון נבחר: ${selectedAccountName}` : 'בחר חשבון סוחר'}</p>
+          <p className="page-subtitle">
+            {selectedSubMerchantUUID
+              ? `תת-סוחר: ${subMerchantName || selectedSubMerchantUUID} | חשבון: ${selectedAccountName || selectedMerchantAccountUUID}`
+              : selectedAccountName
+                ? `חשבון נבחר: ${selectedAccountName}`
+                : 'בחר חשבון סוחר'}
+          </p>
         </div>
         <button className="btn btn-primary" disabled={!selectedMerchantAccountUUID} onClick={() => { setShowCreate((v) => !v); setEditing(null); resetForm(); }}>
           {showCreate ? 'סגור טופס' : 'חנות חדשה'}
@@ -216,7 +258,7 @@ export default function StoresPage() {
               const params = new URLSearchParams(searchParams);
               if (e.target.value) params.set('merchant_account_uuid', e.target.value); else params.delete('merchant_account_uuid');
               setSearchParams(params);
-            }} disabled={!!routeMerchantAccountUUID}>
+            }} disabled={!!routeMerchantAccountUUID || !!selectedSubMerchantUUID}>
               <option value="">בחר חשבון סוחר</option>
               {merchantAccounts.map((a) => <option key={a.uuid} value={a.uuid}>{a.name}</option>)}
             </select>

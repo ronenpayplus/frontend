@@ -1,0 +1,396 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { listMerchantAccounts } from '../api/merchantAccounts';
+import { listCompanies } from '../api/companies';
+import { listLegalEntities } from '../api/legalEntities';
+import { getMerchant, listMerchants } from '../api/merchants';
+import {
+  createSubMerchantAccount,
+  deleteSubMerchantAccount,
+  listSubMerchantAccounts,
+  updateSubMerchantAccount,
+} from '../api/subMerchantAccounts';
+import type { MerchantAccount } from '../types/merchantAccount';
+import type { Merchant } from '../types/merchant';
+import type {
+  CreateSubMerchantAccountRequest,
+  SubMerchantAccount,
+  UpdateSubMerchantAccountRequest,
+} from '../types/subMerchantAccount';
+import {
+  SUB_MERCHANT_ENTITY_TYPES,
+  SUB_MERCHANT_KYC_STATUSES,
+  SUB_MERCHANT_ONBOARDING_STATUSES,
+  SUB_MERCHANT_SELLER_MODELS,
+  SUB_MERCHANT_STATUSES,
+} from '../types/subMerchantAccount';
+import { MOCK_COUNTRIES, MOCK_CURRENCIES, MOCK_TIMEZONES } from '../types/company';
+import ConfirmDialog from '../components/ConfirmDialog';
+import Toast from '../components/Toast';
+import { useToast } from '../hooks/useToast';
+import './CompaniesList.css';
+import './CompanyCreate.css';
+
+export default function SubMerchantAccountsPage() {
+  const navigate = useNavigate();
+  const { uuid: routeMerchantAccountUUID } = useParams<{ uuid: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { toasts, addToast, removeToast } = useToast();
+
+  const selectedMerchantAccountUUID = routeMerchantAccountUUID || searchParams.get('merchant_account_uuid') || '';
+  const selectedMerchantUUID = searchParams.get('merchant_uuid') || '';
+  const [merchantAccounts, setMerchantAccounts] = useState<MerchantAccount[]>([]);
+  const [merchants, setMerchants] = useState<Merchant[]>([]);
+  const [items, setItems] = useState<SubMerchantAccount[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [editing, setEditing] = useState<SubMerchantAccount | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SubMerchantAccount | null>(null);
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+
+  const [form, setForm] = useState({
+    name: '',
+    sub_merchant_code: '',
+    entity_type: 'company',
+    seller_model: 'PLATFORM_MOR',
+    category_code: '5411',
+    mcc_default: '5411',
+    status: 'NEW',
+    onboarding_status: 'NEW',
+    kyc_status: 'not_started',
+    country: 'IL',
+    currency: 'ILS',
+    timezone: 'Asia/Jerusalem',
+    payments_enabled: false,
+    payouts_enabled: false,
+    default_acquiring_model: 'PLATFORM_MID',
+    notes: '',
+  });
+
+  useEffect(() => {
+    const loadMerchants = async () => {
+      try {
+        const direct = await listMerchants({ page: 1, page_size: 300 });
+        if ((direct.merchants || []).length > 0) {
+          setMerchants(direct.merchants || []);
+          return;
+        }
+        const companiesData = await listCompanies({ page: 1, page_size: 200 });
+        const unique = new Map<string, Merchant>();
+        await Promise.all(
+          (companiesData.companies || []).map(async (company) => {
+            try {
+              const legalEntities = await listLegalEntities({ company_uuid: company.uuid, page: 1, page_size: 200 });
+              await Promise.all(
+                (legalEntities.legal_entities || []).map(async (le) => {
+                  try {
+                    const merchantsData = await listMerchants({ legal_entity_uuid: le.uuid, page: 1, page_size: 200 });
+                    (merchantsData.merchants || []).forEach((m) => unique.set(m.uuid, m));
+                  } catch {
+                    // continue
+                  }
+                }),
+              );
+            } catch {
+              // continue
+            }
+          }),
+        );
+        setMerchants(Array.from(unique.values()));
+      } catch {
+        setMerchants([]);
+      }
+    };
+    loadMerchants();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedMerchantUUID) return;
+    if (merchants.some((m) => m.uuid === selectedMerchantUUID)) return;
+    getMerchant(selectedMerchantUUID)
+      .then((data) => {
+        const merchant = data.merchant;
+        if (!merchant?.uuid) return;
+        setMerchants((prev) => (prev.some((m) => m.uuid === merchant.uuid) ? prev : [merchant, ...prev]));
+      })
+      .catch(() => {
+        // keep UI usable even if merchant lookup fails
+      });
+  }, [selectedMerchantUUID, merchants]);
+
+  useEffect(() => {
+    listMerchantAccounts({ page: 1, page_size: 300 })
+      .then((data) => setMerchantAccounts(data.merchant_accounts || []))
+      .catch(() => setMerchantAccounts([]));
+  }, []);
+
+  useEffect(() => {
+    if (routeMerchantAccountUUID || selectedMerchantAccountUUID || merchantAccounts.length === 0) return;
+    const params = new URLSearchParams(searchParams);
+    params.set('merchant_account_uuid', merchantAccounts[0].uuid);
+    setSearchParams(params);
+  }, [routeMerchantAccountUUID, selectedMerchantAccountUUID, merchantAccounts, searchParams, setSearchParams]);
+
+  const fetchItems = useCallback(async () => {
+    if (!selectedMerchantAccountUUID) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const data = await listSubMerchantAccounts({
+        merchant_account_uuid: selectedMerchantAccountUUID,
+        search: search || undefined,
+        page: 1,
+        page_size: 50,
+      });
+      setItems(data.sub_merchant_accounts || []);
+    } catch (error) {
+      console.error(error);
+      addToast('שגיאה בטעינת תתי-סוחרים', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedMerchantAccountUUID, search, addToast]);
+
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
+
+  const selectedAccountName = useMemo(
+    () => merchantAccounts.find((m) => m.uuid === selectedMerchantAccountUUID)?.name || '',
+    [merchantAccounts, selectedMerchantAccountUUID],
+  );
+
+  const resetForm = () => {
+    setForm({
+      name: '',
+      sub_merchant_code: '',
+      entity_type: 'company',
+      seller_model: 'PLATFORM_MOR',
+      category_code: '5411',
+      mcc_default: '5411',
+      status: 'NEW',
+      onboarding_status: 'NEW',
+      kyc_status: 'not_started',
+      country: 'IL',
+      currency: 'ILS',
+      timezone: 'Asia/Jerusalem',
+      payments_enabled: false,
+      payouts_enabled: false,
+      default_acquiring_model: 'PLATFORM_MID',
+      notes: '',
+    });
+  };
+
+  const autoFill = () => {
+    const rand = Math.floor(Math.random() * 9000) + 1000;
+    setForm({
+      name: `Sub Merchant ${rand}`,
+      sub_merchant_code: `SUB-${rand}`,
+      entity_type: 'company',
+      seller_model: 'PLATFORM_MOR',
+      category_code: '5411',
+      mcc_default: '5411',
+      status: 'NEW',
+      onboarding_status: 'NEW',
+      kyc_status: 'not_started',
+      country: 'IL',
+      currency: 'ILS',
+      timezone: 'Asia/Jerusalem',
+      payments_enabled: false,
+      payouts_enabled: false,
+      default_acquiring_model: 'PLATFORM_MID',
+      notes: 'Auto-filled for testing',
+    });
+  };
+
+  const startEdit = (item: SubMerchantAccount) => {
+    setShowCreate(false);
+    setEditing(item);
+    setForm({
+      name: item.name,
+      sub_merchant_code: item.sub_merchant_code || '',
+      entity_type: item.entity_type || 'company',
+      seller_model: item.seller_model,
+      category_code: item.category_code,
+      mcc_default: item.mcc_default || '',
+      status: item.status,
+      onboarding_status: item.onboarding_status || 'NEW',
+      kyc_status: item.kyc_status || 'not_started',
+      country: item.country,
+      currency: item.currency,
+      timezone: item.timezone,
+      payments_enabled: item.payments_enabled,
+      payouts_enabled: item.payouts_enabled,
+      default_acquiring_model: item.default_acquiring_model || 'PLATFORM_MID',
+      notes: item.notes || '',
+    });
+  };
+
+  const save = async () => {
+    if (!selectedMerchantAccountUUID || !selectedMerchantUUID || !form.name || !form.category_code) {
+      addToast('חובה לבחור חשבון סוחר + סוחר ולמלא שם ו-Category', 'error');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      if (editing) {
+        const payload: UpdateSubMerchantAccountRequest = { ...form };
+        await updateSubMerchantAccount(editing.uuid, payload);
+        addToast('תת-סוחר עודכן', 'success');
+        setEditing(null);
+      } else {
+        const payload: CreateSubMerchantAccountRequest = {
+          merchant_account_uuid: selectedMerchantAccountUUID,
+          merchant_uuid: selectedMerchantUUID,
+          ...form,
+        };
+        await createSubMerchantAccount(payload);
+        addToast('תת-סוחר נוצר', 'success');
+        setShowCreate(false);
+      }
+      resetForm();
+      await fetchItems();
+    } catch (error) {
+      console.error(error);
+      addToast('שמירת תת-סוחר נכשלה', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async () => {
+    if (!deleteTarget) return;
+    setSaving(true);
+    try {
+      await deleteSubMerchantAccount(deleteTarget.uuid);
+      setDeleteTarget(null);
+      addToast('תת-סוחר נמחק', 'success');
+      await fetchItems();
+    } catch (error) {
+      console.error(error);
+      addToast('מחיקת תת-סוחר נכשלה', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="companies-page">
+      <div className="breadcrumb">
+        <button className="breadcrumb-link" onClick={() => navigate('/merchant-accounts')}>חשבונות סוחר</button>
+        <span className="breadcrumb-sep">/</span>
+        <span>תתי-סוחרים</span>
+      </div>
+
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">תתי-סוחרים</h1>
+          <p className="page-subtitle">{selectedAccountName ? `חשבון נבחר: ${selectedAccountName}` : 'בחר חשבון סוחר'}</p>
+        </div>
+        <button className="btn btn-primary" disabled={!selectedMerchantAccountUUID} onClick={() => { setShowCreate((v) => !v); setEditing(null); resetForm(); }}>
+          {showCreate ? 'סגור טופס' : 'תת-סוחר חדש'}
+        </button>
+      </div>
+
+      {(showCreate || editing) ? (
+        <div className="form-section">
+          <div className="auto-fill-bar">
+            <button type="button" className="btn btn-auto-fill" onClick={autoFill}>מילוי מהיר</button>
+          </div>
+          <h3 className="section-title">{editing ? 'עריכת תת-סוחר' : 'יצירת תת-סוחר'}</h3>
+          <div className="form-grid">
+            <div className="form-field"><label className="label">שם *</label><input className="input" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Sub Merchant Code</label><input className="input ltr-input" dir="ltr" value={form.sub_merchant_code} onChange={(e) => setForm((p) => ({ ...p, sub_merchant_code: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Entity Type</label><select className="input" value={form.entity_type} onChange={(e) => setForm((p) => ({ ...p, entity_type: e.target.value }))}>{SUB_MERCHANT_ENTITY_TYPES.map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
+            <div className="form-field"><label className="label">Seller Model</label><select className="input" value={form.seller_model} onChange={(e) => setForm((p) => ({ ...p, seller_model: e.target.value }))}>{SUB_MERCHANT_SELLER_MODELS.map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
+            <div className="form-field"><label className="label">Category *</label><input className="input ltr-input" dir="ltr" value={form.category_code} onChange={(e) => setForm((p) => ({ ...p, category_code: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">MCC</label><input className="input ltr-input" dir="ltr" value={form.mcc_default} onChange={(e) => setForm((p) => ({ ...p, mcc_default: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Status</label><select className="input" value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}>{SUB_MERCHANT_STATUSES.map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
+            <div className="form-field"><label className="label">Onboarding</label><select className="input" value={form.onboarding_status} onChange={(e) => setForm((p) => ({ ...p, onboarding_status: e.target.value }))}>{SUB_MERCHANT_ONBOARDING_STATUSES.map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
+            <div className="form-field"><label className="label">KYC</label><select className="input" value={form.kyc_status} onChange={(e) => setForm((p) => ({ ...p, kyc_status: e.target.value }))}>{SUB_MERCHANT_KYC_STATUSES.map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
+            <div className="form-field"><label className="label">מדינה</label><select className="input" value={form.country} onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))}>{MOCK_COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}</select></div>
+            <div className="form-field"><label className="label">מטבע</label><select className="input" value={form.currency} onChange={(e) => setForm((p) => ({ ...p, currency: e.target.value }))}>{MOCK_CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}</select></div>
+            <div className="form-field"><label className="label">אזור זמן</label><select className="input" value={form.timezone} onChange={(e) => setForm((p) => ({ ...p, timezone: e.target.value }))}>{MOCK_TIMEZONES.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
+            <div className="form-field"><label className="label">Acquiring Model</label><select className="input" value={form.default_acquiring_model} onChange={(e) => setForm((p) => ({ ...p, default_acquiring_model: e.target.value }))}><option value="PLATFORM_MID">PLATFORM_MID</option><option value="SELLER_MID">SELLER_MID</option></select></div>
+            <div className="form-field"><label className="label">הערות</label><input className="input" value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} /></div>
+            <div className="form-field toggle-field"><label className="toggle-label"><div className={`toggle ${form.payments_enabled ? 'active' : ''}`} onClick={() => setForm((p) => ({ ...p, payments_enabled: !p.payments_enabled }))}><div className="toggle-knob" /></div><span>Payments Enabled</span></label></div>
+            <div className="form-field toggle-field"><label className="toggle-label"><div className={`toggle ${form.payouts_enabled ? 'active' : ''}`} onClick={() => setForm((p) => ({ ...p, payouts_enabled: !p.payouts_enabled }))}><div className="toggle-knob" /></div><span>Payouts Enabled</span></label></div>
+          </div>
+          <div className="form-actions">
+            <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'שומר...' : editing ? 'עדכן' : 'צור'}</button>
+            <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); }}>ביטול</button>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="card filters-card">
+        <form className="filters-form" onSubmit={(e) => { e.preventDefault(); fetchItems(); }}>
+          <div className="filter-group">
+            <select className="input" value={selectedMerchantUUID} onChange={(e) => {
+              const params = new URLSearchParams(searchParams);
+              if (e.target.value) params.set('merchant_uuid', e.target.value); else params.delete('merchant_uuid');
+              setSearchParams(params);
+            }}>
+              <option value="">בחר סוחר</option>
+              {merchants.map((m) => <option key={m.uuid} value={m.uuid}>{m.name}</option>)}
+            </select>
+          </div>
+          <div className="filter-group">
+            <select className="input" value={selectedMerchantAccountUUID} onChange={(e) => {
+              const params = new URLSearchParams(searchParams);
+              if (e.target.value) params.set('merchant_account_uuid', e.target.value); else params.delete('merchant_account_uuid');
+              if (selectedMerchantUUID) params.set('merchant_uuid', selectedMerchantUUID);
+              setSearchParams(params);
+            }} disabled={!!routeMerchantAccountUUID}>
+              <option value="">בחר חשבון סוחר</option>
+              {merchantAccounts.map((m) => <option key={m.uuid} value={m.uuid}>{m.name}</option>)}
+            </select>
+          </div>
+          <div className="filter-group"><input className="input" placeholder="חיפוש" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
+          <button className="btn btn-primary" type="submit">חיפוש</button>
+        </form>
+      </div>
+
+      <div className="card table-card">
+        {loading ? <div className="loading-state"><div className="spinner" /><span>טוען תתי-סוחרים...</span></div> : items.length === 0 ? <div className="empty-state"><p>לא נמצאו תתי-סוחרים</p></div> : (
+          <div className="table-wrapper">
+            <table className="data-table">
+              <thead><tr><th>שם</th><th>קוד</th><th>סטטוס</th><th>KYC</th><th>מטבע</th><th>פעולות</th></tr></thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr key={item.uuid}>
+                    <td className="cell-name">{item.name}</td>
+                    <td className="cell-mono">{item.sub_merchant_code || '—'}</td>
+                    <td>{item.status}</td>
+                    <td>{item.kyc_status || '—'}</td>
+                    <td className="cell-mono">{item.currency}</td>
+                    <td className="cell-actions">
+                      <button className="btn btn-outline btn-sm" onClick={() => navigate(`/sub-merchants/${item.uuid}/stores?merchant_account_uuid=${item.merchant_account_uuid}`)}>חנויות</button>
+                      <button className="action-btn edit" onClick={() => startEdit(item)}>✎</button>
+                      <button className="action-btn delete" onClick={() => setDeleteTarget(item)}>🗑</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="מחיקת תת-סוחר"
+        message={`למחוק את "${deleteTarget?.name}"?`}
+        confirmLabel="מחק"
+        onConfirm={remove}
+        onCancel={() => setDeleteTarget(null)}
+      />
+      <Toast toasts={toasts} onRemove={removeToast} />
+    </div>
+  );
+}
