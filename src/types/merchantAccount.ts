@@ -82,6 +82,7 @@ export interface CreateMerchantAccountRequest {
 }
 
 export interface UpdateMerchantAccountRequest {
+  uuid?: string;
   name: string;
   merchant_code: string;
   mcc: string;

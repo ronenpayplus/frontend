@@ -252,6 +252,7 @@ export default function MerchantAccountsPage() {
     try {
       if (editing) {
         const payload: UpdateMerchantAccountRequest = {
+          uuid: editing.uuid,
           ...form,
         };
         await updateMerchantAccount(editing.uuid, payload);
