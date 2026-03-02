@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { listMerchantAccountCurrencies } from '../api/merchantAccountCurrencies';
 import { getMerchantAccount, listMerchantAccounts } from '../api/merchantAccounts';
 import { listCompanies } from '../api/companies';
 import { listLegalEntities } from '../api/legalEntities';
@@ -26,7 +27,7 @@ import {
   SUB_MERCHANT_SELLER_MODELS,
   SUB_MERCHANT_STATUSES,
 } from '../types/subMerchantAccount';
-import { MOCK_COUNTRIES, MOCK_CURRENCIES, MOCK_TIMEZONES } from '../types/company';
+import { MOCK_COUNTRIES, MOCK_TIMEZONES } from '../types/company';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
@@ -46,6 +47,7 @@ export default function SubMerchantAccountsPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
   const [allMerchantAccounts, setAllMerchantAccounts] = useState<MerchantAccount[]>([]);
+  const [merchantAccountCurrencies, setMerchantAccountCurrencies] = useState<string[]>([]);
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [items, setItems] = useState<SubMerchantAccount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,6 +137,33 @@ export default function SubMerchantAccountsPage() {
       .then((data) => setAllMerchantAccounts(data.merchant_accounts || []))
       .catch(() => setAllMerchantAccounts([]));
   }, []);
+
+  useEffect(() => {
+    if (!selectedMerchantAccountUUID) {
+      setMerchantAccountCurrencies([]);
+      return;
+    }
+    listMerchantAccountCurrencies(selectedMerchantAccountUUID)
+      .then((data) => {
+        const rows = data.merchant_account_currencies || [];
+        const uniqueCodes = Array.from(new Set(rows.map((row) => row.currency_code).filter(Boolean)));
+        setMerchantAccountCurrencies(uniqueCodes);
+        if (uniqueCodes.length > 0) {
+          const defaultCode = rows.find((row) => row.is_default)?.currency_code || uniqueCodes[0];
+          setForm((prev) => ({ ...prev, currency: defaultCode }));
+        }
+      })
+      .catch(() => {
+        setMerchantAccountCurrencies([]);
+      });
+  }, [selectedMerchantAccountUUID]);
+
+  useEffect(() => {
+    if (merchantAccountCurrencies.length > 0) return;
+    if (!selectedMerchantAccount?.currency) return;
+    setMerchantAccountCurrencies([selectedMerchantAccount.currency]);
+    setForm((prev) => ({ ...prev, currency: selectedMerchantAccount.currency || prev.currency }));
+  }, [merchantAccountCurrencies, selectedMerchantAccount]);
 
   useEffect(() => {
     const missingMerchantUUIDs = Array.from(
@@ -268,7 +297,7 @@ export default function SubMerchantAccountsPage() {
       onboarding_status: 'NEW',
       kyc_status: 'not_started',
       country: 'IL',
-      currency: 'ILS',
+      currency: merchantAccountCurrencies[0] || '',
       timezone: 'Asia/Jerusalem',
       payments_enabled: false,
       payouts_enabled: false,
@@ -290,7 +319,7 @@ export default function SubMerchantAccountsPage() {
       onboarding_status: 'NEW',
       kyc_status: 'not_started',
       country: 'IL',
-      currency: 'ILS',
+      currency: merchantAccountCurrencies[0] || form.currency || '',
       timezone: 'Asia/Jerusalem',
       payments_enabled: false,
       payouts_enabled: false,
@@ -323,8 +352,8 @@ export default function SubMerchantAccountsPage() {
   };
 
   const save = async () => {
-    if (!selectedMerchantAccountUUID || !effectiveMerchantUUID || !form.name || !form.category_code) {
-      addToast('חובה לבחור חשבון סוחר + סוחר ולמלא שם ו-Category', 'error');
+    if (!selectedMerchantAccountUUID || !effectiveMerchantUUID || !form.name || !form.category_code || !form.currency) {
+      addToast('חובה לבחור חשבון סוחר + סוחר ולמלא שם, Category ומטבע', 'error');
       return;
     }
 
@@ -406,7 +435,25 @@ export default function SubMerchantAccountsPage() {
             <div className="form-field"><label className="label">Onboarding</label><select className="input" value={form.onboarding_status} onChange={(e) => setForm((p) => ({ ...p, onboarding_status: e.target.value }))}>{SUB_MERCHANT_ONBOARDING_STATUSES.map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
             <div className="form-field"><label className="label">KYC</label><select className="input" value={form.kyc_status} onChange={(e) => setForm((p) => ({ ...p, kyc_status: e.target.value }))}>{SUB_MERCHANT_KYC_STATUSES.map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
             <div className="form-field"><label className="label">מדינה</label><select className="input" value={form.country} onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))}>{MOCK_COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}</select></div>
-            <div className="form-field"><label className="label">מטבע</label><select className="input" value={form.currency} onChange={(e) => setForm((p) => ({ ...p, currency: e.target.value }))}>{MOCK_CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}</select></div>
+            <div className="form-field">
+              <label className="label">מטבע</label>
+              <select
+                className="input"
+                value={form.currency}
+                onChange={(e) => setForm((p) => ({ ...p, currency: e.target.value }))}
+                disabled={merchantAccountCurrencies.length === 0}
+              >
+                {merchantAccountCurrencies.length === 0 ? (
+                  <option value="">אין מטבעות משויכים לחשבון הסוחר</option>
+                ) : (
+                  merchantAccountCurrencies.map((currencyCode) => (
+                    <option key={currencyCode} value={currencyCode}>
+                      {currencyCode}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
             <div className="form-field"><label className="label">אזור זמן</label><select className="input" value={form.timezone} onChange={(e) => setForm((p) => ({ ...p, timezone: e.target.value }))}>{MOCK_TIMEZONES.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
             <div className="form-field"><label className="label">Acquiring Model</label><select className="input" value={form.default_acquiring_model} onChange={(e) => setForm((p) => ({ ...p, default_acquiring_model: e.target.value }))}><option value="PLATFORM_MID">PLATFORM_MID</option><option value="SELLER_MID">SELLER_MID</option></select></div>
             <div className="form-field"><label className="label">הערות</label><input className="input" value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} /></div>

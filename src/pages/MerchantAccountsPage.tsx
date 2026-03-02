@@ -3,12 +3,18 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { getMerchant, listMerchants } from '../api/merchants';
 import { getLegalEntity, listLegalEntities } from '../api/legalEntities';
 import { listCompanies } from '../api/companies';
+import { listCurrencies } from '../api/currencies';
 import {
   createMerchantAccount,
   deleteMerchantAccount,
   listMerchantAccounts,
   updateMerchantAccount,
 } from '../api/merchantAccounts';
+import {
+  listMerchantAccountCurrencies,
+  syncMerchantAccountCurrencies,
+} from '../api/merchantAccountCurrencies';
+import type { Currency } from '../types/currency';
 import type { Merchant } from '../types/merchant';
 import type { LegalEntity } from '../types/legalEntity';
 import type { Company } from '../types/company';
@@ -19,6 +25,8 @@ import type {
 } from '../types/merchantAccount';
 import { CONTRACT_TYPES, KYC_STATUSES, MOCK_COUNTRIES, MOCK_CURRENCIES, MOCK_TIMEZONES, STATUS_LABELS, VOLUME_TIERS } from '../types/company';
 import ConfirmDialog from '../components/ConfirmDialog';
+import DualListSelector from '../components/DualListSelector';
+import type { DualListItem } from '../components/DualListSelector';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
 import './CompaniesList.css';
@@ -38,6 +46,7 @@ export default function MerchantAccountsPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
   const [merchants, setMerchants] = useState<Merchant[]>([]);
+  const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
   const [selectedLegalEntity, setSelectedLegalEntity] = useState<LegalEntity | null>(null);
   const [items, setItems] = useState<MerchantAccount[]>([]);
@@ -47,6 +56,12 @@ export default function MerchantAccountsPage() {
   const [deleteTarget, setDeleteTarget] = useState<MerchantAccount | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([]);
+
+  const currencyDualListItems = useMemo<DualListItem[]>(
+    () => currencies.map((c) => ({ code: c.alpha3, label: `${c.alpha3} - ${c.name}` })),
+    [currencies],
+  );
 
   const [form, setForm] = useState({
     name: '',
@@ -70,6 +85,12 @@ export default function MerchantAccountsPage() {
     listCompanies({ page: 1, page_size: 300 })
       .then((data) => setCompanies(data.companies || []))
       .catch(() => setCompanies([]));
+  }, []);
+
+  useEffect(() => {
+    listCurrencies({ is_active: 'true', page: 1, page_size: 300 })
+      .then((data) => setCurrencies(data.currencies || []))
+      .catch(() => setCurrencies([]));
   }, []);
 
   useEffect(() => {
@@ -193,6 +214,7 @@ export default function MerchantAccountsPage() {
       volume_tier: 'starter',
       default_acquiring_model: 'PLATFORM_MID',
     });
+    setSelectedCurrencies([]);
   };
 
   const autoFillCreateForm = () => {
@@ -216,7 +238,7 @@ export default function MerchantAccountsPage() {
     });
   };
 
-  const startEdit = (item: MerchantAccount) => {
+  const startEdit = async (item: MerchantAccount) => {
     setEditing(item);
     setShowCreate(false);
     setForm({
@@ -236,6 +258,14 @@ export default function MerchantAccountsPage() {
       volume_tier: item.volume_tier || 'starter',
       default_acquiring_model: item.default_acquiring_model || 'PLATFORM_MID',
     });
+    try {
+      const data = await listMerchantAccountCurrencies(item.uuid);
+      setSelectedCurrencies(
+        (data.merchant_account_currencies || []).map((c) => c.currency_code),
+      );
+    } catch {
+      setSelectedCurrencies([]);
+    }
   };
 
   const handleSave = async () => {
@@ -250,14 +280,14 @@ export default function MerchantAccountsPage() {
 
     setSaving(true);
     try {
+      let accountUUID: string;
       if (editing) {
+        accountUUID = editing.uuid;
         const payload: UpdateMerchantAccountRequest = {
           uuid: editing.uuid,
           ...form,
         };
         await updateMerchantAccount(editing.uuid, payload);
-        addToast('חשבון סוחר עודכן בהצלחה', 'success');
-        setEditing(null);
       } else {
         const payload: CreateMerchantAccountRequest = {
           merchant_uuid: selectedMerchant.uuid,
@@ -265,10 +295,26 @@ export default function MerchantAccountsPage() {
           company_uuid: resolvedCompanyUUID,
           ...form,
         };
-        await createMerchantAccount(payload);
-        addToast('חשבון סוחר נוצר בהצלחה', 'success');
-        setShowCreate(false);
+        const result = await createMerchantAccount(payload);
+        accountUUID = (result as unknown as { merchant_account?: { uuid?: string }; uuid?: string })
+          ?.merchant_account?.uuid || (result as unknown as { uuid?: string })?.uuid || '';
       }
+
+      if (accountUUID && selectedCurrencies.length > 0) {
+        try {
+          await syncMerchantAccountCurrencies(accountUUID, selectedCurrencies);
+        } catch (currError) {
+          console.error('Currency sync error:', currError);
+          addToast('חשבון סוחר נשמר, אך סנכרון המטבעות נכשל', 'error');
+        }
+      }
+
+      addToast(
+        editing ? 'חשבון סוחר עודכן בהצלחה' : 'חשבון סוחר נוצר בהצלחה',
+        'success',
+      );
+      if (editing) setEditing(null);
+      else setShowCreate(false);
       resetForm();
       await fetchItems();
     } catch (error) {
@@ -333,7 +379,7 @@ export default function MerchantAccountsPage() {
             <div className="form-field"><label className="label">סטטוס</label><select className="input" value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}>{Object.keys(STATUS_LABELS).map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}</select></div>
             <div className="form-field"><label className="label">KYC</label><select className="input" value={form.kyc_status} onChange={(e) => setForm((p) => ({ ...p, kyc_status: e.target.value }))}>{KYC_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
             <div className="form-field"><label className="label">מדינה</label><select className="input" value={form.country} onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))}>{MOCK_COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}</select></div>
-            <div className="form-field"><label className="label">מטבע</label><select className="input" value={form.currency} onChange={(e) => setForm((p) => ({ ...p, currency: e.target.value }))}>{MOCK_CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}</select></div>
+            <div className="form-field"><label className="label">מטבע</label><select className="input" value={form.currency} onChange={(e) => setForm((p) => ({ ...p, currency: e.target.value }))}>{(currencies.length > 0 ? currencies.map((c) => ({ code: c.alpha3, label: `${c.alpha3} - ${c.name}` })) : MOCK_CURRENCIES.map((c) => ({ code: c.code, label: `${c.code} - ${c.name}` }))).map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}</select></div>
             <div className="form-field"><label className="label">אזור זמן</label><select className="input" value={form.timezone} onChange={(e) => setForm((p) => ({ ...p, timezone: e.target.value }))}>{MOCK_TIMEZONES.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
             <div className="form-field"><label className="label">סוג חוזה</label><select className="input" value={form.contract_type} onChange={(e) => setForm((p) => ({ ...p, contract_type: e.target.value }))}>{CONTRACT_TYPES.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
             <div className="form-field"><label className="label">שכבת נפח</label><select className="input" value={form.volume_tier} onChange={(e) => setForm((p) => ({ ...p, volume_tier: e.target.value }))}>{VOLUME_TIERS.map((v) => <option key={v} value={v}>{v}</option>)}</select></div>
@@ -341,9 +387,22 @@ export default function MerchantAccountsPage() {
             <div className="form-field toggle-field"><label className="toggle-label"><div className={`toggle ${form.charges_enabled ? 'active' : ''}`} onClick={() => setForm((p) => ({ ...p, charges_enabled: !p.charges_enabled }))}><div className="toggle-knob" /></div><span>Charges Enabled</span></label></div>
             <div className="form-field toggle-field"><label className="toggle-label"><div className={`toggle ${form.payouts_enabled ? 'active' : ''}`} onClick={() => setForm((p) => ({ ...p, payouts_enabled: !p.payouts_enabled }))}><div className="toggle-knob" /></div><span>Payouts Enabled</span></label></div>
           </div>
+
+          <div style={{ marginTop: '20px' }}>
+            <h4 className="section-title" style={{ marginBottom: '12px' }}>מטבעות זמינים לחשבון סוחר</h4>
+            <DualListSelector
+              sourceTitle="כל המטבעות"
+              targetTitle="מטבעות נבחרים"
+              available={currencyDualListItems}
+              selected={selectedCurrencies}
+              onChange={setSelectedCurrencies}
+              disabled={saving}
+            />
+          </div>
+
           <div className="form-actions">
             <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving ? 'שומר...' : editing ? 'עדכן' : 'צור'}</button>
-            <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); }}>ביטול</button>
+            <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); resetForm(); }}>ביטול</button>
           </div>
         </div>
       ) : null}

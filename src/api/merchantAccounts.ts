@@ -55,9 +55,17 @@ export async function getMerchantAccount(uuid: string): Promise<{ merchant_accou
 export async function createMerchantAccount(
   data: CreateMerchantAccountRequest,
 ): Promise<{ uuid: string }> {
-  return request<{ uuid: string }>(`${API_BASE}/create`, {
+  return request<{ uuid: string }>(`${API_BASE}/create-with-currencies`, {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify({
+      ...data,
+      currencies: [
+        {
+          currency_code: data.currency,
+          is_default: true,
+        },
+      ],
+    }),
   });
 }
 
@@ -65,9 +73,18 @@ export async function updateMerchantAccount(
   uuid: string,
   data: UpdateMerchantAccountRequest,
 ): Promise<{ success: boolean }> {
-  return request<{ success: boolean }>(`${API_BASE}/update/${uuid}`, {
+  return request<{ success: boolean }>(`${API_BASE}/update-with-currencies`, {
     method: 'PUT',
-    body: JSON.stringify(data),
+    body: JSON.stringify({
+      ...data,
+      uuid: data.uuid || uuid,
+      currencies: [
+        {
+          currency_code: data.currency,
+          is_default: true,
+        },
+      ],
+    }),
   });
 }
 

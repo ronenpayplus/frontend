@@ -1,0 +1,140 @@
+.dual-list {
+  display: flex;
+  gap: 0;
+  align-items: stretch;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  overflow: hidden;
+  min-height: 320px;
+}
+
+.dual-list--disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.dual-list__panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dual-list__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.dual-list__title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.dual-list__count {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.dual-list__search {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.dual-list__search-input {
+  padding: 6px 10px !important;
+  font-size: 13px !important;
+}
+
+.dual-list__items {
+  flex: 1;
+  overflow-y: auto;
+  list-style: none;
+  padding: 4px 0;
+  max-height: 260px;
+}
+
+.dual-list__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: background var(--transition);
+  font-size: 13px;
+  user-select: none;
+}
+
+.dual-list__item:hover {
+  background: #f0f7ff;
+}
+
+.dual-list__item--selected {
+  background: var(--color-primary-light) !important;
+}
+
+.dual-list__item-code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: var(--color-bg);
+  padding: 1px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  letter-spacing: 0.3px;
+}
+
+.dual-list__item-label {
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dual-list__empty {
+  padding: 20px 14px;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.dual-list__controls {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 8px;
+  background: var(--color-bg);
+  border-left: 1px solid var(--color-border-light);
+  border-right: 1px solid var(--color-border-light);
+}
+
+.dual-list__btn {
+  width: 36px;
+  height: 32px;
+  padding: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+}
+
+.dual-list__btn:not(:disabled):hover {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
