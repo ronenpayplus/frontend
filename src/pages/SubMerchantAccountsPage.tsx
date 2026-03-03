@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { listMerchantAccountCurrencies } from '../api/merchantAccountCurrencies';
+import { listCurrencies } from '../api/currencies';
+import {
+  listSubMerchantCurrencies,
+  syncSubMerchantCurrencies,
+} from '../api/subMerchantCurrencies';
 import { getMerchantAccount, listMerchantAccounts } from '../api/merchantAccounts';
 import { listCompanies } from '../api/companies';
 import { listLegalEntities } from '../api/legalEntities';
@@ -15,6 +20,7 @@ import type { MerchantAccount } from '../types/merchantAccount';
 import type { Merchant } from '../types/merchant';
 import type { Company } from '../types/company';
 import type { LegalEntity } from '../types/legalEntity';
+import type { Currency } from '../types/currency';
 import type {
   CreateSubMerchantAccountRequest,
   SubMerchantAccount,
@@ -29,6 +35,8 @@ import {
 } from '../types/subMerchantAccount';
 import { MOCK_COUNTRIES, MOCK_TIMEZONES } from '../types/company';
 import ConfirmDialog from '../components/ConfirmDialog';
+import DualListSelector from '../components/DualListSelector';
+import type { DualListItem } from '../components/DualListSelector';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
 import './CompaniesList.css';
@@ -48,6 +56,7 @@ export default function SubMerchantAccountsPage() {
   const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
   const [allMerchantAccounts, setAllMerchantAccounts] = useState<MerchantAccount[]>([]);
   const [merchantAccountCurrencies, setMerchantAccountCurrencies] = useState<string[]>([]);
+  const [allCurrencies, setAllCurrencies] = useState<Currency[]>([]);
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [items, setItems] = useState<SubMerchantAccount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +65,7 @@ export default function SubMerchantAccountsPage() {
   const [editing, setEditing] = useState<SubMerchantAccount | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SubMerchantAccount | null>(null);
   const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([]);
   const merchantAccounts = useMemo(
     () =>
       allMerchantAccounts.filter((account) => {
@@ -72,6 +82,18 @@ export default function SubMerchantAccountsPage() {
     || null;
   const inferredMerchantUUID = selectedMerchantAccount?.merchant_uuid || '';
   const effectiveMerchantUUID = selectedMerchantUUID || inferredMerchantUUID;
+  const currencyDualListItems = useMemo<DualListItem[]>(
+    () => allCurrencies.map((currency) => ({ code: currency.alpha3, label: `${currency.alpha3} - ${currency.name}` })),
+    [allCurrencies],
+  );
+  const availableCurrencyCodes = useMemo(
+    () => new Set(allCurrencies.map((currency) => currency.alpha3)),
+    [allCurrencies],
+  );
+  const hasValidSelectedCurrencies = useMemo(
+    () => selectedCurrencies.some((code) => availableCurrencyCodes.has(code)),
+    [selectedCurrencies, availableCurrencyCodes],
+  );
 
   const [form, setForm] = useState({
     name: '',
@@ -96,6 +118,12 @@ export default function SubMerchantAccountsPage() {
     listCompanies({ page: 1, page_size: 300 })
       .then((data) => setCompanies(data.companies || []))
       .catch(() => setCompanies([]));
+  }, []);
+
+  useEffect(() => {
+    listCurrencies({ is_active: 'true', page: 1, page_size: 300 })
+      .then((data) => setAllCurrencies(data.currencies || []))
+      .catch(() => setAllCurrencies([]));
   }, []);
 
   useEffect(() => {
@@ -150,11 +178,17 @@ export default function SubMerchantAccountsPage() {
         setMerchantAccountCurrencies(uniqueCodes);
         if (uniqueCodes.length > 0) {
           const defaultCode = rows.find((row) => row.is_default)?.currency_code || uniqueCodes[0];
+          setSelectedCurrencies((prev) => (prev.length > 0 ? prev.filter((code) => uniqueCodes.includes(code)) : [defaultCode]));
           setForm((prev) => ({ ...prev, currency: defaultCode }));
+        } else {
+          setSelectedCurrencies([]);
+          setForm((prev) => ({ ...prev, currency: '' }));
         }
       })
       .catch(() => {
         setMerchantAccountCurrencies([]);
+        setSelectedCurrencies([]);
+        setForm((prev) => ({ ...prev, currency: '' }));
       });
   }, [selectedMerchantAccountUUID]);
 
@@ -162,8 +196,14 @@ export default function SubMerchantAccountsPage() {
     if (merchantAccountCurrencies.length > 0) return;
     if (!selectedMerchantAccount?.currency) return;
     setMerchantAccountCurrencies([selectedMerchantAccount.currency]);
+    setSelectedCurrencies([selectedMerchantAccount.currency]);
     setForm((prev) => ({ ...prev, currency: selectedMerchantAccount.currency || prev.currency }));
   }, [merchantAccountCurrencies, selectedMerchantAccount]);
+
+  useEffect(() => {
+    if (selectedCurrencies.length === 0) return;
+    setForm((prev) => ({ ...prev, currency: selectedCurrencies[0] }));
+  }, [selectedCurrencies]);
 
   useEffect(() => {
     const missingMerchantUUIDs = Array.from(
@@ -304,6 +344,7 @@ export default function SubMerchantAccountsPage() {
       default_acquiring_model: 'PLATFORM_MID',
       notes: '',
     });
+    setSelectedCurrencies([]);
   };
 
   const autoFill = () => {
@@ -328,7 +369,7 @@ export default function SubMerchantAccountsPage() {
     });
   };
 
-  const startEdit = (item: SubMerchantAccount) => {
+  const startEdit = async (item: SubMerchantAccount) => {
     setShowCreate(false);
     setEditing(item);
     setForm({
@@ -349,19 +390,42 @@ export default function SubMerchantAccountsPage() {
       default_acquiring_model: item.default_acquiring_model || 'PLATFORM_MID',
       notes: item.notes || '',
     });
+    try {
+      const data = await listSubMerchantCurrencies(item.uuid);
+      const selected = (data.sub_merchant_currencies || []).map((row) => row.currency_code);
+      setSelectedCurrencies(selected.length > 0 ? selected : (item.currency ? [item.currency] : []));
+    } catch {
+      setSelectedCurrencies(item.currency ? [item.currency] : []);
+    }
   };
 
   const save = async () => {
-    if (!selectedMerchantAccountUUID || !effectiveMerchantUUID || !form.name || !form.category_code || !form.currency) {
+    if (!selectedMerchantAccountUUID || !effectiveMerchantUUID || !form.name || !form.category_code) {
       addToast('חובה לבחור חשבון סוחר + סוחר ולמלא שם, Category ומטבע', 'error');
       return;
     }
+    if (allCurrencies.length === 0) {
+      addToast('אין מטבעות זמינים מטבלת המטבעות', 'error');
+      return;
+    }
+    if (selectedCurrencies.length === 0) {
+      addToast('חובה לבחור לפחות מטבע אחד לתתי-סוחר', 'error');
+      return;
+    }
+    const validSelected = selectedCurrencies.filter((code) => availableCurrencyCodes.has(code));
+    if (validSelected.length === 0) {
+      addToast('לא נבחר מטבע תקין מתוך טבלת המטבעות', 'error');
+      return;
+    }
+    const selectedCurrency = validSelected[0];
 
     setSaving(true);
     try {
+      let subMerchantUUID = '';
       if (editing) {
-        const payload: UpdateSubMerchantAccountRequest = { ...form };
+        const payload: UpdateSubMerchantAccountRequest = { ...form, currency: selectedCurrency };
         await updateSubMerchantAccount(editing.uuid, payload);
+        subMerchantUUID = editing.uuid;
         addToast('תת-סוחר עודכן', 'success');
         setEditing(null);
       } else {
@@ -369,11 +433,25 @@ export default function SubMerchantAccountsPage() {
           merchant_account_uuid: selectedMerchantAccountUUID,
           merchant_uuid: effectiveMerchantUUID,
           ...form,
+          currency: selectedCurrency,
         };
-        await createSubMerchantAccount(payload);
+        const created = await createSubMerchantAccount(payload);
+        subMerchantUUID = (created as unknown as { uuid?: string; sub_merchant_account?: { uuid?: string } }).uuid
+          || (created as unknown as { sub_merchant_account?: { uuid?: string } }).sub_merchant_account?.uuid
+          || '';
         addToast('תת-סוחר נוצר', 'success');
         setShowCreate(false);
       }
+
+      if (subMerchantUUID && validSelected.length > 0) {
+        try {
+          await syncSubMerchantCurrencies(subMerchantUUID, validSelected);
+        } catch (currencySyncError) {
+          console.error(currencySyncError);
+          addToast('תת-סוחר נשמר, אך סנכרון המטבעות נכשל', 'error');
+        }
+      }
+
       resetForm();
       await fetchItems();
     } catch (error) {
@@ -436,23 +514,8 @@ export default function SubMerchantAccountsPage() {
             <div className="form-field"><label className="label">KYC</label><select className="input" value={form.kyc_status} onChange={(e) => setForm((p) => ({ ...p, kyc_status: e.target.value }))}>{SUB_MERCHANT_KYC_STATUSES.map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
             <div className="form-field"><label className="label">מדינה</label><select className="input" value={form.country} onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))}>{MOCK_COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}</select></div>
             <div className="form-field">
-              <label className="label">מטבע</label>
-              <select
-                className="input"
-                value={form.currency}
-                onChange={(e) => setForm((p) => ({ ...p, currency: e.target.value }))}
-                disabled={merchantAccountCurrencies.length === 0}
-              >
-                {merchantAccountCurrencies.length === 0 ? (
-                  <option value="">אין מטבעות משויכים לחשבון הסוחר</option>
-                ) : (
-                  merchantAccountCurrencies.map((currencyCode) => (
-                    <option key={currencyCode} value={currencyCode}>
-                      {currencyCode}
-                    </option>
-                  ))
-                )}
-              </select>
+              <label className="label">מטבע ברירת מחדל</label>
+              <input className="input" value={selectedCurrencies[0] || ''} placeholder="ייבחר מתוך המטבעות הזמינים" disabled />
             </div>
             <div className="form-field"><label className="label">אזור זמן</label><select className="input" value={form.timezone} onChange={(e) => setForm((p) => ({ ...p, timezone: e.target.value }))}>{MOCK_TIMEZONES.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
             <div className="form-field"><label className="label">Acquiring Model</label><select className="input" value={form.default_acquiring_model} onChange={(e) => setForm((p) => ({ ...p, default_acquiring_model: e.target.value }))}><option value="PLATFORM_MID">PLATFORM_MID</option><option value="SELLER_MID">SELLER_MID</option></select></div>
@@ -460,8 +523,19 @@ export default function SubMerchantAccountsPage() {
             <div className="form-field toggle-field"><label className="toggle-label"><div className={`toggle ${form.payments_enabled ? 'active' : ''}`} onClick={() => setForm((p) => ({ ...p, payments_enabled: !p.payments_enabled }))}><div className="toggle-knob" /></div><span>Payments Enabled</span></label></div>
             <div className="form-field toggle-field"><label className="toggle-label"><div className={`toggle ${form.payouts_enabled ? 'active' : ''}`} onClick={() => setForm((p) => ({ ...p, payouts_enabled: !p.payouts_enabled }))}><div className="toggle-knob" /></div><span>Payouts Enabled</span></label></div>
           </div>
+          <div style={{ marginTop: '20px' }}>
+            <h4 className="section-title" style={{ marginBottom: '12px' }}>מטבעות זמינים לתת-סוחר</h4>
+            <DualListSelector
+              sourceTitle="כל המטבעות (טבלת מטבעות)"
+              targetTitle="מטבעות נבחרים"
+              available={currencyDualListItems}
+              selected={selectedCurrencies}
+              onChange={setSelectedCurrencies}
+              disabled={saving || allCurrencies.length === 0}
+            />
+          </div>
           <div className="form-actions">
-            <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'שומר...' : editing ? 'עדכן' : 'צור'}</button>
+            <button className="btn btn-primary" onClick={save} disabled={saving || !hasValidSelectedCurrencies}>{saving ? 'שומר...' : editing ? 'עדכן' : 'צור'}</button>
             <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); }}>ביטול</button>
           </div>
         </div>

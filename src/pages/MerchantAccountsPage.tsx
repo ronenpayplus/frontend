@@ -23,7 +23,7 @@ import type {
   MerchantAccount,
   UpdateMerchantAccountRequest,
 } from '../types/merchantAccount';
-import { CONTRACT_TYPES, KYC_STATUSES, MOCK_COUNTRIES, MOCK_CURRENCIES, MOCK_TIMEZONES, STATUS_LABELS, VOLUME_TIERS } from '../types/company';
+import { CONTRACT_TYPES, KYC_STATUSES, MOCK_COUNTRIES, MOCK_TIMEZONES, STATUS_LABELS, VOLUME_TIERS } from '../types/company';
 import ConfirmDialog from '../components/ConfirmDialog';
 import DualListSelector from '../components/DualListSelector';
 import type { DualListItem } from '../components/DualListSelector';
@@ -62,6 +62,11 @@ export default function MerchantAccountsPage() {
     () => currencies.map((c) => ({ code: c.alpha3, label: `${c.alpha3} - ${c.name}` })),
     [currencies],
   );
+  const hasValidSelectedCurrencies = useMemo(() => {
+    const availableCurrencyCodes = new Set(currencies.map((c) => c.alpha3));
+    if (availableCurrencyCodes.size === 0) return false;
+    return selectedCurrencies.some((code) => availableCurrencyCodes.has(code));
+  }, [currencies, selectedCurrencies]);
 
   const [form, setForm] = useState({
     name: '',
@@ -70,7 +75,7 @@ export default function MerchantAccountsPage() {
     charges_enabled: true,
     payouts_enabled: false,
     country: 'IL',
-    currency: 'ILS',
+    currency: '',
     timezone: 'Asia/Jerusalem',
     status: 'NEW',
     kyc_status: 'pending',
@@ -204,7 +209,7 @@ export default function MerchantAccountsPage() {
       charges_enabled: true,
       payouts_enabled: false,
       country: 'IL',
-      currency: 'ILS',
+      currency: '',
       timezone: 'Asia/Jerusalem',
       status: 'NEW',
       kyc_status: 'pending',
@@ -226,7 +231,7 @@ export default function MerchantAccountsPage() {
       charges_enabled: true,
       payouts_enabled: false,
       country: 'IL',
-      currency: 'ILS',
+      currency: '',
       timezone: 'Asia/Jerusalem',
       status: 'NEW',
       kyc_status: 'pending',
@@ -277,15 +282,31 @@ export default function MerchantAccountsPage() {
       addToast('שם, Merchant Code ו-MCC הם שדות חובה', 'error');
       return;
     }
+    if (currencies.length === 0) {
+      addToast('אין מטבעות זמינים. לא ניתן לשמור חשבון סוחר', 'error');
+      return;
+    }
+    if (!hasValidSelectedCurrencies) {
+      addToast('חובה לבחור לפחות מטבע זמין אחד', 'error');
+      return;
+    }
 
     setSaving(true);
     try {
+      const availableCurrencyCodes = new Set(currencies.map((c) => c.alpha3));
+      const validSelectedCurrencies = selectedCurrencies.filter((code) => availableCurrencyCodes.has(code));
+      const baseCurrency =
+        form.currency && validSelectedCurrencies.includes(form.currency)
+          ? form.currency
+          : validSelectedCurrencies[0];
+
       let accountUUID: string;
       if (editing) {
         accountUUID = editing.uuid;
         const payload: UpdateMerchantAccountRequest = {
           uuid: editing.uuid,
           ...form,
+          currency: baseCurrency,
         };
         await updateMerchantAccount(editing.uuid, payload);
       } else {
@@ -294,6 +315,7 @@ export default function MerchantAccountsPage() {
           legal_entity_uuid: resolvedLegalEntityUUID,
           company_uuid: resolvedCompanyUUID,
           ...form,
+          currency: baseCurrency,
         };
         const result = await createMerchantAccount(payload);
         accountUUID = (result as unknown as { merchant_account?: { uuid?: string }; uuid?: string })
@@ -379,7 +401,7 @@ export default function MerchantAccountsPage() {
             <div className="form-field"><label className="label">סטטוס</label><select className="input" value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}>{Object.keys(STATUS_LABELS).map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}</select></div>
             <div className="form-field"><label className="label">KYC</label><select className="input" value={form.kyc_status} onChange={(e) => setForm((p) => ({ ...p, kyc_status: e.target.value }))}>{KYC_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
             <div className="form-field"><label className="label">מדינה</label><select className="input" value={form.country} onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))}>{MOCK_COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}</select></div>
-            <div className="form-field"><label className="label">מטבע</label><select className="input" value={form.currency} onChange={(e) => setForm((p) => ({ ...p, currency: e.target.value }))}>{(currencies.length > 0 ? currencies.map((c) => ({ code: c.alpha3, label: `${c.alpha3} - ${c.name}` })) : MOCK_CURRENCIES.map((c) => ({ code: c.code, label: `${c.code} - ${c.name}` }))).map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}</select></div>
+            <div className="form-field"><label className="label">מטבע</label><input className="input" value={selectedCurrencies[0] || 'ייבחר מתוך המטבעות הזמינים'} disabled /></div>
             <div className="form-field"><label className="label">אזור זמן</label><select className="input" value={form.timezone} onChange={(e) => setForm((p) => ({ ...p, timezone: e.target.value }))}>{MOCK_TIMEZONES.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
             <div className="form-field"><label className="label">סוג חוזה</label><select className="input" value={form.contract_type} onChange={(e) => setForm((p) => ({ ...p, contract_type: e.target.value }))}>{CONTRACT_TYPES.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
             <div className="form-field"><label className="label">שכבת נפח</label><select className="input" value={form.volume_tier} onChange={(e) => setForm((p) => ({ ...p, volume_tier: e.target.value }))}>{VOLUME_TIERS.map((v) => <option key={v} value={v}>{v}</option>)}</select></div>
@@ -401,7 +423,7 @@ export default function MerchantAccountsPage() {
           </div>
 
           <div className="form-actions">
-            <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving ? 'שומר...' : editing ? 'עדכן' : 'צור'}</button>
+            <button className="btn btn-primary" onClick={handleSave} disabled={saving || !hasValidSelectedCurrencies}>{saving ? 'שומר...' : editing ? 'עדכן' : 'צור'}</button>
             <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); resetForm(); }}>ביטול</button>
           </div>
         </div>
