@@ -151,7 +151,7 @@ export default function LegalEntityMerchants() {
     if (!editing) return;
     setSaving(true);
     try {
-      await updateMerchant(editing.uuid, payload as UpdateMerchantRequest);
+      await updateMerchant(editing.uuid, { ...(payload as UpdateMerchantRequest), uuid: editing.uuid });
       addToast('סוחר עודכן בהצלחה', 'success');
       setEditing(null);
       await fetchMerchants();

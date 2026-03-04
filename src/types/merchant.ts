@@ -52,6 +52,7 @@ export interface CreateMerchantRequest {
 }
 
 export interface UpdateMerchantRequest {
+  uuid?: string;
   merchant_id_external?: string;
   name: string;
   merchant_code: string;

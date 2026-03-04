@@ -14,6 +14,12 @@ import {
   listMerchantAccountCurrencies,
   syncMerchantAccountCurrencies,
 } from '../api/merchantAccountCurrencies';
+import { listPaymentMethods } from '../api/paymentMethods';
+import { listMerchantAccountMethods, setMerchantAccountMethods } from '../api/merchantAccountMethods';
+import { listChannelTypes } from '../api/channelTypes';
+import { listMerchantAccountChannels, setMerchantAccountChannels } from '../api/merchantAccountChannels';
+import type { PaymentMethod } from '../types/paymentMethod';
+import type { ChannelType } from '../types/channelType';
 import type { Currency } from '../types/currency';
 import type { Merchant } from '../types/merchant';
 import type { LegalEntity } from '../types/legalEntity';
@@ -57,6 +63,10 @@ export default function MerchantAccountsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([]);
+  const [paymentMethodsRef, setPaymentMethodsRef] = useState<PaymentMethod[]>([]);
+  const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>([]);
+  const [channelTypesRef, setChannelTypesRef] = useState<ChannelType[]>([]);
+  const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
 
   const currencyDualListItems = useMemo<DualListItem[]>(
     () => currencies.map((c) => ({ code: c.alpha3, label: `${c.alpha3} - ${c.name}` })),
@@ -67,6 +77,16 @@ export default function MerchantAccountsPage() {
     if (availableCurrencyCodes.size === 0) return false;
     return selectedCurrencies.some((code) => availableCurrencyCodes.has(code));
   }, [currencies, selectedCurrencies]);
+
+  const paymentMethodDualListItems = useMemo<DualListItem[]>(
+    () => paymentMethodsRef.filter((m) => m.is_active).map((m) => ({ code: m.method_code, label: `${m.method_code} - ${m.display_name}` })),
+    [paymentMethodsRef],
+  );
+
+  const channelTypeDualListItems = useMemo<DualListItem[]>(
+    () => channelTypesRef.filter((c) => c.is_active).map((c) => ({ code: c.channel_code, label: `${c.channel_code} - ${c.display_name}` })),
+    [channelTypesRef],
+  );
 
   const [form, setForm] = useState({
     name: '',
@@ -96,6 +116,21 @@ export default function MerchantAccountsPage() {
     listCurrencies({ is_active: 'true', page: 1, page_size: 300 })
       .then((data) => setCurrencies(data.currencies || []))
       .catch(() => setCurrencies([]));
+  }, []);
+
+  const [paymentMethodsLoadError, setPaymentMethodsLoadError] = useState('');
+  const [channelTypesLoadError, setChannelTypesLoadError] = useState('');
+
+  useEffect(() => {
+    listPaymentMethods({ is_active: 'true', page: 1, page_size: 500 })
+      .then((data) => { setPaymentMethodsRef(data?.payment_methods || []); setPaymentMethodsLoadError(''); })
+      .catch((err) => { setPaymentMethodsRef([]); setPaymentMethodsLoadError(err instanceof Error ? err.message : 'Failed to load'); });
+  }, []);
+
+  useEffect(() => {
+    listChannelTypes({ is_active: 'true', page: 1, page_size: 500 })
+      .then((data) => { setChannelTypesRef(data?.channel_types || []); setChannelTypesLoadError(''); })
+      .catch((err) => { setChannelTypesRef([]); setChannelTypesLoadError(err instanceof Error ? err.message : 'Failed to load'); });
   }, []);
 
   useEffect(() => {
@@ -220,6 +255,8 @@ export default function MerchantAccountsPage() {
       default_acquiring_model: 'PLATFORM_MID',
     });
     setSelectedCurrencies([]);
+    setSelectedPaymentMethods([]);
+    setSelectedChannels([]);
   };
 
   const autoFillCreateForm = () => {
@@ -270,6 +307,22 @@ export default function MerchantAccountsPage() {
       );
     } catch {
       setSelectedCurrencies([]);
+    }
+    try {
+      const data = await listMerchantAccountMethods(item.uuid);
+      setSelectedPaymentMethods(
+        (data.merchant_account_methods || []).map((m) => m.method_code),
+      );
+    } catch {
+      setSelectedPaymentMethods([]);
+    }
+    try {
+      const data = await listMerchantAccountChannels(item.uuid);
+      setSelectedChannels(
+        (data.merchant_account_channels || []).map((c) => c.channel_type),
+      );
+    } catch {
+      setSelectedChannels([]);
     }
   };
 
@@ -328,6 +381,30 @@ export default function MerchantAccountsPage() {
         } catch (currError) {
           console.error('Currency sync error:', currError);
           addToast('חשבון סוחר נשמר, אך סנכרון המטבעות נכשל', 'error');
+        }
+      }
+
+      if (accountUUID && selectedPaymentMethods.length > 0) {
+        try {
+          await setMerchantAccountMethods({
+            merchant_account_uuid: accountUUID,
+            methods: selectedPaymentMethods.map((code) => ({ method_code: code, is_enabled: true })),
+          });
+        } catch (pmError) {
+          console.error('Payment methods sync error:', pmError);
+          addToast('חשבון סוחר נשמר, אך סנכרון אמצעי התשלום נכשל', 'error');
+        }
+      }
+
+      if (accountUUID && selectedChannels.length > 0) {
+        try {
+          await setMerchantAccountChannels({
+            merchant_account_uuid: accountUUID,
+            channels: selectedChannels.map((code) => ({ channel_type: code })),
+          });
+        } catch (chError) {
+          console.error('Channels sync error:', chError);
+          addToast('חשבון סוחר נשמר, אך סנכרון ערוצי המכירה נכשל', 'error');
         }
       }
 
@@ -420,6 +497,42 @@ export default function MerchantAccountsPage() {
               onChange={setSelectedCurrencies}
               disabled={saving}
             />
+          </div>
+
+          <div style={{ marginTop: '20px' }}>
+            <h4 className="section-title" style={{ marginBottom: '12px' }}>אמצעי תשלום לחשבון סוחר</h4>
+            {paymentMethodsLoadError ? (
+              <p style={{ color: 'var(--color-danger)', fontSize: '14px' }}>שגיאה בטעינת אמצעי תשלום: {paymentMethodsLoadError}</p>
+            ) : paymentMethodsRef.length === 0 ? (
+              <p style={{ color: 'var(--color-text-muted)', fontSize: '14px' }}>אין אמצעי תשלום זמינים (טבלת עזר ריקה)</p>
+            ) : (
+              <DualListSelector
+                sourceTitle="כל אמצעי התשלום"
+                targetTitle="אמצעי תשלום נבחרים"
+                available={paymentMethodDualListItems}
+                selected={selectedPaymentMethods}
+                onChange={setSelectedPaymentMethods}
+                disabled={saving}
+              />
+            )}
+          </div>
+
+          <div style={{ marginTop: '20px' }}>
+            <h4 className="section-title" style={{ marginBottom: '12px' }}>ערוצי מכירה לחשבון סוחר</h4>
+            {channelTypesLoadError ? (
+              <p style={{ color: 'var(--color-danger)', fontSize: '14px' }}>שגיאה בטעינת ערוצי מכירה: {channelTypesLoadError}</p>
+            ) : channelTypesRef.length === 0 ? (
+              <p style={{ color: 'var(--color-text-muted)', fontSize: '14px' }}>אין ערוצי מכירה זמינים (טבלת עזר ריקה)</p>
+            ) : (
+              <DualListSelector
+                sourceTitle="כל ערוצי המכירה"
+                targetTitle="ערוצי מכירה נבחרים"
+                available={channelTypeDualListItems}
+                selected={selectedChannels}
+                onChange={setSelectedChannels}
+                disabled={saving}
+              />
+            )}
           </div>
 
           <div className="form-actions">
