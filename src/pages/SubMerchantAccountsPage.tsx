@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { listMerchantAccountCurrencies } from '../api/merchantAccountCurrencies';
+import { listPaymentMethods } from '../api/paymentMethods';
+import { listChannelTypes } from '../api/channelTypes';
 import { listCurrencies } from '../api/currencies';
 import {
   listSubMerchantCurrencies,
   syncSubMerchantCurrencies,
 } from '../api/subMerchantCurrencies';
+import { listSubMerchantMethods, setSubMerchantMethods } from '../api/subMerchantMethods';
+import { listSubMerchantChannels, setSubMerchantChannels } from '../api/subMerchantChannels';
 import { getMerchantAccount, listMerchantAccounts } from '../api/merchantAccounts';
 import { listCompanies } from '../api/companies';
 import { listLegalEntities } from '../api/legalEntities';
@@ -21,6 +25,8 @@ import type { Merchant } from '../types/merchant';
 import type { Company } from '../types/company';
 import type { LegalEntity } from '../types/legalEntity';
 import type { Currency } from '../types/currency';
+import type { PaymentMethod } from '../types/paymentMethod';
+import type { ChannelType } from '../types/channelType';
 import type {
   CreateSubMerchantAccountRequest,
   SubMerchantAccount,
@@ -66,6 +72,10 @@ export default function SubMerchantAccountsPage() {
   const [deleteTarget, setDeleteTarget] = useState<SubMerchantAccount | null>(null);
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([]);
+  const [paymentMethodsRef, setPaymentMethodsRef] = useState<PaymentMethod[]>([]);
+  const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>([]);
+  const [channelTypesRef, setChannelTypesRef] = useState<ChannelType[]>([]);
+  const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
   const merchantAccounts = useMemo(
     () =>
       allMerchantAccounts.filter((account) => {
@@ -93,6 +103,14 @@ export default function SubMerchantAccountsPage() {
   const hasValidSelectedCurrencies = useMemo(
     () => selectedCurrencies.some((code) => availableCurrencyCodes.has(code)),
     [selectedCurrencies, availableCurrencyCodes],
+  );
+  const paymentMethodDualListItems = useMemo<DualListItem[]>(
+    () => paymentMethodsRef.filter((m) => m.is_active).map((m) => ({ code: m.method_code, label: `${m.method_code} - ${m.display_name}` })),
+    [paymentMethodsRef],
+  );
+  const channelTypeDualListItems = useMemo<DualListItem[]>(
+    () => channelTypesRef.filter((c) => c.is_active).map((c) => ({ code: c.channel_code, label: `${c.channel_code} - ${c.display_name}` })),
+    [channelTypesRef],
   );
 
   const [form, setForm] = useState({
@@ -124,6 +142,33 @@ export default function SubMerchantAccountsPage() {
     listCurrencies({ is_active: 'true', page: 1, page_size: 300 })
       .then((data) => setAllCurrencies(data.currencies || []))
       .catch(() => setAllCurrencies([]));
+  }, []);
+
+  const [paymentMethodsLoadError, setPaymentMethodsLoadError] = useState('');
+  const [channelTypesLoadError, setChannelTypesLoadError] = useState('');
+
+  useEffect(() => {
+    listPaymentMethods({ is_active: 'true', page: 1, page_size: 500 })
+      .then((data) => {
+        setPaymentMethodsRef(data?.payment_methods || []);
+        setPaymentMethodsLoadError('');
+      })
+      .catch((err) => {
+        setPaymentMethodsRef([]);
+        setPaymentMethodsLoadError(err instanceof Error ? err.message : 'Failed to load');
+      });
+  }, []);
+
+  useEffect(() => {
+    listChannelTypes({ is_active: 'true', page: 1, page_size: 500 })
+      .then((data) => {
+        setChannelTypesRef(data?.channel_types || []);
+        setChannelTypesLoadError('');
+      })
+      .catch((err) => {
+        setChannelTypesRef([]);
+        setChannelTypesLoadError(err instanceof Error ? err.message : 'Failed to load');
+      });
   }, []);
 
   useEffect(() => {
@@ -345,6 +390,8 @@ export default function SubMerchantAccountsPage() {
       notes: '',
     });
     setSelectedCurrencies([]);
+    setSelectedPaymentMethods([]);
+    setSelectedChannels([]);
   };
 
   const autoFill = () => {
@@ -396,6 +443,18 @@ export default function SubMerchantAccountsPage() {
       setSelectedCurrencies(selected.length > 0 ? selected : (item.currency ? [item.currency] : []));
     } catch {
       setSelectedCurrencies(item.currency ? [item.currency] : []);
+    }
+    try {
+      const data = await listSubMerchantMethods(item.uuid);
+      setSelectedPaymentMethods((data.sub_merchant_methods || []).map((row) => row.method_code));
+    } catch {
+      setSelectedPaymentMethods([]);
+    }
+    try {
+      const data = await listSubMerchantChannels(item.uuid);
+      setSelectedChannels((data.sub_merchant_channels || []).map((row) => row.channel_type));
+    } catch {
+      setSelectedChannels([]);
     }
   };
 
@@ -449,6 +508,28 @@ export default function SubMerchantAccountsPage() {
         } catch (currencySyncError) {
           console.error(currencySyncError);
           addToast('תת-סוחר נשמר, אך סנכרון המטבעות נכשל', 'error');
+        }
+      }
+      if (subMerchantUUID && selectedPaymentMethods.length > 0) {
+        try {
+          await setSubMerchantMethods({
+            sub_merchant_uuid: subMerchantUUID,
+            methods: selectedPaymentMethods.map((code) => ({ method_code: code, is_enabled: true })),
+          });
+        } catch (methodsError) {
+          console.error(methodsError);
+          addToast('תת-סוחר נשמר, אך סנכרון אמצעי התשלום נכשל', 'error');
+        }
+      }
+      if (subMerchantUUID && selectedChannels.length > 0) {
+        try {
+          await setSubMerchantChannels({
+            sub_merchant_uuid: subMerchantUUID,
+            channels: selectedChannels.map((code) => ({ channel_type: code })),
+          });
+        } catch (channelsError) {
+          console.error(channelsError);
+          addToast('תת-סוחר נשמר, אך סנכרון ערוצי המכירה נכשל', 'error');
         }
       }
 
@@ -533,6 +614,40 @@ export default function SubMerchantAccountsPage() {
               onChange={setSelectedCurrencies}
               disabled={saving || allCurrencies.length === 0}
             />
+          </div>
+          <div style={{ marginTop: '20px' }}>
+            <h4 className="section-title" style={{ marginBottom: '12px' }}>אמצעי תשלום לתת-סוחר</h4>
+            {paymentMethodsLoadError ? (
+              <p style={{ color: 'var(--color-danger)', fontSize: '14px' }}>שגיאה בטעינת אמצעי תשלום: {paymentMethodsLoadError}</p>
+            ) : paymentMethodsRef.length === 0 ? (
+              <p style={{ color: 'var(--color-text-muted)', fontSize: '14px' }}>אין אמצעי תשלום זמינים (טבלת עזר ריקה)</p>
+            ) : (
+              <DualListSelector
+                sourceTitle="כל אמצעי התשלום"
+                targetTitle="אמצעי תשלום נבחרים"
+                available={paymentMethodDualListItems}
+                selected={selectedPaymentMethods}
+                onChange={setSelectedPaymentMethods}
+                disabled={saving}
+              />
+            )}
+          </div>
+          <div style={{ marginTop: '20px' }}>
+            <h4 className="section-title" style={{ marginBottom: '12px' }}>ערוצי מכירה לתת-סוחר</h4>
+            {channelTypesLoadError ? (
+              <p style={{ color: 'var(--color-danger)', fontSize: '14px' }}>שגיאה בטעינת ערוצי מכירה: {channelTypesLoadError}</p>
+            ) : channelTypesRef.length === 0 ? (
+              <p style={{ color: 'var(--color-text-muted)', fontSize: '14px' }}>אין ערוצי מכירה זמינים (טבלת עזר ריקה)</p>
+            ) : (
+              <DualListSelector
+                sourceTitle="כל ערוצי המכירה"
+                targetTitle="ערוצי מכירה נבחרים"
+                available={channelTypeDualListItems}
+                selected={selectedChannels}
+                onChange={setSelectedChannels}
+                disabled={saving}
+              />
+            )}
           </div>
           <div className="form-actions">
             <button className="btn btn-primary" onClick={save} disabled={saving || !hasValidSelectedCurrencies}>{saving ? 'שומר...' : editing ? 'עדכן' : 'צור'}</button>
