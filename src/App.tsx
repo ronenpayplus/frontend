@@ -13,6 +13,8 @@ import TerminalsPage from './pages/TerminalsPage';
 import CountriesPage from './pages/CountriesPage';
 import CurrenciesPage from './pages/CurrenciesPage';
 import TimezonesPage from './pages/TimezonesPage';
+import PaymentMethodsPage from './pages/PaymentMethodsPage';
+import ChannelTypesPage from './pages/ChannelTypesPage';
 import BeneficialOwnersPage from './pages/BeneficialOwnersPage';
 import CompanyContactsPage from './pages/CompanyContactsPage';
 import ComplianceDocumentsPage from './pages/ComplianceDocumentsPage';
@@ -52,6 +54,8 @@ export default function App() {
           <Route path="/reference/countries" element={<CountriesPage />} />
           <Route path="/reference/currencies" element={<CurrenciesPage />} />
           <Route path="/reference/timezones" element={<TimezonesPage />} />
+          <Route path="/reference/payment-methods" element={<PaymentMethodsPage />} />
+          <Route path="/reference/channel-types" element={<ChannelTypesPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

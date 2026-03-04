@@ -163,6 +163,29 @@ export default function Layout() {
             </svg>
             <span>אזורי זמן</span>
           </NavLink>
+          <NavLink
+            to="/reference/payment-methods"
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="6" width="18" height="12" rx="2" />
+              <line x1="7" y1="10" x2="17" y2="10" />
+              <line x1="7" y1="14" x2="12" y2="14" />
+            </svg>
+            <span>אמצעי תשלום</span>
+          </NavLink>
+          <NavLink
+            to="/reference/channel-types"
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="4" width="7" height="16" rx="1" />
+              <rect x="14" y="8" width="7" height="12" rx="1" />
+              <line x1="6.5" y1="8" x2="6.5" y2="8" />
+              <line x1="17.5" y1="12" x2="17.5" y2="12" />
+            </svg>
+            <span>ערוצי מכירה</span>
+          </NavLink>
         </nav>
       </aside>
       <main className="main-content">
