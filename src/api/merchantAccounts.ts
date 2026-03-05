@@ -5,6 +5,7 @@ import type {
   MerchantAccount,
   UpdateMerchantAccountRequest,
 } from '../types/merchantAccount';
+import type { LocalizationInput } from '../types/orgEntityLocalization';
 
 const API_BASE = '/v2/companies/merchant-accounts';
 
@@ -65,6 +66,7 @@ export async function createMerchantAccount(
           is_default: true,
         },
       ],
+      localizations: data.localizations,
     }),
   });
 }
@@ -84,6 +86,7 @@ export async function updateMerchantAccount(
           is_default: true,
         },
       ],
+      localizations: data.localizations as LocalizationInput[] | undefined,
     }),
   });
 }

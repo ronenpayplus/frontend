@@ -6,6 +6,8 @@ import {
   MERCHANT_STATUSES,
 } from '../types/merchant';
 import { STATUS_LABELS } from '../types/company';
+import type { LocalizationInput } from '../types/orgEntityLocalization';
+import LocalizationsEditor, { ensureAtLeastOneLocalization } from './LocalizationsEditor';
 import './CompanyForm.css';
 
 interface MerchantFormProps {
@@ -13,6 +15,7 @@ interface MerchantFormProps {
   mode: 'create' | 'edit';
   loading: boolean;
   initial?: Merchant | null;
+  initialLocalizations?: LocalizationInput[];
   onSubmit: (data: CreateMerchantRequest | UpdateMerchantRequest) => Promise<void>;
   onCancel: () => void;
 }
@@ -22,6 +25,7 @@ export default function MerchantForm({
   mode,
   loading,
   initial,
+  initialLocalizations,
   onSubmit,
   onCancel,
 }: MerchantFormProps) {
@@ -41,6 +45,19 @@ export default function MerchantForm({
     notes: initial?.notes ?? '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [localizations, setLocalizations] = useState<LocalizationInput[]>(
+    initialLocalizations && initialLocalizations.length > 0
+      ? initialLocalizations
+      : [{
+        lang_code: 'en',
+        display_name: initial?.name ?? '',
+        brand_name: '',
+        description: '',
+        support_email: '',
+        support_phone: '',
+        is_default: true,
+      }],
+  );
 
   const setValue = (field: string, value: string | number) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -55,9 +72,9 @@ export default function MerchantForm({
 
   const validate = () => {
     const next: Record<string, string> = {};
-    if (!form.name.trim()) next.name = 'שם חובה';
-    if (!form.merchant_code.trim()) next.merchant_code = 'Merchant code חובה';
-    if (!form.category_code.trim()) next.category_code = 'Category code חובה';
+    if (!form.name.trim()) next.name = 'Name is required';
+    if (!form.merchant_code.trim()) next.merchant_code = 'Merchant code is required';
+    if (!form.category_code.trim()) next.category_code = 'Category code is required';
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -78,6 +95,26 @@ export default function MerchantForm({
       address_id: '',
       notes: 'Auto-filled test merchant',
     });
+    setLocalizations([
+      {
+        lang_code: 'en',
+        display_name: `Merchant ${rand}`,
+        brand_name: `Merchant ${rand}`,
+        description: 'English localization',
+        support_email: `merchant-${rand}@example.com`,
+        support_phone: `+1-202-555-${String(rand).slice(-4)}`,
+        is_default: true,
+      },
+      {
+        lang_code: 'fr',
+        display_name: `Marchand ${rand}`,
+        brand_name: `Marchand ${rand}`,
+        description: 'French localization',
+        support_email: `assistance-${rand}@example.com`,
+        support_phone: `+33-1-${String(rand).slice(-4)}-1000`,
+        is_default: false,
+      },
+    ]);
     setErrors({});
   };
 
@@ -98,6 +135,7 @@ export default function MerchantForm({
       contact_phone: form.contact_phone || undefined,
       address_id: form.address_id ? Number(form.address_id) : undefined,
       notes: form.notes || undefined,
+      localizations: ensureAtLeastOneLocalization(localizations, form.name),
     };
 
     if (isEdit) {
@@ -115,15 +153,15 @@ export default function MerchantForm({
     <form className="company-form" onSubmit={handleSubmit}>
       <div className="auto-fill-bar">
         <button type="button" className="btn btn-auto-fill" onClick={autoFill}>
-          מילוי מהיר
+          Quick Fill
         </button>
       </div>
 
       <div className="form-section">
-        <h3 className="section-title">{isEdit ? 'עריכת סוחר' : 'סוחר חדש'}</h3>
+        <h3 className="section-title">{isEdit ? 'Edit Merchant' : 'New Merchant'}</h3>
         <div className="form-grid">
           <div className={`form-field ${errors.name ? 'has-error' : ''}`}>
-            <label className="label">שם *</label>
+            <label className="label">Name *</label>
             <input className="input" value={form.name} onChange={(e) => setValue('name', e.target.value)} />
             {errors.name ? <span className="field-error">{errors.name}</span> : null}
           </div>
@@ -243,13 +281,14 @@ export default function MerchantForm({
           </div>
         </div>
       </div>
+      <LocalizationsEditor localizations={localizations} onChange={setLocalizations} />
 
       <div className="form-actions">
         <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? 'שומר...' : isEdit ? 'עדכון סוחר' : 'יצירת סוחר'}
+          {loading ? 'Saving...' : isEdit ? 'Update Merchant' : 'Create Merchant'}
         </button>
         <button type="button" className="btn btn-secondary" onClick={onCancel}>
-          ביטול
+          Cancel
         </button>
       </div>
     </form>

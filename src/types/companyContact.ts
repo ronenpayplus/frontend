@@ -68,10 +68,10 @@ export interface UpdateCompanyContactRequest {
 export const COMPANY_CONTACT_TYPES = ['general', 'technical', 'billing', 'compliance', 'support', 'legal'] as const;
 
 export const COMPANY_CONTACT_TYPE_LABELS: Record<string, string> = {
-  general: 'כללי',
-  technical: 'טכני',
-  billing: 'חיוב',
-  compliance: 'ציות',
-  support: 'תמיכה',
-  legal: 'משפטי',
+  general: 'General',
+  technical: 'Technical',
+  billing: 'Billing',
+  compliance: 'Compliance',
+  support: 'Support',
+  legal: 'Legal',
 };

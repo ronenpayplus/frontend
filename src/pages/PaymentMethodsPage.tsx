@@ -75,7 +75,7 @@ export default function PaymentMethodsPage() {
     } catch (error) {
       console.error('Payment methods load error:', error);
       const msg = error instanceof Error ? error.message : String(error);
-      addToast(`טעינת אמצעי תשלום נכשלה: ${msg}`, 'error');
+      addToast(`Failed to load payment methods: ${msg}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -156,7 +156,7 @@ export default function PaymentMethodsPage() {
 
   const save = async () => {
     if (!form.method_code || !form.display_name || !form.category) {
-      addToast('יש למלא קוד אמצעי תשלום, שם תצוגה וקטגוריה', 'error');
+      addToast('Method code, display name, and category are required', 'error');
       return;
     }
 
@@ -165,11 +165,11 @@ export default function PaymentMethodsPage() {
       const payload = buildPayload();
       if (editing) {
         await updatePaymentMethod(editing.method_code, payload);
-        addToast('אמצעי התשלום עודכן', 'success');
+        addToast('Payment method updated', 'success');
         setEditing(null);
       } else {
         await createPaymentMethod(payload);
-        addToast('אמצעי התשלום נוצר', 'success');
+        addToast('Payment method created', 'success');
         setShowCreate(false);
       }
       resetForm();
@@ -179,8 +179,8 @@ export default function PaymentMethodsPage() {
       const errMsg = error instanceof Error ? error.message : String(error);
       addToast(
         errMsg === 'INVALID_METADATA'
-          ? 'Metadata חייב להיות JSON אובייקט תקין'
-          : `שמירת אמצעי תשלום נכשלה: ${errMsg}`,
+          ? 'Metadata must be a valid JSON object'
+          : `Failed to save payment method: ${errMsg}`,
         'error'
       );
     } finally {
@@ -193,14 +193,14 @@ export default function PaymentMethodsPage() {
     setSaving(true);
     try {
       await deletePaymentMethod(deleteTarget.method_code);
-      addToast('אמצעי התשלום סומן כלא פעיל', 'success');
+      addToast('Payment method marked as inactive', 'success');
       setDeleteTarget(null);
       setIsActiveFilter('true');
       await fetchPaymentMethods();
     } catch (error) {
       console.error(error);
       const errMsg = error instanceof Error ? error.message : String(error);
-      addToast(`מחיקת אמצעי תשלום נכשלה: ${errMsg}`, 'error');
+      addToast(`Failed to delete payment method: ${errMsg}`, 'error');
     } finally {
       setSaving(false);
     }
@@ -210,11 +210,11 @@ export default function PaymentMethodsPage() {
     <div className="companies-page">
       <div className="page-header">
         <div>
-          <h1 className="page-title">אמצעי תשלום</h1>
-          <p className="page-subtitle">טבלת עזר - Payment Methods</p>
+          <h1 className="page-title">Payment Methods</h1>
+          <p className="page-subtitle">Reference Table - Payment Methods</p>
         </div>
         <button className="btn btn-primary" onClick={() => (showCreate ? setShowCreate(false) : startCreate())}>
-          {showCreate ? 'סגור טופס' : 'אמצעי תשלום חדש'}
+          {showCreate ? 'Close Form' : 'New Payment Method'}
         </button>
       </div>
 
@@ -222,10 +222,10 @@ export default function PaymentMethodsPage() {
         <div className="form-section">
           <div className="auto-fill-bar">
             <button type="button" className="btn btn-auto-fill" onClick={autoFillForm}>
-              מילוי מהיר
+              Quick Fill
             </button>
           </div>
-          <h3 className="section-title">{editing ? 'עריכת אמצעי תשלום' : 'יצירת אמצעי תשלום'}</h3>
+          <h3 className="section-title">{editing ? 'Edit Payment Method' : 'Create Payment Method'}</h3>
           <div className="form-grid">
             <div className="form-field">
               <label className="label">Method Code *</label>
@@ -282,14 +282,14 @@ export default function PaymentMethodsPage() {
               />
             </div>
             <div className="form-field">
-              <label className="label">פעיל</label>
+              <label className="label">Active</label>
               <select
                 className="input"
                 value={form.is_active ? 'true' : 'false'}
                 onChange={(e) => setForm((p) => ({ ...p, is_active: e.target.value === 'true' }))}
               >
-                <option value="true">כן</option>
-                <option value="false">לא</option>
+                <option value="true">Yes</option>
+                <option value="false">No</option>
               </select>
             </div>
             <div className="form-field" style={{ gridColumn: '1 / -1' }}>
@@ -305,7 +305,7 @@ export default function PaymentMethodsPage() {
           </div>
           <div className="form-actions">
             <button className="btn btn-primary" onClick={save} disabled={saving}>
-              {saving ? 'שומר...' : editing ? 'עדכן' : 'צור'}
+              {saving ? 'Saving...' : editing ? 'Update' : 'Create'}
             </button>
             <button
               className="btn btn-secondary"
@@ -315,7 +315,7 @@ export default function PaymentMethodsPage() {
                 resetForm();
               }}
             >
-              ביטול
+              Cancel
             </button>
           </div>
         </div>
@@ -334,7 +334,7 @@ export default function PaymentMethodsPage() {
               className="input"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="חיפוש לפי קוד / שם"
+              placeholder="Search by code / name"
             />
           </div>
           <div className="filter-group">
@@ -354,13 +354,13 @@ export default function PaymentMethodsPage() {
           </div>
           <div className="filter-group">
             <select className="input" value={isActiveFilter} onChange={(e) => setIsActiveFilter(e.target.value)}>
-              <option value="">פעיל (הכל)</option>
-              <option value="true">כן</option>
-              <option value="false">לא</option>
+              <option value="">Active (All)</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
             </select>
           </div>
           <button className="btn btn-primary" type="submit">
-            חיפוש
+            Search
           </button>
         </form>
       </div>
@@ -369,11 +369,11 @@ export default function PaymentMethodsPage() {
         {loading ? (
           <div className="loading-state">
             <div className="spinner" />
-            <span>טוען אמצעי תשלום...</span>
+            <span>Loading payment methods...</span>
           </div>
         ) : items.length === 0 ? (
           <div className="empty-state">
-            <p>לא נמצאו אמצעי תשלום</p>
+            <p>No payment methods found</p>
           </div>
         ) : (
           <div className="table-wrapper">
@@ -385,8 +385,8 @@ export default function PaymentMethodsPage() {
                   <th>Category</th>
                   <th>Brand</th>
                   <th>Sort</th>
-                  <th>פעיל</th>
-                  <th>פעולות</th>
+                  <th>Active</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -397,7 +397,7 @@ export default function PaymentMethodsPage() {
                     <td className="cell-mono">{paymentMethod.category}</td>
                     <td className="cell-mono">{paymentMethod.brand || '-'}</td>
                     <td>{paymentMethod.sort_order}</td>
-                    <td>{paymentMethod.is_active ? 'כן' : 'לא'}</td>
+                    <td>{paymentMethod.is_active ? 'Yes' : 'No'}</td>
                     <td className="cell-actions">
                       <button className="action-btn edit" onClick={() => startEdit(paymentMethod)}>
                         ✎
@@ -416,9 +416,9 @@ export default function PaymentMethodsPage() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="השבתת אמצעי תשלום"
-        message={`לסמן את "${deleteTarget?.display_name}" כלא פעיל?`}
-        confirmLabel="השבת"
+        title="Deactivate Payment Method"
+        message={`Mark "${deleteTarget?.display_name}" as inactive?`}
+        confirmLabel="Deactivate"
         onConfirm={remove}
         onCancel={() => setDeleteTarget(null)}
       />

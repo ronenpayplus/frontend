@@ -70,8 +70,8 @@ export const BENEFICIAL_OWNER_NATIONAL_ID_TYPES = ['passport', 'national_id', 'd
 export const BENEFICIAL_OWNER_VERIFICATION_STATUSES = ['pending', 'verified', 'failed', 'expired'] as const;
 
 export const BENEFICIAL_OWNER_ROLE_LABELS: Record<string, string> = {
-  owner: 'בעלים',
-  director: 'דירקטור',
-  controller: 'בעל שליטה',
-  signatory: 'מורשה חתימה',
+  owner: 'Owner',
+  director: 'Director',
+  controller: 'Controller',
+  signatory: 'Authorized Signatory',
 };

@@ -114,7 +114,7 @@ export default function DualListSelector({
         <div className="dual-list__search">
           <input
             className="input dual-list__search-input"
-            placeholder="סינון..."
+            placeholder="Filter..."
             value={sourceSearch}
             onChange={(e) => setSourceSearch(e.target.value)}
             disabled={disabled}
@@ -137,7 +137,7 @@ export default function DualListSelector({
             </li>
           ))}
           {sourceItems.length === 0 && (
-            <li className="dual-list__empty">אין פריטים זמינים</li>
+            <li className="dual-list__empty">No available items</li>
           )}
         </ul>
       </div>
@@ -147,7 +147,7 @@ export default function DualListSelector({
           className="btn btn-outline dual-list__btn"
           onClick={moveAllToTarget}
           disabled={disabled || sourceItems.length === 0}
-          title="הוסף הכל"
+          title="Add all"
         >
           &raquo;
         </button>
@@ -155,7 +155,7 @@ export default function DualListSelector({
           className="btn btn-outline dual-list__btn"
           onClick={moveToTarget}
           disabled={disabled || sourceHighlighted.size === 0}
-          title="הוסף נבחרים"
+          title="Add selected"
         >
           &rsaquo;
         </button>
@@ -163,7 +163,7 @@ export default function DualListSelector({
           className="btn btn-outline dual-list__btn"
           onClick={moveToSource}
           disabled={disabled || targetHighlighted.size === 0}
-          title="הסר נבחרים"
+          title="Remove selected"
         >
           &lsaquo;
         </button>
@@ -171,7 +171,7 @@ export default function DualListSelector({
           className="btn btn-outline dual-list__btn"
           onClick={moveAllToSource}
           disabled={disabled || selected.length === 0}
-          title="הסר הכל"
+          title="Remove all"
         >
           &laquo;
         </button>
@@ -185,7 +185,7 @@ export default function DualListSelector({
         <div className="dual-list__search">
           <input
             className="input dual-list__search-input"
-            placeholder="סינון..."
+            placeholder="Filter..."
             value={targetSearch}
             onChange={(e) => setTargetSearch(e.target.value)}
             disabled={disabled}
@@ -208,7 +208,7 @@ export default function DualListSelector({
             </li>
           ))}
           {targetItems.length === 0 && (
-            <li className="dual-list__empty">לא נבחרו מטבעות</li>
+            <li className="dual-list__empty">No items selected</li>
           )}
         </ul>
       </div>

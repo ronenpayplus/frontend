@@ -58,9 +58,18 @@ export async function getSubMerchantAccount(uuid: string): Promise<{ sub_merchan
 export async function createSubMerchantAccount(
   data: CreateSubMerchantAccountRequest,
 ): Promise<{ uuid: string }> {
-  return request<{ uuid: string }>(`${API_BASE}/create`, {
+  return request<{ uuid: string }>(`${API_BASE}/create-with-currencies`, {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify({
+      ...data,
+      currencies: [
+        {
+          currency_code: data.currency,
+          is_default: true,
+        },
+      ],
+      localizations: data.localizations,
+    }),
   });
 }
 
@@ -68,9 +77,19 @@ export async function updateSubMerchantAccount(
   uuid: string,
   data: UpdateSubMerchantAccountRequest,
 ): Promise<{ success: boolean }> {
-  return request<{ success: boolean }>(`${API_BASE}/update/${uuid}`, {
+  return request<{ success: boolean }>(`${API_BASE}/update-with-currencies`, {
     method: 'PUT',
-    body: JSON.stringify({ ...data, uuid }),
+    body: JSON.stringify({
+      ...data,
+      uuid,
+      currencies: [
+        {
+          currency_code: data.currency,
+          is_default: true,
+        },
+      ],
+      localizations: data.localizations,
+    }),
   });
 }
 

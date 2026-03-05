@@ -1,4 +1,5 @@
 import type { Pagination } from './company';
+import type { LocalizationInput } from './orgEntityLocalization';
 
 export interface Store {
   uuid: string;
@@ -42,6 +43,7 @@ export interface CreateStoreRequest {
   address_id?: number;
   phone?: string;
   email?: string;
+  localizations?: LocalizationInput[];
 }
 
 export interface UpdateStoreRequest {
@@ -54,6 +56,7 @@ export interface UpdateStoreRequest {
   address_id?: number;
   phone?: string;
   email?: string;
+  localizations?: LocalizationInput[];
 }
 
 export const STORE_TYPES = ['physical', 'online', 'mobile', 'popup'] as const;

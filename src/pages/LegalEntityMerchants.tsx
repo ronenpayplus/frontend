@@ -2,15 +2,19 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   createMerchant,
+  createMerchantWithLocalizations,
   deleteMerchant,
   listMerchants,
   updateMerchant,
+  updateMerchantWithLocalizations,
 } from '../api/merchants';
 import { listCompanies } from '../api/companies';
 import { getLegalEntity, listLegalEntities } from '../api/legalEntities';
+import { listOrgEntityLocalizations } from '../api/orgEntityLocalizations';
 import type { Company } from '../types/company';
 import type { LegalEntity } from '../types/legalEntity';
 import type { CreateMerchantRequest, Merchant, UpdateMerchantRequest } from '../types/merchant';
+import type { LocalizationInput } from '../types/orgEntityLocalization';
 import { MERCHANT_BUSINESS_MODEL_LABELS } from '../types/merchant';
 import { STATUS_LABELS } from '../types/company';
 import MerchantForm from '../components/MerchantForm';
@@ -34,6 +38,7 @@ export default function LegalEntityMerchants() {
   const [items, setItems] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [editingLocalizations, setEditingLocalizations] = useState<LocalizationInput[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<Merchant | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Merchant | null>(null);
@@ -103,7 +108,7 @@ export default function LegalEntityMerchants() {
       setItems(data.merchants || []);
     } catch (error) {
       console.error(error);
-      addToast('שגיאה בטעינת סוחרים', 'error');
+      addToast('Failed to load merchants', 'error');
     } finally {
       setLoading(false);
     }
@@ -116,8 +121,8 @@ export default function LegalEntityMerchants() {
   const subtitle = useMemo(
     () =>
       selectedLegalEntity
-        ? `ישות משפטית נבחרת: ${selectedLegalEntity.legal_name}`
-        : 'בחר ישות משפטית כדי לנהל את הסוחרים שלה',
+        ? `Selected legal entity: ${selectedLegalEntity.legal_name}`
+        : 'Select a legal entity to manage its merchants',
     [selectedLegalEntity],
   );
 
@@ -135,13 +140,24 @@ export default function LegalEntityMerchants() {
     if (!selectedLegalEntityUUID) return;
     setSaving(true);
     try {
-      await createMerchant(payload as CreateMerchantRequest);
-      addToast('סוחר נוצר בהצלחה', 'success');
+      const data = payload as CreateMerchantRequest;
+      const localizations = data.localizations || [];
+      const base = { ...data };
+      delete base.localizations;
+      if (localizations.length > 0) {
+        await createMerchantWithLocalizations({
+          ...(base as CreateMerchantRequest),
+          localizations,
+        });
+      } else {
+        await createMerchant(base as CreateMerchantRequest);
+      }
+      addToast('Merchant created successfully', 'success');
       setShowCreate(false);
       await fetchMerchants();
     } catch (error) {
       console.error(error);
-      addToast('יצירת סוחר נכשלה', 'error');
+      addToast('Failed to create merchant', 'error');
     } finally {
       setSaving(false);
     }
@@ -151,13 +167,24 @@ export default function LegalEntityMerchants() {
     if (!editing) return;
     setSaving(true);
     try {
-      await updateMerchant(editing.uuid, { ...(payload as UpdateMerchantRequest), uuid: editing.uuid });
-      addToast('סוחר עודכן בהצלחה', 'success');
+      const data = payload as UpdateMerchantRequest;
+      const localizations = data.localizations || [];
+      const base = { ...data };
+      delete base.localizations;
+      await updateMerchant(editing.uuid, { ...(base as UpdateMerchantRequest), uuid: editing.uuid });
+      if (localizations.length > 0) {
+        await updateMerchantWithLocalizations({
+          uuid: editing.uuid,
+          localizations,
+        });
+      }
+      addToast('Merchant updated successfully', 'success');
       setEditing(null);
+      setEditingLocalizations([]);
       await fetchMerchants();
     } catch (error) {
       console.error(error);
-      addToast('עדכון סוחר נכשל', 'error');
+      addToast('Failed to update merchant', 'error');
     } finally {
       setSaving(false);
     }
@@ -168,12 +195,12 @@ export default function LegalEntityMerchants() {
     setSaving(true);
     try {
       await deleteMerchant(deleteTarget.uuid);
-      addToast('סוחר נמחק בהצלחה', 'success');
+      addToast('Merchant deleted successfully', 'success');
       setDeleteTarget(null);
       await fetchMerchants();
     } catch (error) {
       console.error(error);
-      addToast('מחיקת סוחר נכשלה', 'error');
+      addToast('Failed to delete merchant', 'error');
     } finally {
       setSaving(false);
     }
@@ -183,15 +210,15 @@ export default function LegalEntityMerchants() {
     <div className="companies-page">
       <div className="breadcrumb">
         <button className="breadcrumb-link" onClick={() => navigate('/legal-entities')}>
-          ישויות משפטיות
+          Legal Entities
         </button>
         <span className="breadcrumb-sep">/</span>
-        <span>סוחרים</span>
+        <span>Merchants</span>
       </div>
 
       <div className="page-header">
         <div>
-          <h1 className="page-title">סוחרים</h1>
+          <h1 className="page-title">Merchants</h1>
           <p className="page-subtitle">{subtitle}</p>
         </div>
         <button
@@ -199,7 +226,7 @@ export default function LegalEntityMerchants() {
           disabled={!selectedLegalEntityUUID}
           onClick={() => setShowCreate((p) => !p)}
         >
-          {showCreate ? 'סגור טופס' : 'סוחר חדש'}
+          {showCreate ? 'Close Form' : 'New Merchant'}
         </button>
       </div>
 
@@ -219,8 +246,12 @@ export default function LegalEntityMerchants() {
           mode="edit"
           loading={saving}
           initial={editing}
+          initialLocalizations={editingLocalizations}
           onSubmit={handleEdit}
-          onCancel={() => setEditing(null)}
+          onCancel={() => {
+            setEditing(null);
+            setEditingLocalizations([]);
+          }}
         />
       ) : null}
 
@@ -241,7 +272,7 @@ export default function LegalEntityMerchants() {
                 setEditing(null);
               }}
             >
-              <option value="">בחר חברה</option>
+              <option value="">Select Company</option>
               {companies.map((company) => (
                 <option key={company.uuid} value={company.uuid}>
                   {company.name}
@@ -264,7 +295,7 @@ export default function LegalEntityMerchants() {
               }}
               disabled={!selectedCompanyUUID || !!routeLegalEntityUUID}
             >
-              <option value="">בחר ישות משפטית</option>
+              <option value="">Select Legal Entity</option>
               {legalEntities.map((le) => (
                 <option key={le.uuid} value={le.uuid}>
                   {le.legal_name}
@@ -278,11 +309,11 @@ export default function LegalEntityMerchants() {
               className="input"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="חיפוש לפי שם / Merchant Code"
+              placeholder="Search by name / Merchant Code"
             />
           </div>
           <button type="submit" className="btn btn-primary">
-            חיפוש
+            Search
           </button>
         </form>
       </div>
@@ -291,23 +322,23 @@ export default function LegalEntityMerchants() {
         {loading ? (
           <div className="loading-state">
             <div className="spinner" />
-            <span>טוען סוחרים...</span>
+            <span>Loading merchants...</span>
           </div>
         ) : items.length === 0 ? (
           <div className="empty-state">
-            <p>לא נמצאו סוחרים</p>
+            <p>No merchants found</p>
           </div>
         ) : (
           <div className="table-wrapper">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>שם</th>
+                  <th>Name</th>
                   <th>Merchant Code</th>
                   <th>Business Model</th>
-                  <th>סטטוס</th>
+                  <th>Status</th>
                   <th>Email</th>
-                  <th>פעולות</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -327,12 +358,24 @@ export default function LegalEntityMerchants() {
                           )
                         }
                       >
-                        חשבונות סוחר
+                        Merchant Accounts
                       </button>
-                      <button className="action-btn edit" onClick={() => setEditing(m)} title="עריכה">
+                      <button
+                        className="action-btn edit"
+                        onClick={async () => {
+                          setEditing(m);
+                          try {
+                            const rows = await listOrgEntityLocalizations('merchant', m.uuid);
+                            setEditingLocalizations(rows);
+                          } catch {
+                            setEditingLocalizations([]);
+                          }
+                        }}
+                        title="Edit"
+                      >
                         ✎
                       </button>
-                      <button className="action-btn delete" onClick={() => setDeleteTarget(m)} title="מחיקה">
+                      <button className="action-btn delete" onClick={() => setDeleteTarget(m)} title="Delete">
                         🗑
                       </button>
                     </td>
@@ -346,9 +389,9 @@ export default function LegalEntityMerchants() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="מחיקת סוחר"
-        message={`למחוק את "${deleteTarget?.name}"?`}
-        confirmLabel="מחק"
+        title="Delete Merchant"
+        message={`Delete "${deleteTarget?.name}"?`}
+        confirmLabel="Delete"
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />

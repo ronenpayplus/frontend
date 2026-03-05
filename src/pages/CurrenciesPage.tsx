@@ -57,7 +57,7 @@ export default function CurrenciesPage() {
       setItems(data.currencies || []);
     } catch (error) {
       console.error(error);
-      addToast('טעינת מטבעות נכשלה', 'error');
+      addToast('Failed to load currencies', 'error');
     } finally {
       setLoading(false);
     }
@@ -119,7 +119,7 @@ export default function CurrenciesPage() {
 
   const save = async () => {
     if (!form.alpha3 || !form.numeric_code || !form.name) {
-      addToast('יש למלא Alpha3, Numeric Code ושם', 'error');
+      addToast('Alpha3, Numeric Code, and Name are required', 'error');
       return;
     }
     setSaving(true);
@@ -127,18 +127,18 @@ export default function CurrenciesPage() {
       const payload = buildPayload();
       if (editing) {
         await updateCurrency(editing.id, payload);
-        addToast('המטבע עודכן', 'success');
+        addToast('Currency updated', 'success');
         setEditing(null);
       } else {
         await createCurrency(payload);
-        addToast('המטבע נוצר', 'success');
+        addToast('Currency created', 'success');
         setShowCreate(false);
       }
       resetForm();
       await fetchCurrencies();
     } catch (error) {
       console.error(error);
-      addToast('שמירת מטבע נכשלה', 'error');
+      addToast('Failed to save currency', 'error');
     } finally {
       setSaving(false);
     }
@@ -149,12 +149,12 @@ export default function CurrenciesPage() {
     setSaving(true);
     try {
       await deleteCurrency(deleteTarget.id);
-      addToast('המטבע נמחק', 'success');
+      addToast('Currency deleted', 'success');
       setDeleteTarget(null);
       await fetchCurrencies();
     } catch (error) {
       console.error(error);
-      addToast('מחיקת מטבע נכשלה', 'error');
+      addToast('Failed to delete currency', 'error');
     } finally {
       setSaving(false);
     }
@@ -164,11 +164,11 @@ export default function CurrenciesPage() {
     <div className="companies-page">
       <div className="page-header">
         <div>
-          <h1 className="page-title">מטבעות</h1>
-          <p className="page-subtitle">טבלת עזר - Currencies</p>
+          <h1 className="page-title">Currencies</h1>
+          <p className="page-subtitle">Reference Table - Currencies</p>
         </div>
         <button className="btn btn-primary" onClick={() => (showCreate ? setShowCreate(false) : startCreate())}>
-          {showCreate ? 'סגור טופס' : 'מטבע חדש'}
+          {showCreate ? 'Close Form' : 'New Currency'}
         </button>
       </div>
 
@@ -176,67 +176,67 @@ export default function CurrenciesPage() {
         <div className="form-section">
           <div className="auto-fill-bar">
             <button type="button" className="btn btn-auto-fill" onClick={autoFillForm}>
-              מילוי מהיר
+              Quick Fill
             </button>
           </div>
-          <h3 className="section-title">{editing ? 'עריכת מטבע' : 'יצירת מטבע'}</h3>
+          <h3 className="section-title">{editing ? 'Edit Currency' : 'Create Currency'}</h3>
           <div className="form-grid">
             <div className="form-field"><label className="label">Alpha3 *</label><input className="input ltr-input" dir="ltr" maxLength={3} value={form.alpha3} onChange={(e) => setForm((p) => ({ ...p, alpha3: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Numeric Code *</label><input className="input ltr-input" dir="ltr" maxLength={3} value={form.numeric_code} onChange={(e) => setForm((p) => ({ ...p, numeric_code: e.target.value }))} /></div>
-            <div className="form-field"><label className="label">שם *</label><input className="input" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div>
-            <div className="form-field"><label className="label">סימול</label><input className="input ltr-input" dir="ltr" value={form.symbol} onChange={(e) => setForm((p) => ({ ...p, symbol: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Name *</label><input className="input" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Symbol</label><input className="input ltr-input" dir="ltr" value={form.symbol} onChange={(e) => setForm((p) => ({ ...p, symbol: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Decimals</label><input type="number" className="input ltr-input" dir="ltr" value={form.decimals} onChange={(e) => setForm((p) => ({ ...p, decimals: Number(e.target.value) }))} /></div>
             <div className="form-field"><label className="label">Minor Unit</label><input type="number" className="input ltr-input" dir="ltr" value={form.minor_unit} onChange={(e) => setForm((p) => ({ ...p, minor_unit: Number(e.target.value) }))} /></div>
             <div className="form-field"><label className="label">Country Alpha2</label><input className="input ltr-input" dir="ltr" maxLength={2} value={form.country_alpha2} onChange={(e) => setForm((p) => ({ ...p, country_alpha2: e.target.value }))} /></div>
-            <div className="form-field"><label className="label">פעיל</label><select className="input" value={form.is_active ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, is_active: e.target.value === 'true' }))}><option value="true">כן</option><option value="false">לא</option></select></div>
-            <div className="form-field"><label className="label">Crypto</label><select className="input" value={form.is_crypto ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, is_crypto: e.target.value === 'true' }))}><option value="false">לא</option><option value="true">כן</option></select></div>
+            <div className="form-field"><label className="label">Active</label><select className="input" value={form.is_active ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, is_active: e.target.value === 'true' }))}><option value="true">Yes</option><option value="false">No</option></select></div>
+            <div className="form-field"><label className="label">Crypto</label><select className="input" value={form.is_crypto ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, is_crypto: e.target.value === 'true' }))}><option value="false">No</option><option value="true">Yes</option></select></div>
           </div>
           <div className="form-actions">
-            <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'שומר...' : editing ? 'עדכן' : 'צור'}</button>
-            <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); resetForm(); }}>ביטול</button>
+            <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'Saving...' : editing ? 'Update' : 'Create'}</button>
+            <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); resetForm(); }}>Cancel</button>
           </div>
         </div>
       )}
 
       <div className="card filters-card">
         <form className="filters-form" onSubmit={(e) => { e.preventDefault(); fetchCurrencies(); }}>
-          <div className="filter-group"><input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="חיפוש לפי שם / קוד" /></div>
+          <div className="filter-group"><input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name / code" /></div>
           <div className="filter-group">
             <select className="input" value={isActiveFilter} onChange={(e) => setIsActiveFilter(e.target.value)}>
-              <option value="">פעיל (הכל)</option>
-              <option value="true">כן</option>
-              <option value="false">לא</option>
+              <option value="">Active (All)</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
             </select>
           </div>
           <div className="filter-group">
             <select className="input" value={isCryptoFilter} onChange={(e) => setIsCryptoFilter(e.target.value)}>
-              <option value="">Crypto (הכל)</option>
-              <option value="true">כן</option>
-              <option value="false">לא</option>
+              <option value="">Crypto (All)</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
             </select>
           </div>
-          <button className="btn btn-primary" type="submit">חיפוש</button>
+          <button className="btn btn-primary" type="submit">Search</button>
         </form>
       </div>
 
       <div className="card table-card">
         {loading ? (
-          <div className="loading-state"><div className="spinner" /><span>טוען מטבעות...</span></div>
+          <div className="loading-state"><div className="spinner" /><span>Loading currencies...</span></div>
         ) : items.length === 0 ? (
-          <div className="empty-state"><p>לא נמצאו מטבעות</p></div>
+          <div className="empty-state"><p>No currencies found</p></div>
         ) : (
           <div className="table-wrapper">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>שם</th>
+                  <th>Name</th>
                   <th>Alpha3</th>
                   <th>Numeric</th>
                   <th>Symbol</th>
                   <th>Decimals</th>
-                  <th>פעיל</th>
+                  <th>Active</th>
                   <th>Crypto</th>
-                  <th>פעולות</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -247,8 +247,8 @@ export default function CurrenciesPage() {
                     <td className="cell-mono">{currency.numeric_code}</td>
                     <td className="cell-mono">{currency.symbol || '-'}</td>
                     <td>{currency.decimals}</td>
-                    <td>{currency.is_active ? 'כן' : 'לא'}</td>
-                    <td>{currency.is_crypto ? 'כן' : 'לא'}</td>
+                    <td>{currency.is_active ? 'Yes' : 'No'}</td>
+                    <td>{currency.is_crypto ? 'Yes' : 'No'}</td>
                     <td className="cell-actions">
                       <button className="action-btn edit" onClick={() => startEdit(currency)}>✎</button>
                       <button className="action-btn delete" onClick={() => setDeleteTarget(currency)}>🗑</button>
@@ -263,9 +263,9 @@ export default function CurrenciesPage() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="מחיקת מטבע"
-        message={`למחוק את "${deleteTarget?.name}"?`}
-        confirmLabel="מחק"
+        title="Delete Currency"
+        message={`Delete "${deleteTarget?.name}"?`}
+        confirmLabel="Delete"
         onConfirm={remove}
         onCancel={() => setDeleteTarget(null)}
       />

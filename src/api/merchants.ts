@@ -5,6 +5,7 @@ import type {
   Merchant,
   UpdateMerchantRequest,
 } from '../types/merchant';
+import type { LocalizationInput } from '../types/orgEntityLocalization';
 
 const API_BASE = '/v2/companies/merchants';
 
@@ -55,12 +56,31 @@ export async function createMerchant(data: CreateMerchantRequest): Promise<{ uui
   });
 }
 
+export async function createMerchantWithLocalizations(
+  data: CreateMerchantRequest & { localizations: LocalizationInput[] },
+): Promise<{ uuid: string }> {
+  return request<{ uuid: string }>(`${API_BASE}/create-with-localizations`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
 export async function getMerchant(uuid: string): Promise<{ merchant: Merchant }> {
   return request<{ merchant: Merchant }>(`${API_BASE}/get/${uuid}`);
 }
 
 export async function updateMerchant(uuid: string, data: UpdateMerchantRequest): Promise<{ success: boolean }> {
   return request<{ success: boolean }>(`${API_BASE}/update/${uuid}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateMerchantWithLocalizations(data: {
+  uuid: string;
+  localizations: LocalizationInput[];
+}): Promise<{ success: boolean }> {
+  return request<{ success: boolean }>(`${API_BASE}/update-with-localizations`, {
     method: 'PUT',
     body: JSON.stringify(data),
   });

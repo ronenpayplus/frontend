@@ -1,4 +1,5 @@
 import type { Pagination } from './company';
+import type { LocalizationInput } from './orgEntityLocalization';
 
 export interface Merchant {
   uuid: string;
@@ -49,6 +50,7 @@ export interface CreateMerchantRequest {
   address_id?: number;
   notes?: string;
   created_by?: string;
+  localizations?: LocalizationInput[];
 }
 
 export interface UpdateMerchantRequest {
@@ -66,6 +68,7 @@ export interface UpdateMerchantRequest {
   address_id?: number;
   notes?: string;
   updated_by?: string;
+  localizations?: LocalizationInput[];
 }
 
 export const MERCHANT_BUSINESS_MODELS = [
@@ -88,10 +91,10 @@ export const MERCHANT_STATUSES = [
 ] as const;
 
 export const MERCHANT_BUSINESS_MODEL_LABELS: Record<string, string> = {
-  retail: 'קמעונאות',
-  ecommerce: 'איקומרס',
-  marketplace: 'מרקטפלייס',
+  retail: 'Retail',
+  ecommerce: 'Ecommerce',
+  marketplace: 'Marketplace',
   saas: 'SaaS',
-  subscription: 'מנויים',
-  professional_services: 'שירותים מקצועיים',
+  subscription: 'Subscription',
+  professional_services: 'Professional Services',
 };

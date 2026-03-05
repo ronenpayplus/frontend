@@ -29,7 +29,7 @@ export default function CompanyDetail() {
       .then((data) => setCompany(data.company))
       .catch((err) => {
         console.error(err);
-        addToast('שגיאה בטעינת פרטי החברה', 'error');
+        addToast('Failed to load company details', 'error');
       })
       .finally(() => setLoading(false));
   }, [uuid, addToast]);
@@ -38,10 +38,10 @@ export default function CompanyDetail() {
     if (!uuid) return;
     try {
       await deleteCompany(uuid);
-      addToast('החברה נמחקה בהצלחה', 'success');
+      addToast('Company deleted successfully', 'success');
       setTimeout(() => navigate('/companies'), 500);
     } catch {
-      addToast('שגיאה במחיקת החברה', 'error');
+      addToast('Failed to delete company', 'error');
     }
   };
 
@@ -49,7 +49,7 @@ export default function CompanyDetail() {
     return (
       <div className="loading-state">
         <div className="spinner" />
-        <span>טוען פרטי חברה...</span>
+        <span>Loading company details...</span>
       </div>
     );
   }
@@ -57,9 +57,9 @@ export default function CompanyDetail() {
   if (!company) {
     return (
       <div className="empty-state">
-        <p>החברה לא נמצאה</p>
+        <p>Company not found</p>
         <button className="btn btn-primary" onClick={() => navigate('/companies')}>
-          חזרה לרשימה
+          Back to list
         </button>
       </div>
     );
@@ -72,7 +72,7 @@ export default function CompanyDetail() {
   return (
     <div className="company-detail-page">
       <div className="breadcrumb">
-        <button className="breadcrumb-link" onClick={() => navigate('/companies')}>חברות</button>
+        <button className="breadcrumb-link" onClick={() => navigate('/companies')}>Companies</button>
         <span className="breadcrumb-sep">/</span>
         <span>{company.name}</span>
       </div>
@@ -82,73 +82,73 @@ export default function CompanyDetail() {
           <div className="detail-title-row">
             <h1 className="page-title">{company.name}</h1>
             <StatusBadge status={company.status} />
-            {company.is_blocked && <span className="blocked-badge">חסום</span>}
+            {company.is_blocked && <span className="blocked-badge">Blocked</span>}
           </div>
           <p className="detail-uuid">{company.uuid}</p>
         </div>
         <div className="detail-header-actions">
           <button className="btn btn-secondary" onClick={() => navigate(`/companies/${uuid}/legal-entities`)}>
-            ישויות משפטיות
+            Legal Entities
           </button>
           <button className="btn btn-secondary" onClick={() => navigate(`/companies/${uuid}/contacts`)}>
-            אנשי קשר
+            Contacts
           </button>
           <button className="btn btn-primary" onClick={() => navigate(`/companies/${uuid}/edit`)}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
             </svg>
-            עריכה
+            Edit
           </button>
           <button className="btn btn-outline btn-danger-outline" onClick={() => setShowDelete(true)}>
-            מחיקה
+            Delete
           </button>
         </div>
       </div>
 
       <div className="detail-sections">
         <div className="detail-card">
-          <h3 className="section-title">פרטי חברה</h3>
+          <h3 className="section-title">Company Details</h3>
           <div className="detail-grid">
-            <DetailItem label="מספר" value={company.number} mono />
-            <DetailItem label="סוג חברה" value={COMPANY_TYPE_LABELS[company.company_type] || company.company_type} />
-            <DetailItem label="סוג עסק" value={BUSINESS_TYPE_LABELS[company.business_type || ''] || company.business_type} />
-            <DetailItem label="סוג חשבון פלטפורמה" value={company.platform_account_type} />
-            <DetailItem label="סוג חוזה" value={company.contract_type} />
+            <DetailItem label="Number" value={company.number} mono />
+            <DetailItem label="Company Type" value={COMPANY_TYPE_LABELS[company.company_type] || company.company_type} />
+            <DetailItem label="Business Type" value={BUSINESS_TYPE_LABELS[company.business_type || ''] || company.business_type} />
+            <DetailItem label="Platform Account Type" value={company.platform_account_type} />
+            <DetailItem label="Contract Type" value={company.contract_type} />
           </div>
         </div>
 
         <div className="detail-card">
-          <h3 className="section-title">הגדרות אזוריות</h3>
+          <h3 className="section-title">Regional Settings</h3>
           <div className="detail-grid">
-            <DetailItem label="מטבע" value={company.default_currency} mono />
-            <DetailItem label="מדינה" value={company.default_country} mono />
-            <DetailItem label="אזור זמן" value={company.timezone} mono />
-            <DetailItem label="קוד MCC" value={company.mcc} mono />
+            <DetailItem label="Currency" value={company.default_currency} mono />
+            <DetailItem label="Country" value={company.default_country} mono />
+            <DetailItem label="Timezone" value={company.timezone} mono />
+            <DetailItem label="MCC Code" value={company.mcc} mono />
           </div>
         </div>
 
         <div className="detail-card">
-          <h3 className="section-title">סיכון וציות</h3>
+          <h3 className="section-title">Risk & Compliance</h3>
           <div className="detail-grid">
-            <DetailItem label="פרופיל סיכון" value={RISK_PROFILE_LABELS[company.risk_profile || ''] || company.risk_profile} />
-            <DetailItem label="סוחר בסיכון גבוה" value={company.high_risk_merchant ? 'כן' : 'לא'} />
-            <DetailItem label="סטטוס KYC" value={company.kyc_status} />
-            <DetailItem label="סטטוס AML" value={company.aml_status} />
-            <DetailItem label="שכבת נפח" value={VOLUME_TIER_LABELS[company.volume_tier || ''] || company.volume_tier} />
-            <DetailItem label="מגבלת נפח חודשית" value={company.monthly_volume_limit?.toLocaleString()} />
+            <DetailItem label="Risk Profile" value={RISK_PROFILE_LABELS[company.risk_profile || ''] || company.risk_profile} />
+            <DetailItem label="High Risk Merchant" value={company.high_risk_merchant ? 'Yes' : 'No'} />
+            <DetailItem label="KYC Status" value={company.kyc_status} />
+            <DetailItem label="AML Status" value={company.aml_status} />
+            <DetailItem label="Volume Tier" value={VOLUME_TIER_LABELS[company.volume_tier || ''] || company.volume_tier} />
+            <DetailItem label="Monthly Volume Limit" value={company.monthly_volume_limit?.toLocaleString()} />
           </div>
         </div>
 
         <div className="detail-card">
-          <h3 className="section-title">פרטי קשר ותמיכה</h3>
+          <h3 className="section-title">Contact & Support</h3>
           <div className="detail-grid">
-            <DetailItem label="אתר" value={company.website} ltr />
-            <DetailItem label="אימייל תמיכה" value={company.support_email} ltr />
-            <DetailItem label="טלפון תמיכה" value={company.support_phone} ltr />
+            <DetailItem label="Website" value={company.website} ltr />
+            <DetailItem label="Support Email" value={company.support_email} ltr />
+            <DetailItem label="Support Phone" value={company.support_phone} ltr />
             {company.message_for_client && (
               <div className="detail-item span-full">
-                <span className="detail-label">הודעה ללקוח</span>
+                <span className="detail-label">Customer Message</span>
                 <span className="detail-value">{company.message_for_client}</span>
               </div>
             )}
@@ -156,20 +156,20 @@ export default function CompanyDetail() {
         </div>
 
         <div className="detail-card">
-          <h3 className="section-title">מידע על המערכת</h3>
+          <h3 className="section-title">System Information</h3>
           <div className="detail-grid">
-            <DetailItem label="נוצר" value={formatDate(company.created_at)} />
-            <DetailItem label="עודכן" value={formatDate(company.updated_at)} />
-            <DetailItem label="הופעל" value={formatDate(company.activated_at)} />
+            <DetailItem label="Created" value={formatDate(company.created_at)} />
+            <DetailItem label="Updated" value={formatDate(company.updated_at)} />
+            <DetailItem label="Activated" value={formatDate(company.activated_at)} />
           </div>
         </div>
       </div>
 
       <ConfirmDialog
         open={showDelete}
-        title="מחיקת חברה"
-        message={`האם אתה בטוח שברצונך למחוק את "${company.name}"? פעולה זו אינה הפיכה.`}
-        confirmLabel="מחק"
+        title="Delete Company"
+        message={`Are you sure you want to delete "${company.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
         onConfirm={handleDelete}
         onCancel={() => setShowDelete(false)}
       />

@@ -142,7 +142,7 @@ export default function BeneficialOwnersPage() {
       setItems(data.beneficial_owners || []);
     } catch (error) {
       console.error(error);
-      addToast('שגיאה בטעינת בעלי שליטה', 'error');
+      addToast('Failed to load beneficial owners', 'error');
     } finally {
       setLoading(false);
     }
@@ -228,25 +228,25 @@ export default function BeneficialOwnersPage() {
 
   const save = async () => {
     if (!selectedLegalEntityUUID || !form.first_name || !form.last_name || !form.date_of_birth) {
-      addToast('יש לבחור ישות משפטית ולמלא את שדות החובה', 'error');
+      addToast('Select a legal entity and fill required fields', 'error');
       return;
     }
     setSaving(true);
     try {
       if (editing) {
         await updateBeneficialOwner(editing.uuid, buildUpdatePayload());
-        addToast('בעל השליטה עודכן', 'success');
+        addToast('Beneficial owner updated', 'success');
         setEditing(null);
       } else {
         await createBeneficialOwner(buildCreatePayload());
-        addToast('בעל השליטה נוצר', 'success');
+        addToast('Beneficial owner created', 'success');
         setShowCreate(false);
       }
       resetForm();
       await fetchItems();
     } catch (error) {
       console.error(error);
-      addToast('שמירה נכשלה', 'error');
+      addToast('Save failed', 'error');
     } finally {
       setSaving(false);
     }
@@ -257,12 +257,12 @@ export default function BeneficialOwnersPage() {
     setSaving(true);
     try {
       await deleteBeneficialOwner(deleteTarget.uuid);
-      addToast('בעל השליטה נמחק', 'success');
+      addToast('Beneficial owner deleted', 'success');
       setDeleteTarget(null);
       await fetchItems();
     } catch (error) {
       console.error(error);
-      addToast('מחיקה נכשלה', 'error');
+      addToast('Delete failed', 'error');
     } finally {
       setSaving(false);
     }
@@ -271,16 +271,16 @@ export default function BeneficialOwnersPage() {
   return (
     <div className="companies-page">
       <div className="breadcrumb">
-        <button className="breadcrumb-link" onClick={() => navigate('/legal-entities')}>ישויות משפטיות</button>
+        <button className="breadcrumb-link" onClick={() => navigate('/legal-entities')}>Legal Entities</button>
         <span className="breadcrumb-sep">/</span>
-        <span>בעלי שליטה</span>
+        <span>Beneficial Owners</span>
       </div>
 
       <div className="page-header">
         <div>
-          <h1 className="page-title">בעלי שליטה</h1>
+          <h1 className="page-title">Beneficial Owners</h1>
           <p className="page-subtitle">
-            {selectedLegalEntityName ? `ישות משפטית נבחרת: ${selectedLegalEntityName}` : 'בחר ישות משפטית כדי לנהל בעלי שליטה'}
+            {selectedLegalEntityName ? `Selected legal entity: ${selectedLegalEntityName}` : 'Select a legal entity to manage beneficial owners'}
           </p>
         </div>
         <button
@@ -288,35 +288,35 @@ export default function BeneficialOwnersPage() {
           disabled={!selectedLegalEntityUUID}
           onClick={() => { setShowCreate((v) => !v); setEditing(null); resetForm(); }}
         >
-          {showCreate ? 'סגור טופס' : 'בעל שליטה חדש'}
+          {showCreate ? 'Close Form' : 'New Beneficial Owner'}
         </button>
       </div>
 
       {(showCreate || editing) && (
         <div className="form-section">
           <div className="auto-fill-bar">
-            <button type="button" className="btn btn-auto-fill" onClick={autoFill}>מילוי מהיר</button>
+            <button type="button" className="btn btn-auto-fill" onClick={autoFill}>Quick Fill</button>
           </div>
-          <h3 className="section-title">{editing ? 'עריכת בעל שליטה' : 'יצירת בעל שליטה'}</h3>
+          <h3 className="section-title">{editing ? 'Edit Beneficial Owner' : 'Create Beneficial Owner'}</h3>
           <div className="form-grid">
-            <div className="form-field"><label className="label">שם פרטי *</label><input className="input" value={form.first_name} onChange={(e) => setForm((p) => ({ ...p, first_name: e.target.value }))} /></div>
-            <div className="form-field"><label className="label">שם משפחה *</label><input className="input" value={form.last_name} onChange={(e) => setForm((p) => ({ ...p, last_name: e.target.value }))} /></div>
-            <div className="form-field"><label className="label">תאריך לידה *</label><input type="date" className="input ltr-input" dir="ltr" value={form.date_of_birth} onChange={(e) => setForm((p) => ({ ...p, date_of_birth: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">First Name *</label><input className="input" value={form.first_name} onChange={(e) => setForm((p) => ({ ...p, first_name: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Last Name *</label><input className="input" value={form.last_name} onChange={(e) => setForm((p) => ({ ...p, last_name: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Date of Birth *</label><input type="date" className="input ltr-input" dir="ltr" value={form.date_of_birth} onChange={(e) => setForm((p) => ({ ...p, date_of_birth: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Nationality *</label><input className="input ltr-input" dir="ltr" maxLength={2} value={form.nationality} onChange={(e) => setForm((p) => ({ ...p, nationality: e.target.value.toUpperCase() }))} /></div>
             <div className="form-field"><label className="label">Role *</label><select className="input" value={form.role} onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}>{BENEFICIAL_OWNER_ROLES.map((role) => <option key={role} value={role}>{BENEFICIAL_OWNER_ROLE_LABELS[role] || role}</option>)}</select></div>
             <div className="form-field"><label className="label">Ownership % *</label><input type="number" min={0} max={100} step="0.01" className="input ltr-input" dir="ltr" value={form.ownership_percentage} onChange={(e) => setForm((p) => ({ ...p, ownership_percentage: Number(e.target.value) }))} /></div>
             <div className="form-field"><label className="label">National ID</label><input className="input ltr-input" dir="ltr" value={form.national_id} onChange={(e) => setForm((p) => ({ ...p, national_id: e.target.value }))} /></div>
             <div className="form-field"><label className="label">National ID Type</label><select className="input" value={form.national_id_type} onChange={(e) => setForm((p) => ({ ...p, national_id_type: e.target.value }))}>{BENEFICIAL_OWNER_NATIONAL_ID_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
             <div className="form-field"><label className="label">Address ID</label><input type="number" className="input ltr-input" dir="ltr" value={form.address_id} onChange={(e) => setForm((p) => ({ ...p, address_id: e.target.value }))} /></div>
-            <div className="form-field"><label className="label">PEP</label><select className="input" value={form.pep_status ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, pep_status: e.target.value === 'true' }))}><option value="false">לא</option><option value="true">כן</option></select></div>
-            <div className="form-field"><label className="label">Sanctions Clear</label><select className="input" value={form.sanctions_clear ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, sanctions_clear: e.target.value === 'true' }))}><option value="true">כן</option><option value="false">לא</option></select></div>
+            <div className="form-field"><label className="label">PEP</label><select className="input" value={form.pep_status ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, pep_status: e.target.value === 'true' }))}><option value="false">No</option><option value="true">Yes</option></select></div>
+            <div className="form-field"><label className="label">Sanctions Clear</label><select className="input" value={form.sanctions_clear ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, sanctions_clear: e.target.value === 'true' }))}><option value="true">Yes</option><option value="false">No</option></select></div>
             {editing ? (
               <div className="form-field"><label className="label">Verification</label><select className="input" value={form.verification_status} onChange={(e) => setForm((p) => ({ ...p, verification_status: e.target.value }))}>{BENEFICIAL_OWNER_VERIFICATION_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
             ) : null}
           </div>
           <div className="form-actions">
-            <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'שומר...' : editing ? 'עדכן' : 'צור'}</button>
-            <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); resetForm(); }}>ביטול</button>
+            <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'Saving...' : editing ? 'Update' : 'Create'}</button>
+            <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); resetForm(); }}>Cancel</button>
           </div>
         </div>
       )}
@@ -335,7 +335,7 @@ export default function BeneficialOwnersPage() {
                 setSearchParams(params);
               }}
             >
-              <option value="">בחר חברה</option>
+              <option value="">Select Company</option>
               {companies.map((company) => <option key={company.uuid} value={company.uuid}>{company.name}</option>)}
             </select>
           </div>
@@ -351,34 +351,34 @@ export default function BeneficialOwnersPage() {
               }}
               disabled={!selectedCompanyUUID || !!routeLegalEntityUUID}
             >
-              <option value="">בחר ישות משפטית</option>
+              <option value="">Select Legal Entity</option>
               {legalEntities.map((le) => <option key={le.uuid} value={le.uuid}>{le.legal_name}</option>)}
             </select>
           </div>
-          <div className="filter-group"><input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="חיפוש לפי שם" /></div>
-          <div className="filter-group"><select className="input" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}><option value="">תפקיד (הכל)</option>{BENEFICIAL_OWNER_ROLES.map((role) => <option key={role} value={role}>{BENEFICIAL_OWNER_ROLE_LABELS[role] || role}</option>)}</select></div>
-          <div className="filter-group"><select className="input" value={verificationFilter} onChange={(e) => setVerificationFilter(e.target.value)}><option value="">אימות (הכל)</option>{BENEFICIAL_OWNER_VERIFICATION_STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}</select></div>
-          <button className="btn btn-primary" type="submit">חיפוש</button>
+          <div className="filter-group"><input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name" /></div>
+          <div className="filter-group"><select className="input" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}><option value="">Role (All)</option>{BENEFICIAL_OWNER_ROLES.map((role) => <option key={role} value={role}>{BENEFICIAL_OWNER_ROLE_LABELS[role] || role}</option>)}</select></div>
+          <div className="filter-group"><select className="input" value={verificationFilter} onChange={(e) => setVerificationFilter(e.target.value)}><option value="">Verification (All)</option>{BENEFICIAL_OWNER_VERIFICATION_STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}</select></div>
+          <button className="btn btn-primary" type="submit">Search</button>
         </form>
       </div>
 
       <div className="card table-card">
         {loading ? (
-          <div className="loading-state"><div className="spinner" /><span>טוען בעלי שליטה...</span></div>
+          <div className="loading-state"><div className="spinner" /><span>Loading beneficial owners...</span></div>
         ) : items.length === 0 ? (
-          <div className="empty-state"><p>לא נמצאו בעלי שליטה</p></div>
+          <div className="empty-state"><p>No beneficial owners found</p></div>
         ) : (
           <div className="table-wrapper">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>שם</th>
-                  <th>תפקיד</th>
+                  <th>Name</th>
+                  <th>Role</th>
                   <th>Ownership %</th>
                   <th>Nationality</th>
                   <th>Verification</th>
                   <th>PEP</th>
-                  <th>פעולות</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -389,7 +389,7 @@ export default function BeneficialOwnersPage() {
                     <td>{item.ownership_percentage}</td>
                     <td className="cell-mono">{item.nationality}</td>
                     <td>{item.verification_status}</td>
-                    <td>{item.pep_status ? 'כן' : 'לא'}</td>
+                    <td>{item.pep_status ? 'Yes' : 'No'}</td>
                     <td className="cell-actions">
                       <button className="action-btn edit" onClick={() => startEdit(item)}>✎</button>
                       <button className="action-btn delete" onClick={() => setDeleteTarget(item)}>🗑</button>
@@ -404,9 +404,9 @@ export default function BeneficialOwnersPage() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="מחיקת בעל שליטה"
-        message={`למחוק את "${deleteTarget?.first_name} ${deleteTarget?.last_name}"?`}
-        confirmLabel="מחק"
+        title="Delete Beneficial Owner"
+        message={`Delete "${deleteTarget?.first_name} ${deleteTarget?.last_name}"?`}
+        confirmLabel="Delete"
         onConfirm={remove}
         onCancel={() => setDeleteTarget(null)}
       />

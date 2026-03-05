@@ -53,7 +53,7 @@ export default function TimezonesPage() {
       setItems(data.timezones || []);
     } catch (error) {
       console.error(error);
-      addToast('טעינת אזורי זמן נכשלה', 'error');
+      addToast('Failed to load timezones', 'error');
     } finally {
       setLoading(false);
     }
@@ -108,7 +108,7 @@ export default function TimezonesPage() {
 
   const save = async () => {
     if (!form.tz_name || !form.utc_offset || !form.region) {
-      addToast('יש למלא שם אזור זמן, UTC Offset ו-Region', 'error');
+      addToast('Timezone name, UTC offset, and region are required', 'error');
       return;
     }
     setSaving(true);
@@ -116,18 +116,18 @@ export default function TimezonesPage() {
       const payload = buildPayload();
       if (editing) {
         await updateTimezone(editing.id, payload);
-        addToast('אזור הזמן עודכן', 'success');
+        addToast('Timezone updated', 'success');
         setEditing(null);
       } else {
         await createTimezone(payload);
-        addToast('אזור הזמן נוצר', 'success');
+        addToast('Timezone created', 'success');
         setShowCreate(false);
       }
       resetForm();
       await fetchTimezones();
     } catch (error) {
       console.error(error);
-      addToast('שמירת אזור זמן נכשלה', 'error');
+      addToast('Failed to save timezone', 'error');
     } finally {
       setSaving(false);
     }
@@ -138,12 +138,12 @@ export default function TimezonesPage() {
     setSaving(true);
     try {
       await deleteTimezone(deleteTarget.id);
-      addToast('אזור הזמן נמחק', 'success');
+      addToast('Timezone deleted', 'success');
       setDeleteTarget(null);
       await fetchTimezones();
     } catch (error) {
       console.error(error);
-      addToast('מחיקת אזור זמן נכשלה', 'error');
+      addToast('Failed to delete timezone', 'error');
     } finally {
       setSaving(false);
     }
@@ -153,11 +153,11 @@ export default function TimezonesPage() {
     <div className="companies-page">
       <div className="page-header">
         <div>
-          <h1 className="page-title">אזורי זמן</h1>
-          <p className="page-subtitle">טבלת עזר - Timezones</p>
+          <h1 className="page-title">Timezones</h1>
+          <p className="page-subtitle">Reference Table - Timezones</p>
         </div>
         <button className="btn btn-primary" onClick={() => (showCreate ? setShowCreate(false) : startCreate())}>
-          {showCreate ? 'סגור טופס' : 'אזור זמן חדש'}
+          {showCreate ? 'Close Form' : 'New Timezone'}
         </button>
       </div>
 
@@ -165,46 +165,46 @@ export default function TimezonesPage() {
         <div className="form-section">
           <div className="auto-fill-bar">
             <button type="button" className="btn btn-auto-fill" onClick={autoFillForm}>
-              מילוי מהיר
+              Quick Fill
             </button>
           </div>
-          <h3 className="section-title">{editing ? 'עריכת אזור זמן' : 'יצירת אזור זמן'}</h3>
+          <h3 className="section-title">{editing ? 'Edit Timezone' : 'Create Timezone'}</h3>
           <div className="form-grid">
             <div className="form-field"><label className="label">TZ Name *</label><input className="input ltr-input" dir="ltr" value={form.tz_name} onChange={(e) => setForm((p) => ({ ...p, tz_name: e.target.value }))} /></div>
             <div className="form-field"><label className="label">UTC Offset *</label><input className="input ltr-input" dir="ltr" value={form.utc_offset} onChange={(e) => setForm((p) => ({ ...p, utc_offset: e.target.value }))} /></div>
             <div className="form-field"><label className="label">UTC Offset Minutes *</label><input type="number" className="input ltr-input" dir="ltr" value={form.utc_offset_minutes} onChange={(e) => setForm((p) => ({ ...p, utc_offset_minutes: Number(e.target.value) }))} /></div>
             <div className="form-field"><label className="label">Region *</label><input className="input ltr-input" dir="ltr" value={form.region} onChange={(e) => setForm((p) => ({ ...p, region: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Country Alpha2</label><input className="input ltr-input" dir="ltr" maxLength={2} value={form.country_alpha2} onChange={(e) => setForm((p) => ({ ...p, country_alpha2: e.target.value }))} /></div>
-            <div className="form-field"><label className="label">פעיל</label><select className="input" value={form.is_active ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, is_active: e.target.value === 'true' }))}><option value="true">כן</option><option value="false">לא</option></select></div>
+            <div className="form-field"><label className="label">Active</label><select className="input" value={form.is_active ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, is_active: e.target.value === 'true' }))}><option value="true">Yes</option><option value="false">No</option></select></div>
           </div>
           <div className="form-actions">
-            <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'שומר...' : editing ? 'עדכן' : 'צור'}</button>
-            <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); resetForm(); }}>ביטול</button>
+            <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'Saving...' : editing ? 'Update' : 'Create'}</button>
+            <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); resetForm(); }}>Cancel</button>
           </div>
         </div>
       )}
 
       <div className="card filters-card">
         <form className="filters-form" onSubmit={(e) => { e.preventDefault(); fetchTimezones(); }}>
-          <div className="filter-group"><input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="חיפוש לפי TZ / Region" /></div>
+          <div className="filter-group"><input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by TZ / Region" /></div>
           <div className="filter-group"><input className="input ltr-input" dir="ltr" value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} placeholder="Region" /></div>
           <div className="filter-group"><input className="input ltr-input" dir="ltr" maxLength={2} value={countryFilter} onChange={(e) => setCountryFilter(e.target.value.toUpperCase())} placeholder="Country Alpha2" /></div>
           <div className="filter-group">
             <select className="input" value={isActiveFilter} onChange={(e) => setIsActiveFilter(e.target.value)}>
-              <option value="">פעיל (הכל)</option>
-              <option value="true">כן</option>
-              <option value="false">לא</option>
+              <option value="">Active (All)</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
             </select>
           </div>
-          <button className="btn btn-primary" type="submit">חיפוש</button>
+          <button className="btn btn-primary" type="submit">Search</button>
         </form>
       </div>
 
       <div className="card table-card">
         {loading ? (
-          <div className="loading-state"><div className="spinner" /><span>טוען אזורי זמן...</span></div>
+          <div className="loading-state"><div className="spinner" /><span>Loading timezones...</span></div>
         ) : items.length === 0 ? (
-          <div className="empty-state"><p>לא נמצאו אזורי זמן</p></div>
+          <div className="empty-state"><p>No timezones found</p></div>
         ) : (
           <div className="table-wrapper">
             <table className="data-table">
@@ -215,8 +215,8 @@ export default function TimezonesPage() {
                   <th>Minutes</th>
                   <th>Region</th>
                   <th>Country</th>
-                  <th>פעיל</th>
-                  <th>פעולות</th>
+                  <th>Active</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -227,7 +227,7 @@ export default function TimezonesPage() {
                     <td>{timezone.utc_offset_minutes}</td>
                     <td>{timezone.region}</td>
                     <td className="cell-mono">{timezone.country_alpha2 || '-'}</td>
-                    <td>{timezone.is_active ? 'כן' : 'לא'}</td>
+                    <td>{timezone.is_active ? 'Yes' : 'No'}</td>
                     <td className="cell-actions">
                       <button className="action-btn edit" onClick={() => startEdit(timezone)}>✎</button>
                       <button className="action-btn delete" onClick={() => setDeleteTarget(timezone)}>🗑</button>
@@ -242,9 +242,9 @@ export default function TimezonesPage() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="מחיקת אזור זמן"
-        message={`למחוק את "${deleteTarget?.tz_name}"?`}
-        confirmLabel="מחק"
+        title="Delete Timezone"
+        message={`Delete "${deleteTarget?.tz_name}"?`}
+        confirmLabel="Delete"
         onConfirm={remove}
         onCancel={() => setDeleteTarget(null)}
       />

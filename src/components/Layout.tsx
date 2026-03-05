@@ -18,7 +18,7 @@ export default function Layout() {
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
               <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
-            <span>חברות</span>
+            <span>Companies</span>
           </NavLink>
           <NavLink
             to="/legal-entities"
@@ -29,7 +29,7 @@ export default function Layout() {
               <line x1="7" y1="9" x2="17" y2="9" />
               <line x1="7" y1="13" x2="17" y2="13" />
             </svg>
-            <span>ישויות משפטיות</span>
+            <span>Legal Entities</span>
           </NavLink>
           <NavLink
             to="/beneficial-owners"
@@ -41,7 +41,7 @@ export default function Layout() {
               <path d="M4 20c0-3 2.5-5 5-5s5 2 5 5" />
               <path d="M13 20c.3-2.1 1.9-3.6 3.8-4" />
             </svg>
-            <span>בעלי שליטה</span>
+            <span>Beneficial Owners</span>
           </NavLink>
           <NavLink
             to="/contacts"
@@ -51,7 +51,7 @@ export default function Layout() {
               <circle cx="12" cy="8" r="4" />
               <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
             </svg>
-            <span>אנשי קשר</span>
+            <span>Contacts</span>
           </NavLink>
           <NavLink
             to="/compliance-documents"
@@ -63,7 +63,7 @@ export default function Layout() {
               <line x1="8" y1="13" x2="16" y2="13" />
               <line x1="8" y1="17" x2="14" y2="17" />
             </svg>
-            <span>מסמכי ציות</span>
+            <span>Compliance Documents</span>
           </NavLink>
           <NavLink
             to="/merchants"
@@ -75,7 +75,7 @@ export default function Layout() {
               <circle cx="17" cy="17" r="3" />
               <circle cx="7" cy="7" r="3" />
             </svg>
-            <span>סוחרים</span>
+            <span>Merchants</span>
           </NavLink>
           <NavLink
             to="/merchant-accounts"
@@ -85,7 +85,7 @@ export default function Layout() {
               <rect x="3" y="5" width="18" height="14" rx="2" />
               <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
-            <span>חשבונות סוחר</span>
+            <span>Merchant Accounts</span>
           </NavLink>
           <NavLink
             to="/sub-merchants"
@@ -96,7 +96,7 @@ export default function Layout() {
               <rect x="13" y="5" width="8" height="6" rx="1" />
               <rect x="8" y="14" width="8" height="6" rx="1" />
             </svg>
-            <span>תתי-סוחרים</span>
+            <span>Sub Merchants</span>
           </NavLink>
           <NavLink
             to="/stores"
@@ -106,7 +106,7 @@ export default function Layout() {
               <path d="M3 9h18l-1 10H4L3 9z" />
               <path d="M7 9V5h10v4" />
             </svg>
-            <span>חנויות</span>
+            <span>Stores</span>
           </NavLink>
           <NavLink
             to="/terminal-groups"
@@ -117,7 +117,7 @@ export default function Layout() {
               <rect x="13" y="4" width="8" height="7" rx="1" />
               <rect x="8" y="14" width="8" height="7" rx="1" />
             </svg>
-            <span>קבוצות טרמינל</span>
+            <span>Terminal Groups</span>
           </NavLink>
           <NavLink
             to="/terminals"
@@ -128,10 +128,10 @@ export default function Layout() {
               <line x1="11" y1="5" x2="13" y2="5" />
               <line x1="11" y1="19" x2="13" y2="19" />
             </svg>
-            <span>טרמינלים</span>
+            <span>Terminals</span>
           </NavLink>
 
-          <div className="nav-section-title">טבלאות עזר</div>
+          <div className="nav-section-title">Reference Tables</div>
           <NavLink
             to="/reference/countries"
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
@@ -141,7 +141,7 @@ export default function Layout() {
               <path d="M12 3a9 9 0 0 1 0 18" />
               <path d="M12 3a9 9 0 0 0 0 18" />
             </svg>
-            <span>מדינות</span>
+            <span>Countries</span>
           </NavLink>
           <NavLink
             to="/reference/currencies"
@@ -151,7 +151,7 @@ export default function Layout() {
               <circle cx="12" cy="12" r="9" />
               <path d="M8 10c0-1.1 1.8-2 4-2s4 .9 4 2-1.8 2-4 2-4 .9-4 2 1.8 2 4 2 4-.9 4-2" />
             </svg>
-            <span>מטבעות</span>
+            <span>Currencies</span>
           </NavLink>
           <NavLink
             to="/reference/timezones"
@@ -161,7 +161,7 @@ export default function Layout() {
               <circle cx="12" cy="12" r="9" />
               <path d="M12 7v5l3 2" />
             </svg>
-            <span>אזורי זמן</span>
+            <span>Timezones</span>
           </NavLink>
           <NavLink
             to="/reference/payment-methods"
@@ -172,7 +172,7 @@ export default function Layout() {
               <line x1="7" y1="10" x2="17" y2="10" />
               <line x1="7" y1="14" x2="12" y2="14" />
             </svg>
-            <span>אמצעי תשלום</span>
+            <span>Payment Methods</span>
           </NavLink>
           <NavLink
             to="/reference/channel-types"
@@ -184,7 +184,7 @@ export default function Layout() {
               <line x1="6.5" y1="8" x2="6.5" y2="8" />
               <line x1="17.5" y1="12" x2="17.5" y2="12" />
             </svg>
-            <span>ערוצי מכירה</span>
+            <span>Channel Types</span>
           </NavLink>
         </nav>
       </aside>

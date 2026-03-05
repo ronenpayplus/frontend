@@ -155,7 +155,7 @@ export default function TerminalGroupsPage() {
       setItems(data.terminal_groups || []);
     } catch (error) {
       console.error(error);
-      addToast('שגיאה בטעינת קבוצות טרמינל', 'error');
+      addToast('Failed to load terminal groups', 'error');
     } finally {
       setLoading(false);
     }
@@ -193,7 +193,7 @@ export default function TerminalGroupsPage() {
 
   const save = async () => {
     if (!selectedStoreUUID || !form.name) {
-      addToast('חובה לבחור חנות ולהזין שם', 'error');
+      addToast('Store selection and name are required', 'error');
       return;
     }
     setSaving(true);
@@ -201,19 +201,19 @@ export default function TerminalGroupsPage() {
       if (editing) {
         const payload: UpdateTerminalGroupRequest = { ...form };
         await updateTerminalGroup(editing.uuid, payload);
-        addToast('קבוצת טרמינל עודכנה', 'success');
+        addToast('Terminal group updated', 'success');
         setEditing(null);
       } else {
         const payload: CreateTerminalGroupRequest = { ...form, store_uuid: selectedStoreUUID };
         await createTerminalGroup(payload);
-        addToast('קבוצת טרמינל נוצרה', 'success');
+        addToast('Terminal group created', 'success');
         setShowCreate(false);
       }
       resetForm();
       await fetchItems();
     } catch (error) {
       console.error(error);
-      addToast('שמירת קבוצת טרמינל נכשלה', 'error');
+      addToast('Failed to save terminal group', 'error');
     } finally {
       setSaving(false);
     }
@@ -225,10 +225,10 @@ export default function TerminalGroupsPage() {
     try {
       await deleteTerminalGroup(deleteTarget.uuid);
       setDeleteTarget(null);
-      addToast('קבוצת טרמינל נמחקה', 'success');
+      addToast('Terminal group deleted', 'success');
       await fetchItems();
     } catch {
-      addToast('מחיקת קבוצת טרמינל נכשלה', 'error');
+      addToast('Failed to delete terminal group', 'error');
     } finally {
       setSaving(false);
     }
@@ -237,18 +237,18 @@ export default function TerminalGroupsPage() {
   return (
     <div className="companies-page">
       <div className="breadcrumb">
-        <button className="breadcrumb-link" onClick={() => navigate('/stores')}>חנויות</button>
+        <button className="breadcrumb-link" onClick={() => navigate('/stores')}>Stores</button>
         <span className="breadcrumb-sep">/</span>
-        <span>קבוצות טרמינל</span>
+        <span>Terminal Groups</span>
       </div>
 
       <div className="page-header">
         <div>
-          <h1 className="page-title">קבוצות טרמינל</h1>
-          <p className="page-subtitle">{selectedStoreName ? `חנות נבחרת: ${selectedStoreName}` : 'בחר חנות'}</p>
+          <h1 className="page-title">Terminal Groups</h1>
+          <p className="page-subtitle">{selectedStoreName ? `Selected store: ${selectedStoreName}` : 'Select a store'}</p>
         </div>
         <button className="btn btn-primary" disabled={!selectedStoreUUID} onClick={() => { setShowCreate((v) => !v); setEditing(null); resetForm(); }}>
-          {showCreate ? 'סגור טופס' : 'קבוצה חדשה'}
+          {showCreate ? 'Close Form' : 'New Group'}
         </button>
       </div>
 
@@ -256,18 +256,18 @@ export default function TerminalGroupsPage() {
         <div className="form-section">
           <div className="auto-fill-bar">
             <button type="button" className="btn btn-auto-fill" onClick={autoFillTerminalGroupForm}>
-              מילוי מהיר
+              Quick Fill
             </button>
           </div>
-          <h3 className="section-title">{editing ? 'עריכת קבוצת טרמינל' : 'יצירת קבוצת טרמינל'}</h3>
+          <h3 className="section-title">{editing ? 'Edit Terminal Group' : 'Create Terminal Group'}</h3>
           <div className="form-grid">
-            <div className="form-field"><label className="label">שם *</label><input className="input" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div>
-            <div className="form-field"><label className="label">סטטוס</label><select className="input" value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}>{TERMINAL_GROUP_STATUSES.map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
-            <div className="form-field span-full"><label className="label">תיאור</label><textarea className="input textarea" rows={3} value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Name *</label><input className="input" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Status</label><select className="input" value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}>{TERMINAL_GROUP_STATUSES.map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
+            <div className="form-field span-full"><label className="label">Description</label><textarea className="input textarea" rows={3} value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} /></div>
           </div>
           <div className="form-actions">
-            <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'שומר...' : editing ? 'עדכן' : 'צור'}</button>
-            <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); }}>ביטול</button>
+            <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'Saving...' : editing ? 'Update' : 'Create'}</button>
+            <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); }}>Cancel</button>
           </div>
         </div>
       ) : null}
@@ -284,7 +284,7 @@ export default function TerminalGroupsPage() {
               if (!routeStoreUUID) params.delete('store_uuid');
               setSearchParams(params);
             }}>
-              <option value="">בחר חברה</option>
+              <option value="">Select Company</option>
               {companies.map((company) => <option key={company.uuid} value={company.uuid}>{company.name}</option>)}
             </select>
           </div>
@@ -297,7 +297,7 @@ export default function TerminalGroupsPage() {
               if (!routeStoreUUID) params.delete('store_uuid');
               setSearchParams(params);
             }} disabled={!selectedCompanyUUID}>
-              <option value="">בחר ישות משפטית</option>
+              <option value="">Select Legal Entity</option>
               {legalEntities.map((entity) => <option key={entity.uuid} value={entity.uuid}>{entity.legal_name}</option>)}
             </select>
           </div>
@@ -309,7 +309,7 @@ export default function TerminalGroupsPage() {
               if (!routeStoreUUID) params.delete('store_uuid');
               setSearchParams(params);
             }} disabled={!selectedLegalEntityUUID}>
-              <option value="">בחר סוחר</option>
+              <option value="">Select Merchant</option>
               {merchants.map((merchant) => <option key={merchant.uuid} value={merchant.uuid}>{merchant.name || merchant.uuid}</option>)}
             </select>
           </div>
@@ -320,7 +320,7 @@ export default function TerminalGroupsPage() {
               if (!routeStoreUUID) params.delete('store_uuid');
               setSearchParams(params);
             }} disabled={!selectedMerchantUUID}>
-              <option value="">בחר חשבון סוחר</option>
+              <option value="">Select Merchant Account</option>
               {merchantAccounts.map((account) => <option key={account.uuid} value={account.uuid}>{account.name}</option>)}
             </select>
           </div>
@@ -330,20 +330,20 @@ export default function TerminalGroupsPage() {
               if (e.target.value) params.set('store_uuid', e.target.value); else params.delete('store_uuid');
               setSearchParams(params);
             }} disabled={!!routeStoreUUID || (!selectedMerchantAccountUUID && !selectedStoreUUID)}>
-              <option value="">בחר חנות</option>
+              <option value="">Select Store</option>
               {stores.map((s) => <option key={s.uuid} value={s.uuid}>{s.name}</option>)}
             </select>
           </div>
-          <div className="filter-group"><input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="חיפוש" /></div>
-          <button className="btn btn-primary" type="submit">חיפוש</button>
+          <div className="filter-group"><input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search" /></div>
+          <button className="btn btn-primary" type="submit">Search</button>
         </form>
       </div>
 
       <div className="card table-card">
-        {loading ? <div className="loading-state"><div className="spinner" /><span>טוען קבוצות טרמינל...</span></div> : items.length === 0 ? <div className="empty-state"><p>לא נמצאו קבוצות טרמינל</p></div> : (
+        {loading ? <div className="loading-state"><div className="spinner" /><span>Loading terminal groups...</span></div> : items.length === 0 ? <div className="empty-state"><p>No terminal groups found</p></div> : (
           <div className="table-wrapper">
             <table className="data-table">
-              <thead><tr><th>שם</th><th>תיאור</th><th>סטטוס</th><th>פעולות</th></tr></thead>
+              <thead><tr><th>Name</th><th>Description</th><th>Status</th><th>Actions</th></tr></thead>
               <tbody>
                 {items.map((g) => (
                   <tr key={g.uuid}>
@@ -355,7 +355,7 @@ export default function TerminalGroupsPage() {
                         className="btn btn-outline btn-sm"
                         onClick={() => navigate(`/terminal-groups/${g.uuid}/terminals?store_uuid=${selectedStoreUUID}`)}
                       >
-                        טרמינלים
+                        Terminals
                       </button>
                       <button className="action-btn edit" onClick={() => startEdit(g)}>✎</button>
                       <button className="action-btn delete" onClick={() => setDeleteTarget(g)}>🗑</button>
@@ -370,9 +370,9 @@ export default function TerminalGroupsPage() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="מחיקת קבוצת טרמינל"
-        message={`למחוק את "${deleteTarget?.name}"?`}
-        confirmLabel="מחק"
+        title="Delete Terminal Group"
+        message={`Delete "${deleteTarget?.name}"?`}
+        confirmLabel="Delete"
         onConfirm={remove}
         onCancel={() => setDeleteTarget(null)}
       />

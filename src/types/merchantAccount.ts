@@ -1,4 +1,5 @@
 import type { Pagination } from './company';
+import type { LocalizationInput } from './orgEntityLocalization';
 
 export interface MerchantAccount {
   uuid: string;
@@ -79,6 +80,7 @@ export interface CreateMerchantAccountRequest {
   default_payment_flow?: string;
   default_acquiring_model?: string;
   notes?: string;
+  localizations?: LocalizationInput[];
 }
 
 export interface UpdateMerchantAccountRequest {
@@ -108,4 +110,5 @@ export interface UpdateMerchantAccountRequest {
   default_payment_flow?: string;
   default_acquiring_model?: string;
   notes?: string;
+  localizations?: LocalizationInput[];
 }

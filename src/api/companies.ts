@@ -1,5 +1,7 @@
 import type {
   Company,
+  CompanyLocalization,
+  CompanyLocalizationInput,
   CreateCompanyRequest,
   UpdateCompanyRequest,
   ListCompaniesResponse,
@@ -63,11 +65,37 @@ export async function createCompany(data: CreateCompanyRequest): Promise<{ uuid:
   });
 }
 
+export async function createCompanyWithLocalizations(data: CreateCompanyRequest & { localizations: CompanyLocalizationInput[] }): Promise<{ uuid: string }> {
+  return request<{ uuid: string }>(`${API_BASE}/create-with-localizations`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
 export async function updateCompany(uuid: string, data: UpdateCompanyRequest): Promise<{ success: boolean }> {
   return request<{ success: boolean }>(`${API_BASE}/update/${uuid}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   });
+}
+
+export async function updateCompanyWithLocalizations(data: { uuid: string; localizations: CompanyLocalizationInput[] }): Promise<{ success: boolean }> {
+  return request<{ success: boolean }>(`${API_BASE}/update-with-localizations`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function listCompanyLocalizations(companyUUID: string): Promise<CompanyLocalization[]> {
+  const query = new URLSearchParams();
+  query.set('owner_type', 'company');
+  query.set('owner_uuid', companyUUID);
+  query.set('page', '1');
+  query.set('page_size', '100');
+  const data = await request<{ org_entity_localizations?: CompanyLocalization[] }>(
+    `${API_BASE}/localizations/list?${query.toString()}`,
+  );
+  return data.org_entity_localizations || [];
 }
 
 export async function deleteCompany(uuid: string): Promise<{ success: boolean }> {

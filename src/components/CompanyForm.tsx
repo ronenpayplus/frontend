@@ -1,5 +1,10 @@
-import { useState } from 'react';
-import type { CreateCompanyRequest, UpdateCompanyRequest, Company } from '../types/company';
+import { useEffect, useState } from 'react';
+import type {
+  CreateCompanyRequest,
+  UpdateCompanyRequest,
+  Company,
+  CompanyLocalizationInput,
+} from '../types/company';
 import {
   COMPANY_STATUSES,
   COMPANY_TYPES,
@@ -23,13 +28,42 @@ import './CompanyForm.css';
 
 interface CompanyFormProps {
   company?: Company;
+  initialLocalizations?: CompanyLocalizationInput[];
   onSubmit: (data: CreateCompanyRequest | UpdateCompanyRequest) => Promise<void>;
   onCancel: () => void;
   isEdit?: boolean;
   loading?: boolean;
 }
 
-export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loading }: CompanyFormProps) {
+export default function CompanyForm({
+  company,
+  initialLocalizations,
+  onSubmit,
+  onCancel,
+  isEdit,
+  loading,
+}: CompanyFormProps) {
+  const buildDefaultLocalization = (
+    sourceCompany?: Company,
+  ): CompanyLocalizationInput => ({
+    lang_code: 'en',
+    display_name: sourceCompany?.name || '',
+    brand_name: '',
+    legal_entity_name: '',
+    settlement_descriptor: '',
+    description: '',
+    website_url: sourceCompany?.website || '',
+    contact_name: '',
+    contact_email: '',
+    contact_phone: '',
+    support_email: sourceCompany?.support_email || '',
+    support_phone: sourceCompany?.support_phone || '',
+    receipt_header: '',
+    receipt_footer: '',
+    invoice_notes: '',
+    is_default: true,
+  });
+
   const [form, setForm] = useState({
     name: company?.name || '',
     number: company?.number || '',
@@ -56,11 +90,24 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [localizations, setLocalizations] = useState<CompanyLocalizationInput[]>(
+    initialLocalizations && initialLocalizations.length > 0
+      ? initialLocalizations
+      : [buildDefaultLocalization(company)],
+  );
+
+  useEffect(() => {
+    if (initialLocalizations && initialLocalizations.length > 0) {
+      setLocalizations(initialLocalizations);
+      return;
+    }
+    setLocalizations([buildDefaultLocalization(company)]);
+  }, [initialLocalizations, company]);
 
   const autoFill = () => {
     const rand = Math.floor(Math.random() * 9000) + 1000;
     setForm({
-      name: `חברת טסט ${rand}`,
+      name: `Test Company ${rand}`,
       number: `TST-${rand}`,
       status: 'NEW',
       company_type: 'operating_company',
@@ -81,9 +128,47 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
       support_phone: `+972-3-${rand}-000`,
       volume_tier: 'growth',
       monthly_volume_limit: 500000,
-      message_for_client: 'ברוכים הבאים למערכת',
+      message_for_client: 'Welcome to the system',
     });
     setErrors({});
+    setLocalizations([
+      {
+        lang_code: 'en',
+        display_name: `Test Company ${rand}`,
+        brand_name: `Test Brand ${rand}`,
+        legal_entity_name: '',
+        settlement_descriptor: '',
+        description: 'English localization',
+        website_url: `https://test-${rand}.co.il`,
+        contact_name: 'Support Team',
+        contact_email: `support@test-${rand}.co.il`,
+        contact_phone: `+972-3-${rand}-000`,
+        support_email: `support@test-${rand}.co.il`,
+        support_phone: `+972-3-${rand}-000`,
+        receipt_header: 'Thank you for your purchase',
+        receipt_footer: 'Need help? Contact support',
+        invoice_notes: 'Generated automatically',
+        is_default: true,
+      },
+      {
+        lang_code: 'fr',
+        display_name: `Societe Test ${rand}`,
+        brand_name: `Marque Test ${rand}`,
+        legal_entity_name: '',
+        settlement_descriptor: '',
+        description: 'French localization',
+        website_url: `https://test-${rand}.co.il`,
+        contact_name: 'Equipe Support',
+        contact_email: `support@test-${rand}.co.il`,
+        contact_phone: `+972-3-${rand}-000`,
+        support_email: `support@test-${rand}.co.il`,
+        support_phone: `+972-3-${rand}-000`,
+        receipt_header: 'Merci pour votre achat',
+        receipt_footer: 'Besoin d aide? Contactez le support',
+        invoice_notes: 'Genere automatiquement',
+        is_default: false,
+      },
+    ]);
   };
 
   const set = (field: string, value: string | boolean | number) => {
@@ -99,12 +184,26 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
-    if (!form.name.trim()) errs.name = 'שם חובה';
-    if (!form.number.trim()) errs.number = 'מספר חובה';
-    if (!form.company_type) errs.company_type = 'סוג חברה חובה';
-    if (!form.default_currency) errs.default_currency = 'מטבע חובה';
-    if (!form.default_country) errs.default_country = 'מדינה חובה';
-    if (!form.timezone) errs.timezone = 'אזור זמן חובה';
+    if (!form.name.trim()) errs.name = 'Name is required';
+    if (!form.number.trim()) errs.number = 'Company number is required';
+    if (!form.company_type) errs.company_type = 'Company type is required';
+    if (!form.default_currency) errs.default_currency = 'Currency is required';
+    if (!form.default_country) errs.default_country = 'Country is required';
+    if (!form.timezone) errs.timezone = 'Timezone is required';
+    if (localizations.length === 0) errs.localizations = 'At least one localization is required';
+    const seenLangs = new Set<string>();
+    let hasDefault = false;
+    localizations.forEach((loc, index) => {
+      const lang = loc.lang_code.trim().toLowerCase();
+      if (!lang) errs[`localizations.${index}.lang_code`] = 'Language code is required';
+      if (!loc.display_name.trim()) errs[`localizations.${index}.display_name`] = 'Display name is required';
+      if (lang) {
+        if (seenLangs.has(lang)) errs[`localizations.${index}.lang_code`] = 'Language must be unique';
+        seenLangs.add(lang);
+      }
+      if (loc.is_default) hasDefault = true;
+    });
+    if (localizations.length > 0 && !hasDefault) errs.localizations_default = 'One localization must be default';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -127,7 +226,79 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
       delete data.aml_status;
     }
 
-    await onSubmit(data as unknown as CreateCompanyRequest | UpdateCompanyRequest);
+    const sanitizedLocalizations = localizations.map((loc) => ({
+      lang_code: loc.lang_code.trim().toLowerCase(),
+      display_name: loc.display_name.trim(),
+      brand_name: loc.brand_name?.trim() || undefined,
+      legal_entity_name: loc.legal_entity_name?.trim() || undefined,
+      settlement_descriptor: loc.settlement_descriptor?.trim() || undefined,
+      description: loc.description?.trim() || undefined,
+      website_url: loc.website_url?.trim() || undefined,
+      contact_name: loc.contact_name?.trim() || undefined,
+      contact_email: loc.contact_email?.trim() || undefined,
+      contact_phone: loc.contact_phone?.trim() || undefined,
+      support_email: loc.support_email?.trim() || undefined,
+      support_phone: loc.support_phone?.trim() || undefined,
+      receipt_header: loc.receipt_header?.trim() || undefined,
+      receipt_footer: loc.receipt_footer?.trim() || undefined,
+      invoice_notes: loc.invoice_notes?.trim() || undefined,
+      is_default: loc.is_default,
+    }));
+
+    await onSubmit({
+      ...(data as unknown as CreateCompanyRequest | UpdateCompanyRequest),
+      localizations: sanitizedLocalizations,
+    });
+  };
+
+  const addLocalization = () => {
+    setLocalizations((prev) => [
+      ...prev,
+      {
+        lang_code: '',
+        display_name: '',
+        brand_name: '',
+        legal_entity_name: '',
+        settlement_descriptor: '',
+        description: '',
+        website_url: '',
+        contact_name: '',
+        contact_email: '',
+        contact_phone: '',
+        support_email: '',
+        support_phone: '',
+        receipt_header: '',
+        receipt_footer: '',
+        invoice_notes: '',
+        is_default: false,
+      },
+    ]);
+  };
+
+  const removeLocalization = (index: number) => {
+    setLocalizations((prev) => {
+      if (prev.length <= 1) return prev;
+      const next = prev.filter((_, i) => i !== index);
+      if (!next.some((loc) => loc.is_default)) {
+        next[0] = { ...next[0], is_default: true };
+      }
+      return next;
+    });
+  };
+
+  const setLocalizationValue = (index: number, field: keyof CompanyLocalizationInput, value: string | boolean) => {
+    setLocalizations((prev) =>
+      prev.map((loc, i) => {
+        if (i !== index) return loc;
+        if (field === 'is_default' && value === true) {
+          return { ...loc, is_default: true };
+        }
+        return { ...loc, [field]: value } as CompanyLocalizationInput;
+      }).map((loc, i) => {
+        if (field === 'is_default' && value === true && i !== index) return { ...loc, is_default: false };
+        return loc;
+      }),
+    );
   };
 
   return (
@@ -138,39 +309,39 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
             </svg>
-            מילוי אוטומטי לבדיקה
+            Quick Fill
           </button>
         </div>
       )}
 
       <div className="form-section">
-        <h3 className="section-title">פרטי חברה</h3>
+        <h3 className="section-title">Company Details</h3>
         <div className="form-grid">
           <div className={`form-field ${errors.name ? 'has-error' : ''}`}>
-            <label className="label">שם החברה *</label>
+            <label className="label">Company Name *</label>
             <input
               className="input"
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
-              placeholder="הזן שם חברה"
+              placeholder="Enter company name"
             />
             {errors.name && <span className="field-error">{errors.name}</span>}
           </div>
 
           <div className={`form-field ${errors.number ? 'has-error' : ''}`}>
-            <label className="label">מספר חברה *</label>
+            <label className="label">Company Number *</label>
             <input
               className="input"
               value={form.number}
               onChange={(e) => set('number', e.target.value)}
-              placeholder="הזן מספר חברה"
+              placeholder="Enter company number"
             />
             {errors.number && <span className="field-error">{errors.number}</span>}
           </div>
 
           {isEdit && (
             <div className="form-field">
-              <label className="label">סטטוס</label>
+              <label className="label">Status</label>
               <select className="input" value={form.status} onChange={(e) => set('status', e.target.value)}>
                 {COMPANY_STATUSES.map((s) => (
                   <option key={s} value={s}>{STATUS_LABELS[s] || s}</option>
@@ -180,9 +351,9 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
           )}
 
           <div className={`form-field ${errors.company_type ? 'has-error' : ''}`}>
-            <label className="label">סוג חברה *</label>
+            <label className="label">Company Type *</label>
             <select className="input" value={form.company_type} onChange={(e) => set('company_type', e.target.value)}>
-              <option value="">בחר סוג חברה</option>
+              <option value="">Select company type</option>
               {COMPANY_TYPES.map((t) => (
                 <option key={t} value={t}>{COMPANY_TYPE_LABELS[t] || t}</option>
               ))}
@@ -191,9 +362,9 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
           </div>
 
           <div className="form-field">
-            <label className="label">סוג עסק</label>
+            <label className="label">Business Type</label>
             <select className="input" value={form.business_type} onChange={(e) => set('business_type', e.target.value)}>
-              <option value="">בחר סוג עסק</option>
+              <option value="">Select business type</option>
               {BUSINESS_TYPES.map((t) => (
                 <option key={t} value={t}>{BUSINESS_TYPE_LABELS[t] || t}</option>
               ))}
@@ -201,9 +372,9 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
           </div>
 
           <div className="form-field">
-            <label className="label">סוג חשבון פלטפורמה</label>
+            <label className="label">Platform Account Type</label>
             <select className="input" value={form.platform_account_type} onChange={(e) => set('platform_account_type', e.target.value)}>
-              <option value="">בחר סוג חשבון</option>
+              <option value="">Select account type</option>
               {PLATFORM_ACCOUNT_TYPES.map((t) => (
                 <option key={t} value={t}>{t}</option>
               ))}
@@ -211,9 +382,9 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
           </div>
 
           <div className="form-field">
-            <label className="label">סוג חוזה</label>
+            <label className="label">Contract Type</label>
             <select className="input" value={form.contract_type} onChange={(e) => set('contract_type', e.target.value)}>
-              <option value="">בחר סוג חוזה</option>
+              <option value="">Select contract type</option>
               {CONTRACT_TYPES.map((t) => (
                 <option key={t} value={t}>{t}</option>
               ))}
@@ -223,12 +394,12 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
       </div>
 
       <div className="form-section">
-        <h3 className="section-title">הגדרות אזוריות</h3>
+        <h3 className="section-title">Regional Settings</h3>
         <div className="form-grid">
           <div className={`form-field ${errors.default_currency ? 'has-error' : ''}`}>
-            <label className="label">מטבע ברירת מחדל *</label>
+            <label className="label">Default Currency *</label>
             <select className="input" value={form.default_currency} onChange={(e) => set('default_currency', e.target.value)}>
-              <option value="">בחר מטבע</option>
+              <option value="">Select currency</option>
               {MOCK_CURRENCIES.map((c) => (
                 <option key={c.code} value={c.code}>{c.code} - {c.name}</option>
               ))}
@@ -237,9 +408,9 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
           </div>
 
           <div className={`form-field ${errors.default_country ? 'has-error' : ''}`}>
-            <label className="label">מדינה ברירת מחדל *</label>
+            <label className="label">Default Country *</label>
             <select className="input" value={form.default_country} onChange={(e) => set('default_country', e.target.value)}>
-              <option value="">בחר מדינה</option>
+              <option value="">Select country</option>
               {MOCK_COUNTRIES.map((c) => (
                 <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
               ))}
@@ -248,9 +419,9 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
           </div>
 
           <div className={`form-field ${errors.timezone ? 'has-error' : ''}`}>
-            <label className="label">אזור זמן *</label>
+            <label className="label">Timezone *</label>
             <select className="input" value={form.timezone} onChange={(e) => set('timezone', e.target.value)}>
-              <option value="">בחר אזור זמן</option>
+              <option value="">Select timezone</option>
               {MOCK_TIMEZONES.map((tz) => (
                 <option key={tz} value={tz}>{tz}</option>
               ))}
@@ -259,24 +430,24 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
           </div>
 
           <div className="form-field">
-            <label className="label">קוד MCC</label>
+            <label className="label">MCC Code</label>
             <input
               className="input"
               value={form.mcc}
               onChange={(e) => set('mcc', e.target.value)}
-              placeholder="למשל 5411"
+              placeholder="e.g. 5411"
             />
           </div>
         </div>
       </div>
 
       <div className="form-section">
-        <h3 className="section-title">סיכון וציות</h3>
+        <h3 className="section-title">Risk & Compliance</h3>
         <div className="form-grid">
           <div className="form-field">
-            <label className="label">פרופיל סיכון</label>
+            <label className="label">Risk Profile</label>
             <select className="input" value={form.risk_profile} onChange={(e) => set('risk_profile', e.target.value)}>
-              <option value="">בחר פרופיל</option>
+              <option value="">Select profile</option>
               {RISK_PROFILES.map((r) => (
                 <option key={r} value={r}>{RISK_PROFILE_LABELS[r] || r}</option>
               ))}
@@ -286,9 +457,9 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
           {isEdit && (
             <>
               <div className="form-field">
-                <label className="label">סטטוס KYC</label>
+                <label className="label">KYC Status</label>
                 <select className="input" value={form.kyc_status} onChange={(e) => set('kyc_status', e.target.value)}>
-                  <option value="">בחר סטטוס</option>
+                  <option value="">Select status</option>
                   {KYC_STATUSES.map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
@@ -296,9 +467,9 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
               </div>
 
               <div className="form-field">
-                <label className="label">סטטוס AML</label>
+                <label className="label">AML Status</label>
                 <select className="input" value={form.aml_status} onChange={(e) => set('aml_status', e.target.value)}>
-                  <option value="">בחר סטטוס</option>
+                  <option value="">Select status</option>
                   {AML_STATUSES.map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
@@ -308,9 +479,9 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
           )}
 
           <div className="form-field">
-            <label className="label">שכבת נפח</label>
+            <label className="label">Volume Tier</label>
             <select className="input" value={form.volume_tier} onChange={(e) => set('volume_tier', e.target.value)}>
-              <option value="">בחר שכבה</option>
+              <option value="">Select tier</option>
               {VOLUME_TIERS.map((v) => (
                 <option key={v} value={v}>{VOLUME_TIER_LABELS[v] || v}</option>
               ))}
@@ -318,13 +489,13 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
           </div>
 
           <div className="form-field">
-            <label className="label">מגבלת נפח חודשית</label>
+            <label className="label">Monthly Volume Limit</label>
             <input
               className="input"
               type="number"
               value={form.monthly_volume_limit}
               onChange={(e) => set('monthly_volume_limit', e.target.value)}
-              placeholder="ללא מגבלה"
+              placeholder="No limit"
             />
           </div>
 
@@ -333,7 +504,7 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
               <div className={`toggle ${form.high_risk_merchant ? 'active' : ''}`} onClick={() => set('high_risk_merchant', !form.high_risk_merchant)}>
                 <div className="toggle-knob" />
               </div>
-              <span>סוחר בסיכון גבוה</span>
+              <span>High-risk merchant</span>
             </label>
           </div>
 
@@ -343,7 +514,7 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
                 <div className={`toggle ${form.is_blocked ? 'active danger' : ''}`} onClick={() => set('is_blocked', !form.is_blocked)}>
                   <div className="toggle-knob" />
                 </div>
-                <span>חסום</span>
+                <span>Blocked</span>
               </label>
             </div>
           )}
@@ -351,10 +522,10 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
       </div>
 
       <div className="form-section">
-        <h3 className="section-title">פרטי קשר ותמיכה</h3>
+        <h3 className="section-title">Contact & Support</h3>
         <div className="form-grid">
           <div className="form-field">
-            <label className="label">אתר אינטרנט</label>
+            <label className="label">Website</label>
             <input
               className="input ltr-input"
               value={form.website}
@@ -365,7 +536,7 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
           </div>
 
           <div className="form-field">
-            <label className="label">אימייל תמיכה</label>
+            <label className="label">Support Email</label>
             <input
               className="input ltr-input"
               type="email"
@@ -377,7 +548,7 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
           </div>
 
           <div className="form-field">
-            <label className="label">טלפון תמיכה</label>
+            <label className="label">Support Phone</label>
             <input
               className="input ltr-input"
               value={form.support_phone}
@@ -388,16 +559,86 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
           </div>
 
           <div className="form-field span-full">
-            <label className="label">הודעה ללקוח</label>
+            <label className="label">Message for Customer</label>
             <textarea
               className="input textarea"
               value={form.message_for_client}
               onChange={(e) => set('message_for_client', e.target.value)}
-              placeholder="הודעה שתוצג ללקוח"
+              placeholder="Message shown to customer"
               rows={3}
             />
           </div>
         </div>
+      </div>
+
+      <div className="form-section">
+        <div className="auto-fill-bar">
+          <h3 className="section-title" style={{ margin: 0 }}>Localizations (Multi-language)</h3>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={addLocalization}>
+            Add Language
+          </button>
+        </div>
+        {errors.localizations ? <span className="field-error">{errors.localizations}</span> : null}
+        {errors.localizations_default ? <span className="field-error">{errors.localizations_default}</span> : null}
+        {localizations.map((loc, index) => (
+          <div key={`${loc.lang_code}-${index}`} className="form-grid" style={{ marginBottom: 12, padding: 12, border: '1px solid var(--color-border-light)', borderRadius: 8 }}>
+            <div className={`form-field ${errors[`localizations.${index}.lang_code`] ? 'has-error' : ''}`}>
+              <label className="label">Language Code *</label>
+              <input
+                className="input ltr-input"
+                dir="ltr"
+                value={loc.lang_code}
+                onChange={(e) => setLocalizationValue(index, 'lang_code', e.target.value)}
+                placeholder="en"
+              />
+              {errors[`localizations.${index}.lang_code`] ? <span className="field-error">{errors[`localizations.${index}.lang_code`]}</span> : null}
+            </div>
+            <div className={`form-field ${errors[`localizations.${index}.display_name`] ? 'has-error' : ''}`}>
+              <label className="label">Display Name *</label>
+              <input
+                className="input"
+                value={loc.display_name}
+                onChange={(e) => setLocalizationValue(index, 'display_name', e.target.value)}
+                placeholder="Company name in this language"
+              />
+              {errors[`localizations.${index}.display_name`] ? <span className="field-error">{errors[`localizations.${index}.display_name`]}</span> : null}
+            </div>
+            <div className="form-field">
+              <label className="label">Brand Name</label>
+              <input className="input" value={loc.brand_name || ''} onChange={(e) => setLocalizationValue(index, 'brand_name', e.target.value)} />
+            </div>
+            <div className="form-field">
+              <label className="label">Description</label>
+              <input className="input" value={loc.description || ''} onChange={(e) => setLocalizationValue(index, 'description', e.target.value)} />
+            </div>
+            <div className="form-field">
+              <label className="label">Support Email</label>
+              <input className="input ltr-input" dir="ltr" value={loc.support_email || ''} onChange={(e) => setLocalizationValue(index, 'support_email', e.target.value)} />
+            </div>
+            <div className="form-field">
+              <label className="label">Support Phone</label>
+              <input className="input ltr-input" dir="ltr" value={loc.support_phone || ''} onChange={(e) => setLocalizationValue(index, 'support_phone', e.target.value)} />
+            </div>
+            <div className="form-field toggle-field">
+              <label className="toggle-label">
+                <div className={`toggle ${loc.is_default ? 'active' : ''}`} onClick={() => setLocalizationValue(index, 'is_default', true)}>
+                  <div className="toggle-knob" />
+                </div>
+                <span>Default language</span>
+              </label>
+            </div>
+            <div className="form-field">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => removeLocalization(index)}
+                disabled={localizations.length <= 1}
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="form-actions">
@@ -405,14 +646,14 @@ export default function CompanyForm({ company, onSubmit, onCancel, isEdit, loadi
           {loading ? (
             <>
               <div className="spinner spinner-sm" />
-              שומר...
+              Saving...
             </>
           ) : (
-            isEdit ? 'עדכון' : 'יצירה'
+            isEdit ? 'Update' : 'Create'
           )}
         </button>
         <button type="button" className="btn btn-secondary" onClick={onCancel}>
-          ביטול
+          Cancel
         </button>
       </div>
     </form>

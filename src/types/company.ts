@@ -22,8 +22,36 @@ export interface Company {
   volume_tier?: string;
   monthly_volume_limit?: number;
   message_for_client?: string;
+  localizations?: CompanyLocalization[];
   activated_at?: string;
   created_at: string;
+  updated_at?: string;
+}
+
+export interface CompanyLocalizationInput {
+  lang_code: string;
+  display_name: string;
+  brand_name?: string;
+  legal_entity_name?: string;
+  settlement_descriptor?: string;
+  description?: string;
+  website_url?: string;
+  contact_name?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  support_email?: string;
+  support_phone?: string;
+  receipt_header?: string;
+  receipt_footer?: string;
+  invoice_notes?: string;
+  is_default: boolean;
+}
+
+export interface CompanyLocalization extends CompanyLocalizationInput {
+  uuid: string;
+  owner_type: string;
+  owner_uuid: string;
+  created_at?: string;
   updated_at?: string;
 }
 
@@ -46,6 +74,7 @@ export interface CreateCompanyRequest {
   volume_tier?: string;
   monthly_volume_limit?: number;
   message_for_client?: string;
+  localizations?: CompanyLocalizationInput[];
   parent_company_uuid?: string;
   created_by?: string;
 }
@@ -73,6 +102,7 @@ export interface UpdateCompanyRequest {
   volume_tier?: string;
   monthly_volume_limit?: number;
   message_for_client?: string;
+  localizations?: CompanyLocalizationInput[];
   updated_by?: string;
 }
 
@@ -136,56 +166,56 @@ export const VOLUME_TIERS = [
 ] as const;
 
 export const STATUS_LABELS: Record<string, string> = {
-  NEW: 'חדש',
-  PENDING_KYC: 'ממתין ל-KYC',
-  ACTIVE: 'פעיל',
-  RESTRICTED: 'מוגבל',
-  SUSPENDED: 'מושעה',
-  CLOSED: 'סגור',
-  TERMINATED: 'בוטל',
+  NEW: 'New',
+  PENDING_KYC: 'Pending KYC',
+  ACTIVE: 'Active',
+  RESTRICTED: 'Restricted',
+  SUSPENDED: 'Suspended',
+  CLOSED: 'Closed',
+  TERMINATED: 'Terminated',
 };
 
 export const COMPANY_TYPE_LABELS: Record<string, string> = {
-  holding_company: 'חברת אחזקות',
-  operating_company: 'חברה תפעולית',
-  single_entity: 'ישות בודדת',
+  holding_company: 'Holding Company',
+  operating_company: 'Operating Company',
+  single_entity: 'Single Entity',
 };
 
 export const BUSINESS_TYPE_LABELS: Record<string, string> = {
-  individual: 'עצמאי',
-  company: 'חברה',
-  non_profit: 'עמותה',
-  government_entity: 'גוף ממשלתי',
+  individual: 'Individual',
+  company: 'Company',
+  non_profit: 'Non-profit',
+  government_entity: 'Government Entity',
 };
 
 export const RISK_PROFILE_LABELS: Record<string, string> = {
-  low: 'נמוך',
-  medium: 'בינוני',
-  high: 'גבוה',
-  critical: 'קריטי',
-  custom: 'מותאם',
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+  critical: 'Critical',
+  custom: 'Custom',
 };
 
 export const VOLUME_TIER_LABELS: Record<string, string> = {
-  starter: 'התחלתי',
-  growth: 'צמיחה',
-  enterprise: 'ארגוני',
-  custom: 'מותאם',
+  starter: 'Starter',
+  growth: 'Growth',
+  enterprise: 'Enterprise',
+  custom: 'Custom',
 };
 
 export const MOCK_CURRENCIES = [
-  { code: 'ILS', name: 'שקל ישראלי' },
-  { code: 'USD', name: 'דולר אמריקאי' },
-  { code: 'EUR', name: 'אירו' },
-  { code: 'GBP', name: 'לירה שטרלינג' },
+  { code: 'ILS', name: 'Israeli Shekel' },
+  { code: 'USD', name: 'US Dollar' },
+  { code: 'EUR', name: 'Euro' },
+  { code: 'GBP', name: 'Pound Sterling' },
 ];
 
 export const MOCK_COUNTRIES = [
-  { code: 'IL', name: 'ישראל' },
-  { code: 'US', name: 'ארצות הברית' },
-  { code: 'GB', name: 'בריטניה' },
-  { code: 'DE', name: 'גרמניה' },
-  { code: 'FR', name: 'צרפת' },
+  { code: 'IL', name: 'Israel' },
+  { code: 'US', name: 'United States' },
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'DE', name: 'Germany' },
+  { code: 'FR', name: 'France' },
 ];
 
 export const MOCK_TIMEZONES = [

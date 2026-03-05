@@ -155,7 +155,7 @@ export default function ComplianceDocumentsPage() {
       setItems(data.compliance_documents || []);
     } catch (error) {
       console.error(error);
-      addToast('שגיאה בטעינת מסמכי ציות', 'error');
+      addToast('Failed to load compliance documents', 'error');
     } finally {
       setLoading(false);
     }
@@ -166,7 +166,7 @@ export default function ComplianceDocumentsPage() {
   }, [fetchItems]);
 
   const subtitle = useMemo(
-    () => (selectedLegalEntity ? `ישות משפטית נבחרת: ${selectedLegalEntity.legal_name}` : 'בחר ישות משפטית לניהול מסמכים'),
+    () => (selectedLegalEntity ? `Selected legal entity: ${selectedLegalEntity.legal_name}` : 'Select legal entity to manage documents'),
     [selectedLegalEntity],
   );
 
@@ -239,25 +239,25 @@ export default function ComplianceDocumentsPage() {
 
   const save = async () => {
     if (!selectedLegalEntityUUID || !form.document_name || !form.file_reference) {
-      addToast('יש לבחור ישות משפטית ולמלא שם מסמך ו-File Reference', 'error');
+      addToast('Select legal entity and fill document name and file reference', 'error');
       return;
     }
     setSaving(true);
     try {
       if (editing) {
         await updateComplianceDocument(editing.uuid, buildUpdatePayload());
-        addToast('המסמך עודכן', 'success');
+        addToast('Document updated', 'success');
         setEditing(null);
       } else {
         await createComplianceDocument(buildCreatePayload());
-        addToast('המסמך נוצר', 'success');
+        addToast('Document created', 'success');
         setShowCreate(false);
       }
       resetForm();
       await fetchItems();
     } catch (error) {
       console.error(error);
-      addToast('שמירה נכשלה', 'error');
+      addToast('Save failed', 'error');
     } finally {
       setSaving(false);
     }
@@ -268,12 +268,12 @@ export default function ComplianceDocumentsPage() {
     setSaving(true);
     try {
       await deleteComplianceDocument(deleteTarget.uuid);
-      addToast('המסמך נמחק', 'success');
+      addToast('Document deleted', 'success');
       setDeleteTarget(null);
       await fetchItems();
     } catch (error) {
       console.error(error);
-      addToast('מחיקה נכשלה', 'error');
+      addToast('Delete failed', 'error');
     } finally {
       setSaving(false);
     }
@@ -282,27 +282,27 @@ export default function ComplianceDocumentsPage() {
   return (
     <div className="companies-page">
       <div className="breadcrumb">
-        <button className="breadcrumb-link" onClick={() => navigate('/legal-entities')}>ישויות משפטיות</button>
+        <button className="breadcrumb-link" onClick={() => navigate('/legal-entities')}>Legal Entities</button>
         <span className="breadcrumb-sep">/</span>
-        <span>מסמכי ציות</span>
+        <span>Compliance Documents</span>
       </div>
 
       <div className="page-header">
         <div>
-          <h1 className="page-title">מסמכי ציות</h1>
+          <h1 className="page-title">Compliance Documents</h1>
           <p className="page-subtitle">{subtitle}</p>
         </div>
         <button className="btn btn-primary" disabled={!selectedLegalEntityUUID} onClick={() => { setShowCreate((v) => !v); setEditing(null); resetForm(); }}>
-          {showCreate ? 'סגור טופס' : 'מסמך חדש'}
+          {showCreate ? 'Close Form' : 'New Document'}
         </button>
       </div>
 
       {(showCreate || editing) && (
         <div className="form-section">
           <div className="auto-fill-bar">
-            <button type="button" className="btn btn-auto-fill" onClick={autoFill}>מילוי מהיר</button>
+            <button type="button" className="btn btn-auto-fill" onClick={autoFill}>Quick Fill</button>
           </div>
-          <h3 className="section-title">{editing ? 'עריכת מסמך ציות' : 'יצירת מסמך ציות'}</h3>
+          <h3 className="section-title">{editing ? 'Edit Compliance Document' : 'Create Compliance Document'}</h3>
           <div className="form-grid">
             <div className="form-field"><label className="label">Document Name *</label><input className="input" value={form.document_name} onChange={(e) => setForm((p) => ({ ...p, document_name: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Document Type *</label><select className="input" value={form.document_type} onChange={(e) => setForm((p) => ({ ...p, document_type: e.target.value }))}>{COMPLIANCE_DOCUMENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
@@ -312,7 +312,7 @@ export default function ComplianceDocumentsPage() {
             <div className="form-field"><label className="label">Issuing Country</label><input className="input ltr-input" dir="ltr" maxLength={2} value={form.issuing_country} onChange={(e) => setForm((p) => ({ ...p, issuing_country: e.target.value.toUpperCase() }))} /></div>
             <div className="form-field"><label className="label">Issue Date</label><input type="date" className="input ltr-input" dir="ltr" value={form.issue_date} onChange={(e) => setForm((p) => ({ ...p, issue_date: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Expiry Date</label><input type="date" className="input ltr-input" dir="ltr" value={form.expiry_date} onChange={(e) => setForm((p) => ({ ...p, expiry_date: e.target.value }))} /></div>
-            <div className="form-field"><label className="label">Beneficial Owner</label><select className="input" value={form.beneficial_owner_uuid} onChange={(e) => setForm((p) => ({ ...p, beneficial_owner_uuid: e.target.value }))}><option value="">ללא</option>{beneficialOwners.map((bo) => <option key={bo.uuid} value={bo.uuid}>{bo.first_name} {bo.last_name}</option>)}</select></div>
+            <div className="form-field"><label className="label">Beneficial Owner</label><select className="input" value={form.beneficial_owner_uuid} onChange={(e) => setForm((p) => ({ ...p, beneficial_owner_uuid: e.target.value }))}><option value="">None</option>{beneficialOwners.map((bo) => <option key={bo.uuid} value={bo.uuid}>{bo.first_name} {bo.last_name}</option>)}</select></div>
             <div className="form-field"><label className="label">Verification</label><select className="input" value={form.verification_status} onChange={(e) => setForm((p) => ({ ...p, verification_status: e.target.value }))}>{COMPLIANCE_VERIFICATION_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
             {editing ? (
               <>
@@ -322,8 +322,8 @@ export default function ComplianceDocumentsPage() {
             ) : null}
           </div>
           <div className="form-actions">
-            <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'שומר...' : editing ? 'עדכן' : 'צור'}</button>
-            <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); resetForm(); }}>ביטול</button>
+            <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'Saving...' : editing ? 'Update' : 'Create'}</button>
+            <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); resetForm(); }}>Cancel</button>
           </div>
         </div>
       )}
@@ -342,7 +342,7 @@ export default function ComplianceDocumentsPage() {
                 setSearchParams(params);
               }}
             >
-              <option value="">בחר חברה</option>
+              <option value="">Select Company</option>
               {companies.map((company) => <option key={company.uuid} value={company.uuid}>{company.name}</option>)}
             </select>
           </div>
@@ -353,35 +353,35 @@ export default function ComplianceDocumentsPage() {
               else params.delete('legal_entity_uuid');
               setSearchParams(params);
             }} disabled={!selectedCompanyUUID || !!routeLegalEntityUUID}>
-              <option value="">בחר ישות משפטית</option>
+              <option value="">Select Legal Entity</option>
               {legalEntities.map((le) => <option key={le.uuid} value={le.uuid}>{le.legal_name}</option>)}
             </select>
           </div>
-          <div className="filter-group"><select className="input" value={beneficialOwnerFilter} onChange={(e) => setBeneficialOwnerFilter(e.target.value)}><option value="">בעל שליטה (הכל)</option>{beneficialOwners.map((bo) => <option key={bo.uuid} value={bo.uuid}>{bo.first_name} {bo.last_name}</option>)}</select></div>
-          <div className="filter-group"><select className="input" value={docTypeFilter} onChange={(e) => setDocTypeFilter(e.target.value)}><option value="">סוג מסמך (הכל)</option>{COMPLIANCE_DOCUMENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
-          <div className="filter-group"><select className="input" value={verificationFilter} onChange={(e) => setVerificationFilter(e.target.value)}><option value="">אימות (הכל)</option>{COMPLIANCE_VERIFICATION_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
-          <div className="filter-group"><input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="חיפוש לפי שם מסמך" /></div>
-          <button className="btn btn-primary" type="submit">חיפוש</button>
+          <div className="filter-group"><select className="input" value={beneficialOwnerFilter} onChange={(e) => setBeneficialOwnerFilter(e.target.value)}><option value="">Beneficial Owner (All)</option>{beneficialOwners.map((bo) => <option key={bo.uuid} value={bo.uuid}>{bo.first_name} {bo.last_name}</option>)}</select></div>
+          <div className="filter-group"><select className="input" value={docTypeFilter} onChange={(e) => setDocTypeFilter(e.target.value)}><option value="">Document Type (All)</option>{COMPLIANCE_DOCUMENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
+          <div className="filter-group"><select className="input" value={verificationFilter} onChange={(e) => setVerificationFilter(e.target.value)}><option value="">Verification (All)</option>{COMPLIANCE_VERIFICATION_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
+          <div className="filter-group"><input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by document name" /></div>
+          <button className="btn btn-primary" type="submit">Search</button>
         </form>
       </div>
 
       <div className="card table-card">
         {loading ? (
-          <div className="loading-state"><div className="spinner" /><span>טוען מסמכי ציות...</span></div>
+          <div className="loading-state"><div className="spinner" /><span>Loading compliance documents...</span></div>
         ) : items.length === 0 ? (
-          <div className="empty-state"><p>לא נמצאו מסמכים</p></div>
+          <div className="empty-state"><p>No documents found</p></div>
         ) : (
           <div className="table-wrapper">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>שם מסמך</th>
-                  <th>סוג</th>
+                  <th>Document Name</th>
+                  <th>Type</th>
                   <th>File Type</th>
                   <th>Verification</th>
                   <th>Issue</th>
                   <th>Expiry</th>
-                  <th>פעולות</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -407,9 +407,9 @@ export default function ComplianceDocumentsPage() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="מחיקת מסמך ציות"
-        message={`למחוק את "${deleteTarget?.document_name}"?`}
-        confirmLabel="מחק"
+        title="Delete Compliance Document"
+        message={`Delete "${deleteTarget?.document_name}"?`}
+        confirmLabel="Delete"
         onConfirm={remove}
         onCancel={() => setDeleteTarget(null)}
       />

@@ -49,7 +49,7 @@ export default function CompaniesList() {
       setCompanies(data.companies || []);
       setPagination(data.pagination);
     } catch (err) {
-      addToast('שגיאה בטעינת חברות', 'error');
+      addToast('Failed to load companies', 'error');
       console.error(err);
     } finally {
       setLoading(false);
@@ -80,11 +80,11 @@ export default function CompaniesList() {
     if (!deleteTarget) return;
     try {
       await deleteCompany(deleteTarget.uuid);
-      addToast(`החברה "${deleteTarget.name}" נמחקה בהצלחה`, 'success');
+      addToast(`Company "${deleteTarget.name}" deleted successfully`, 'success');
       setDeleteTarget(null);
       fetchCompanies();
     } catch {
-      addToast('שגיאה במחיקת החברה', 'error');
+      addToast('Failed to delete company', 'error');
     }
   };
 
@@ -101,15 +101,15 @@ export default function CompaniesList() {
     <div className="companies-page">
       <div className="page-header">
         <div>
-          <h1 className="page-title">חברות</h1>
-          <p className="page-subtitle">ניהול חברות במערכת</p>
+          <h1 className="page-title">Companies</h1>
+          <p className="page-subtitle">Manage companies</p>
         </div>
         <button className="btn btn-primary" onClick={() => navigate('/companies/new')}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          חברה חדשה
+          New Company
         </button>
       </div>
 
@@ -119,7 +119,7 @@ export default function CompaniesList() {
             <input
               type="text"
               className="input"
-              placeholder="חיפוש לפי שם או מספר..."
+              placeholder="Search by name or number..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -130,7 +130,7 @@ export default function CompaniesList() {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="">כל הסטטוסים</option>
+              <option value="">All statuses</option>
               {COMPANY_STATUSES.map((s) => (
                 <option key={s} value={s}>{STATUS_LABELS[s] || s}</option>
               ))}
@@ -142,15 +142,15 @@ export default function CompaniesList() {
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
             >
-              <option value="">כל הסוגים</option>
+              <option value="">All types</option>
               {COMPANY_TYPES.map((t) => (
                 <option key={t} value={t}>{COMPANY_TYPE_LABELS[t] || t}</option>
               ))}
             </select>
           </div>
-          <button type="submit" className="btn btn-primary">חיפוש</button>
+          <button type="submit" className="btn btn-primary">Search</button>
           {hasFilters && (
-            <button type="button" className="btn btn-ghost" onClick={clearFilters}>ניקוי</button>
+            <button type="button" className="btn btn-ghost" onClick={clearFilters}>Clear</button>
           )}
         </form>
       </div>
@@ -159,7 +159,7 @@ export default function CompaniesList() {
         {loading ? (
           <div className="loading-state">
             <div className="spinner" />
-            <span>טוען חברות...</span>
+            <span>Loading companies...</span>
           </div>
         ) : companies.length === 0 ? (
           <div className="empty-state">
@@ -167,9 +167,9 @@ export default function CompaniesList() {
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
               <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
-            <p>לא נמצאו חברות</p>
+            <p>No companies found</p>
             {hasFilters && (
-              <button className="btn btn-ghost" onClick={clearFilters}>נקה מסננים</button>
+              <button className="btn btn-ghost" onClick={clearFilters}>Clear filters</button>
             )}
           </div>
         ) : (
@@ -178,14 +178,14 @@ export default function CompaniesList() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>שם</th>
-                    <th>מספר</th>
-                    <th>סוג</th>
-                    <th>סטטוס</th>
-                    <th>מטבע</th>
-                    <th>מדינה</th>
-                    <th>נוצר</th>
-                    <th>פעולות</th>
+                    <th>Name</th>
+                    <th>Number</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Currency</th>
+                    <th>Country</th>
+                    <th>Created</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -207,7 +207,7 @@ export default function CompaniesList() {
                       <td className="cell-actions" onClick={(e) => e.stopPropagation()}>
                         <button
                           className="action-btn edit"
-                          title="עריכה"
+                          title="Edit"
                           onClick={() => navigate(`/companies/${company.uuid}/edit`)}
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -217,7 +217,7 @@ export default function CompaniesList() {
                         </button>
                         <button
                           className="action-btn delete"
-                          title="מחיקה"
+                          title="Delete"
                           onClick={() => setDeleteTarget(company)}
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -234,7 +234,7 @@ export default function CompaniesList() {
             {pagination.total_pages > 1 && (
               <div className="pagination">
                 <span className="pagination-info">
-                  {pagination.total_items} תוצאות | עמוד {pagination.page} מתוך {pagination.total_pages}
+                  {pagination.total_items} results | page {pagination.page} of {pagination.total_pages}
                 </span>
                 <div className="pagination-btns">
                   <button
@@ -242,7 +242,7 @@ export default function CompaniesList() {
                     disabled={pagination.page <= 1}
                     onClick={() => handlePageChange(pagination.page - 1)}
                   >
-                    הקודם
+                    Previous
                   </button>
                   {Array.from({ length: Math.min(pagination.total_pages, 5) }, (_, i) => {
                     const start = Math.max(1, pagination.page - 2);
@@ -263,7 +263,7 @@ export default function CompaniesList() {
                     disabled={pagination.page >= pagination.total_pages}
                     onClick={() => handlePageChange(pagination.page + 1)}
                   >
-                    הבא
+                    Next
                   </button>
                 </div>
               </div>
@@ -274,9 +274,9 @@ export default function CompaniesList() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="מחיקת חברה"
-        message={`האם אתה בטוח שברצונך למחוק את "${deleteTarget?.name}"? פעולה זו אינה הפיכה.`}
-        confirmLabel="מחק"
+        title="Delete Company"
+        message={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />

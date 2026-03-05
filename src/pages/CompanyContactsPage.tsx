@@ -115,7 +115,7 @@ export default function CompanyContactsPage() {
       setItems(data.contacts || []);
     } catch (error) {
       console.error(error);
-      addToast('שגיאה בטעינת אנשי קשר', 'error');
+      addToast('Failed to load contacts', 'error');
     } finally {
       setLoading(false);
     }
@@ -126,7 +126,7 @@ export default function CompanyContactsPage() {
   }, [fetchContacts]);
 
   const subtitle = useMemo(
-    () => (selectedCompany ? `חברה נבחרת: ${selectedCompany.name}` : 'בחר חברה כדי לנהל אנשי קשר'),
+    () => (selectedCompany ? `Selected company: ${selectedCompany.name}` : 'Select a company to manage contacts'),
     [selectedCompany],
   );
 
@@ -202,25 +202,25 @@ export default function CompanyContactsPage() {
 
   const save = async () => {
     if (!selectedCompanyUUID || !form.full_name) {
-      addToast('יש לבחור חברה ולמלא שם מלא', 'error');
+      addToast('Select a company and enter full name', 'error');
       return;
     }
     setSaving(true);
     try {
       if (editing) {
         await updateCompanyContact(editing.uuid, updatePayload());
-        addToast('איש הקשר עודכן', 'success');
+        addToast('Contact updated', 'success');
         setEditing(null);
       } else {
         await createCompanyContact(createPayload());
-        addToast('איש הקשר נוצר', 'success');
+        addToast('Contact created', 'success');
         setShowCreate(false);
       }
       resetForm();
       await fetchContacts();
     } catch (error) {
       console.error(error);
-      addToast('שמירה נכשלה', 'error');
+      addToast('Save failed', 'error');
     } finally {
       setSaving(false);
     }
@@ -231,12 +231,12 @@ export default function CompanyContactsPage() {
     setSaving(true);
     try {
       await deleteCompanyContact(deleteTarget.uuid);
-      addToast('איש הקשר נמחק', 'success');
+      addToast('Contact deleted', 'success');
       setDeleteTarget(null);
       await fetchContacts();
     } catch (error) {
       console.error(error);
-      addToast('מחיקה נכשלה', 'error');
+      addToast('Delete failed', 'error');
     } finally {
       setSaving(false);
     }
@@ -245,27 +245,27 @@ export default function CompanyContactsPage() {
   return (
     <div className="companies-page">
       <div className="breadcrumb">
-        <button className="breadcrumb-link" onClick={() => navigate('/companies')}>חברות</button>
+        <button className="breadcrumb-link" onClick={() => navigate('/companies')}>Companies</button>
         <span className="breadcrumb-sep">/</span>
-        <span>אנשי קשר</span>
+        <span>Contacts</span>
       </div>
 
       <div className="page-header">
         <div>
-          <h1 className="page-title">אנשי קשר חברה</h1>
+          <h1 className="page-title">Company Contacts</h1>
           <p className="page-subtitle">{subtitle}</p>
         </div>
         <button className="btn btn-primary" disabled={!selectedCompanyUUID} onClick={() => { setShowCreate((v) => !v); setEditing(null); resetForm(); }}>
-          {showCreate ? 'סגור טופס' : 'איש קשר חדש'}
+          {showCreate ? 'Close Form' : 'New Contact'}
         </button>
       </div>
 
       {(showCreate || editing) && (
         <div className="form-section">
           <div className="auto-fill-bar">
-            <button type="button" className="btn btn-auto-fill" onClick={autoFill}>מילוי מהיר</button>
+            <button type="button" className="btn btn-auto-fill" onClick={autoFill}>Quick Fill</button>
           </div>
-          <h3 className="section-title">{editing ? 'עריכת איש קשר' : 'יצירת איש קשר'}</h3>
+          <h3 className="section-title">{editing ? 'Edit Contact' : 'Create Contact'}</h3>
           <div className="form-grid">
             <div className="form-field"><label className="label">Full Name *</label><input className="input" value={form.full_name} onChange={(e) => setForm((p) => ({ ...p, full_name: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Contact Type</label><select className="input" value={form.contact_type} onChange={(e) => setForm((p) => ({ ...p, contact_type: e.target.value }))}>{COMPANY_CONTACT_TYPES.map((t) => <option key={t} value={t}>{COMPANY_CONTACT_TYPE_LABELS[t] || t}</option>)}</select></div>
@@ -277,12 +277,12 @@ export default function CompanyContactsPage() {
             <div className="form-field"><label className="label">Job Title</label><input className="input" value={form.job_title} onChange={(e) => setForm((p) => ({ ...p, job_title: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Department</label><input className="input" value={form.department} onChange={(e) => setForm((p) => ({ ...p, department: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Lang Code</label><input className="input ltr-input" dir="ltr" value={form.lang_code} onChange={(e) => setForm((p) => ({ ...p, lang_code: e.target.value }))} /></div>
-            <div className="form-field"><label className="label">Default</label><select className="input" value={form.is_default ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, is_default: e.target.value === 'true' }))}><option value="true">כן</option><option value="false">לא</option></select></div>
-            <div className="form-field"><label className="label">Primary</label><select className="input" value={form.is_primary ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, is_primary: e.target.value === 'true' }))}><option value="true">כן</option><option value="false">לא</option></select></div>
+            <div className="form-field"><label className="label">Default</label><select className="input" value={form.is_default ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, is_default: e.target.value === 'true' }))}><option value="true">Yes</option><option value="false">No</option></select></div>
+            <div className="form-field"><label className="label">Primary</label><select className="input" value={form.is_primary ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, is_primary: e.target.value === 'true' }))}><option value="true">Yes</option><option value="false">No</option></select></div>
           </div>
           <div className="form-actions">
-            <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'שומר...' : editing ? 'עדכן' : 'צור'}</button>
-            <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); resetForm(); }}>ביטול</button>
+            <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'Saving...' : editing ? 'Update' : 'Create'}</button>
+            <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); resetForm(); }}>Cancel</button>
           </div>
         </div>
       )}
@@ -296,35 +296,35 @@ export default function CompanyContactsPage() {
               else params.delete('company_uuid');
               setSearchParams(params);
             }} disabled={!!routeCompanyUUID}>
-              <option value="">בחר חברה</option>
+              <option value="">Select Company</option>
               {companies.map((c) => <option key={c.uuid} value={c.uuid}>{c.name}</option>)}
             </select>
           </div>
-          <div className="filter-group"><input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="חיפוש לפי שם / אימייל" /></div>
-          <div className="filter-group"><select className="input" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}><option value="">סוג קשר (הכל)</option>{COMPANY_CONTACT_TYPES.map((t) => <option key={t} value={t}>{COMPANY_CONTACT_TYPE_LABELS[t] || t}</option>)}</select></div>
-          <div className="filter-group"><select className="input" value={defaultFilter} onChange={(e) => setDefaultFilter(e.target.value)}><option value="">Default (הכל)</option><option value="true">כן</option><option value="false">לא</option></select></div>
-          <div className="filter-group"><select className="input" value={primaryFilter} onChange={(e) => setPrimaryFilter(e.target.value)}><option value="">Primary (הכל)</option><option value="true">כן</option><option value="false">לא</option></select></div>
-          <button className="btn btn-primary" type="submit">חיפוש</button>
+          <div className="filter-group"><input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name / email" /></div>
+          <div className="filter-group"><select className="input" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}><option value="">Contact Type (All)</option>{COMPANY_CONTACT_TYPES.map((t) => <option key={t} value={t}>{COMPANY_CONTACT_TYPE_LABELS[t] || t}</option>)}</select></div>
+          <div className="filter-group"><select className="input" value={defaultFilter} onChange={(e) => setDefaultFilter(e.target.value)}><option value="">Default (All)</option><option value="true">Yes</option><option value="false">No</option></select></div>
+          <div className="filter-group"><select className="input" value={primaryFilter} onChange={(e) => setPrimaryFilter(e.target.value)}><option value="">Primary (All)</option><option value="true">Yes</option><option value="false">No</option></select></div>
+          <button className="btn btn-primary" type="submit">Search</button>
         </form>
       </div>
 
       <div className="card table-card">
         {loading ? (
-          <div className="loading-state"><div className="spinner" /><span>טוען אנשי קשר...</span></div>
+          <div className="loading-state"><div className="spinner" /><span>Loading contacts...</span></div>
         ) : items.length === 0 ? (
-          <div className="empty-state"><p>לא נמצאו אנשי קשר</p></div>
+          <div className="empty-state"><p>No contacts found</p></div>
         ) : (
           <div className="table-wrapper">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>שם</th>
-                  <th>סוג</th>
+                  <th>Name</th>
+                  <th>Type</th>
                   <th>Email</th>
-                  <th>טלפון</th>
+                  <th>Phone</th>
                   <th>Default</th>
                   <th>Primary</th>
-                  <th>פעולות</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -334,8 +334,8 @@ export default function CompanyContactsPage() {
                     <td>{COMPANY_CONTACT_TYPE_LABELS[item.contact_type] || item.contact_type || '—'}</td>
                     <td className="cell-mono">{item.email || '—'}</td>
                     <td className="cell-mono">{item.phone || item.mobile || '—'}</td>
-                    <td>{item.is_default ? 'כן' : 'לא'}</td>
-                    <td>{item.is_primary ? 'כן' : 'לא'}</td>
+                    <td>{item.is_default ? 'Yes' : 'No'}</td>
+                    <td>{item.is_primary ? 'Yes' : 'No'}</td>
                     <td className="cell-actions">
                       <button className="action-btn edit" onClick={() => startEdit(item)}>✎</button>
                       <button className="action-btn delete" onClick={() => setDeleteTarget(item)}>🗑</button>
@@ -350,9 +350,9 @@ export default function CompanyContactsPage() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="מחיקת איש קשר"
-        message={`למחוק את "${deleteTarget?.full_name}"?`}
-        confirmLabel="מחק"
+        title="Delete Contact"
+        message={`Delete "${deleteTarget?.full_name}"?`}
+        confirmLabel="Delete"
         onConfirm={remove}
         onCancel={() => setDeleteTarget(null)}
       />

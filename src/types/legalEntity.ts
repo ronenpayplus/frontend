@@ -1,4 +1,5 @@
 import type { Pagination } from './company';
+import type { LocalizationInput } from './orgEntityLocalization';
 
 export interface LegalEntity {
   uuid: string;
@@ -48,6 +49,7 @@ export interface CreateLegalEntityRequest {
   registered_address_id: number;
   operating_address_id?: number;
   created_by?: string;
+  localizations?: LocalizationInput[];
 }
 
 export interface UpdateLegalEntityRequest {
@@ -64,6 +66,7 @@ export interface UpdateLegalEntityRequest {
   kyc_status: string;
   status: string;
   updated_by?: string;
+  localizations?: LocalizationInput[];
 }
 
 export const LEGAL_ENTITY_TYPES = [
@@ -103,27 +106,27 @@ export const LEGAL_ENTITY_STATUSES = [
 ] as const;
 
 export const LEGAL_ENTITY_TYPE_LABELS: Record<string, string> = {
-  corporation: 'תאגיד',
+  corporation: 'Corporation',
   llc: 'LLC',
-  limited: 'חברה בע"מ',
-  sole_proprietor: 'עוסק יחיד',
-  partnership: 'שותפות',
-  non_profit: 'עמותה',
-  government: 'ממשלתי',
+  limited: 'Limited Company',
+  sole_proprietor: 'Sole Proprietor',
+  partnership: 'Partnership',
+  non_profit: 'Non-profit',
+  government: 'Government',
 };
 
 export const LEGAL_ENTITY_STATUS_LABELS: Record<string, string> = {
-  active: 'פעיל',
-  pending_verification: 'ממתין לאימות',
-  verified: 'מאומת',
-  suspended: 'מושעה',
-  dissolved: 'פורק',
+  active: 'Active',
+  pending_verification: 'Pending Verification',
+  verified: 'Verified',
+  suspended: 'Suspended',
+  dissolved: 'Dissolved',
 };
 
 export const LEGAL_ENTITY_KYC_LABELS: Record<string, string> = {
-  pending: 'ממתין',
-  in_review: 'בבדיקה',
-  verified: 'מאומת',
-  rejected: 'נדחה',
-  expired: 'פג תוקף',
+  pending: 'Pending',
+  in_review: 'In Review',
+  verified: 'Verified',
+  rejected: 'Rejected',
+  expired: 'Expired',
 };

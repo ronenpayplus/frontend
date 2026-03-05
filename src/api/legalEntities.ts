@@ -5,6 +5,7 @@ import type {
   UpdateLegalEntityRequest,
   LegalEntity,
 } from '../types/legalEntity';
+import type { LocalizationInput } from '../types/orgEntityLocalization';
 
 const API_BASE = '/v2/companies/legal-entities';
 
@@ -57,6 +58,15 @@ export async function createLegalEntity(data: CreateLegalEntityRequest): Promise
   });
 }
 
+export async function createLegalEntityWithLocalizations(
+  data: CreateLegalEntityRequest & { localizations: LocalizationInput[] },
+): Promise<{ uuid: string }> {
+  return request<{ uuid: string }>(`${API_BASE}/create-with-localizations`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
 export async function getLegalEntity(uuid: string): Promise<{ legal_entity: LegalEntity }> {
   return request<{ legal_entity: LegalEntity }>(`${API_BASE}/get/${uuid}`);
 }
@@ -66,6 +76,16 @@ export async function updateLegalEntity(
   data: UpdateLegalEntityRequest,
 ): Promise<{ success: boolean }> {
   return request<{ success: boolean }>(`${API_BASE}/update/${uuid}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateLegalEntityWithLocalizations(data: {
+  uuid: string;
+  localizations: LocalizationInput[];
+}): Promise<{ success: boolean }> {
+  return request<{ success: boolean }>(`${API_BASE}/update-with-localizations`, {
     method: 'PUT',
     body: JSON.stringify(data),
   });

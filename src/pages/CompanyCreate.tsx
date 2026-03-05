@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createCompany } from '../api/companies';
+import { createCompany, createCompanyWithLocalizations } from '../api/companies';
 import type { CreateCompanyRequest } from '../types/company';
 import CompanyForm from '../components/CompanyForm';
 import Toast from '../components/Toast';
@@ -15,11 +15,19 @@ export default function CompanyCreate() {
   const handleSubmit = async (data: CreateCompanyRequest) => {
     setLoading(true);
     try {
-      const result = await createCompany(data);
-      addToast('החברה נוצרה בהצלחה', 'success');
+      const localizations = data.localizations || [];
+      const payload = { ...data };
+      delete payload.localizations;
+      const result = localizations.length > 0
+        ? await createCompanyWithLocalizations({
+          ...(payload as CreateCompanyRequest),
+          localizations,
+        })
+        : await createCompany(payload as CreateCompanyRequest);
+      addToast('Company created successfully', 'success');
       setTimeout(() => navigate(`/companies/${result.uuid}`), 500);
     } catch (err) {
-      addToast('שגיאה ביצירת החברה', 'error');
+      addToast('Failed to create company', 'error');
       console.error(err);
       setLoading(false);
     }
@@ -29,11 +37,11 @@ export default function CompanyCreate() {
     <div className="company-create-page">
       <div className="page-header">
         <div className="breadcrumb">
-          <button className="breadcrumb-link" onClick={() => navigate('/companies')}>חברות</button>
+          <button className="breadcrumb-link" onClick={() => navigate('/companies')}>Companies</button>
           <span className="breadcrumb-sep">/</span>
-          <span>חברה חדשה</span>
+          <span>New Company</span>
         </div>
-        <h1 className="page-title">יצירת חברה חדשה</h1>
+        <h1 className="page-title">Create New Company</h1>
       </div>
 
       <CompanyForm

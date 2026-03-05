@@ -61,7 +61,7 @@ export default function CountriesPage() {
       setItems(data.countries || []);
     } catch (error) {
       console.error(error);
-      addToast('טעינת מדינות נכשלה', 'error');
+      addToast('Failed to load countries', 'error');
     } finally {
       setLoading(false);
     }
@@ -125,7 +125,7 @@ export default function CountriesPage() {
 
   const save = async () => {
     if (!form.alpha2 || !form.alpha3 || !form.numeric_code || !form.name) {
-      addToast('יש למלא Alpha2, Alpha3, Numeric Code ושם', 'error');
+      addToast('Alpha2, Alpha3, Numeric Code, and Name are required', 'error');
       return;
     }
     setSaving(true);
@@ -133,12 +133,12 @@ export default function CountriesPage() {
       const payload = buildPayload();
       if (editing) {
         await updateCountry(editing.id, payload);
-        addToast('המדינה עודכנה', 'success');
+        addToast('Country updated', 'success');
         setEditing(null);
       } else {
         try {
           await createCountry(payload);
-          addToast('המדינה נוצרה', 'success');
+          addToast('Country created', 'success');
           setShowCreate(false);
         } catch (createError) {
           // Country delete is soft-delete in backend (is_active=false), so recreate may fail on unique keys.
@@ -151,7 +151,7 @@ export default function CountriesPage() {
             ...payload,
             is_active: true,
           });
-          addToast('המדינה כבר הייתה קיימת, הופעלה מחדש ועודכנה', 'success');
+          addToast('Country already existed, reactivated and updated', 'success');
           setShowCreate(false);
         }
       }
@@ -159,7 +159,7 @@ export default function CountriesPage() {
       await fetchCountries();
     } catch (error) {
       console.error(error);
-      addToast('שמירת מדינה נכשלה', 'error');
+      addToast('Failed to save country', 'error');
     } finally {
       setSaving(false);
     }
@@ -170,13 +170,13 @@ export default function CountriesPage() {
     setSaving(true);
     try {
       await deleteCountry(deleteTarget.id);
-      addToast('המדינה סומנה כלא פעילה', 'success');
+      addToast('Country marked as inactive', 'success');
       setDeleteTarget(null);
       setIsActiveFilter('true');
       await fetchCountries();
     } catch (error) {
       console.error(error);
-      addToast('מחיקת מדינה נכשלה', 'error');
+      addToast('Failed to delete country', 'error');
     } finally {
       setSaving(false);
     }
@@ -186,11 +186,11 @@ export default function CountriesPage() {
     <div className="companies-page">
       <div className="page-header">
         <div>
-          <h1 className="page-title">מדינות</h1>
-          <p className="page-subtitle">טבלת עזר - Countries</p>
+          <h1 className="page-title">Countries</h1>
+          <p className="page-subtitle">Reference Table - Countries</p>
         </div>
         <button className="btn btn-primary" onClick={() => (showCreate ? setShowCreate(false) : startCreate())}>
-          {showCreate ? 'סגור טופס' : 'מדינה חדשה'}
+          {showCreate ? 'Close Form' : 'New Country'}
         </button>
       </div>
 
@@ -198,69 +198,69 @@ export default function CountriesPage() {
         <div className="form-section">
           <div className="auto-fill-bar">
             <button type="button" className="btn btn-auto-fill" onClick={autoFillForm}>
-              מילוי מהיר
+              Quick Fill
             </button>
           </div>
-          <h3 className="section-title">{editing ? 'עריכת מדינה' : 'יצירת מדינה'}</h3>
+          <h3 className="section-title">{editing ? 'Edit Country' : 'Create Country'}</h3>
           <div className="form-grid">
             <div className="form-field"><label className="label">Alpha2 *</label><input className="input ltr-input" dir="ltr" maxLength={2} value={form.alpha2} onChange={(e) => setForm((p) => ({ ...p, alpha2: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Alpha3 *</label><input className="input ltr-input" dir="ltr" maxLength={3} value={form.alpha3} onChange={(e) => setForm((p) => ({ ...p, alpha3: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Numeric Code *</label><input className="input ltr-input" dir="ltr" maxLength={3} value={form.numeric_code} onChange={(e) => setForm((p) => ({ ...p, numeric_code: e.target.value }))} /></div>
-            <div className="form-field"><label className="label">שם *</label><input className="input" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div>
-            <div className="form-field"><label className="label">שם רשמי</label><input className="input" value={form.official_name} onChange={(e) => setForm((p) => ({ ...p, official_name: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Name *</label><input className="input" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Official Name</label><input className="input" value={form.official_name} onChange={(e) => setForm((p) => ({ ...p, official_name: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Region</label><input className="input ltr-input" dir="ltr" value={form.region} onChange={(e) => setForm((p) => ({ ...p, region: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Sub Region</label><input className="input ltr-input" dir="ltr" value={form.sub_region} onChange={(e) => setForm((p) => ({ ...p, sub_region: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Phone Prefix</label><input className="input ltr-input" dir="ltr" value={form.phone_prefix} onChange={(e) => setForm((p) => ({ ...p, phone_prefix: e.target.value }))} /></div>
-            <div className="form-field"><label className="label">פעיל</label><select className="input" value={form.is_active ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, is_active: e.target.value === 'true' }))}><option value="true">כן</option><option value="false">לא</option></select></div>
-            <div className="form-field"><label className="label">Sanctioned</label><select className="input" value={form.is_sanctioned ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, is_sanctioned: e.target.value === 'true' }))}><option value="false">לא</option><option value="true">כן</option></select></div>
+            <div className="form-field"><label className="label">Active</label><select className="input" value={form.is_active ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, is_active: e.target.value === 'true' }))}><option value="true">Yes</option><option value="false">No</option></select></div>
+            <div className="form-field"><label className="label">Sanctioned</label><select className="input" value={form.is_sanctioned ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, is_sanctioned: e.target.value === 'true' }))}><option value="false">No</option><option value="true">Yes</option></select></div>
           </div>
           <div className="form-actions">
-            <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'שומר...' : editing ? 'עדכן' : 'צור'}</button>
-            <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); resetForm(); }}>ביטול</button>
+            <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'Saving...' : editing ? 'Update' : 'Create'}</button>
+            <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); resetForm(); }}>Cancel</button>
           </div>
         </div>
       )}
 
       <div className="card filters-card">
         <form className="filters-form" onSubmit={(e) => { e.preventDefault(); fetchCountries(); }}>
-          <div className="filter-group"><input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="חיפוש לפי שם / קודים" /></div>
+          <div className="filter-group"><input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name / codes" /></div>
           <div className="filter-group"><input className="input ltr-input" dir="ltr" value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} placeholder="Region" /></div>
           <div className="filter-group">
             <select className="input" value={isActiveFilter} onChange={(e) => setIsActiveFilter(e.target.value)}>
-              <option value="">סטטוס פעיל (הכל)</option>
-              <option value="true">פעיל בלבד</option>
-              <option value="false">לא פעיל בלבד</option>
+              <option value="">Active Status (All)</option>
+              <option value="true">Active only</option>
+              <option value="false">Inactive only</option>
             </select>
           </div>
           <div className="filter-group">
             <select className="input" value={isSanctionedFilter} onChange={(e) => setIsSanctionedFilter(e.target.value)}>
-              <option value="">Sanctioned (הכל)</option>
-              <option value="true">כן</option>
-              <option value="false">לא</option>
+              <option value="">Sanctioned (All)</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
             </select>
           </div>
-          <button className="btn btn-primary" type="submit">חיפוש</button>
+          <button className="btn btn-primary" type="submit">Search</button>
         </form>
       </div>
 
       <div className="card table-card">
         {loading ? (
-          <div className="loading-state"><div className="spinner" /><span>טוען מדינות...</span></div>
+          <div className="loading-state"><div className="spinner" /><span>Loading countries...</span></div>
         ) : items.length === 0 ? (
-          <div className="empty-state"><p>לא נמצאו מדינות</p></div>
+          <div className="empty-state"><p>No countries found</p></div>
         ) : (
           <div className="table-wrapper">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>שם</th>
+                  <th>Name</th>
                   <th>Alpha2</th>
                   <th>Alpha3</th>
                   <th>Numeric</th>
                   <th>Region</th>
-                  <th>פעיל</th>
+                  <th>Active</th>
                   <th>Sanctioned</th>
-                  <th>פעולות</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -271,8 +271,8 @@ export default function CountriesPage() {
                     <td className="cell-mono">{country.alpha3}</td>
                     <td className="cell-mono">{country.numeric_code}</td>
                     <td>{country.region || '-'}</td>
-                    <td>{country.is_active ? 'כן' : 'לא'}</td>
-                    <td>{country.is_sanctioned ? 'כן' : 'לא'}</td>
+                    <td>{country.is_active ? 'Yes' : 'No'}</td>
+                    <td>{country.is_sanctioned ? 'Yes' : 'No'}</td>
                     <td className="cell-actions">
                       <button className="action-btn edit" onClick={() => startEdit(country)}>✎</button>
                       <button className="action-btn delete" onClick={() => setDeleteTarget(country)}>🗑</button>
@@ -287,9 +287,9 @@ export default function CountriesPage() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="מחיקת מדינה"
-        message={`למחוק את "${deleteTarget?.name}"?`}
-        confirmLabel="מחק"
+        title="Delete Country"
+        message={`Delete "${deleteTarget?.name}"?`}
+        confirmLabel="Delete"
         onConfirm={remove}
         onCancel={() => setDeleteTarget(null)}
       />

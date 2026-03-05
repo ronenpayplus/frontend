@@ -4,6 +4,7 @@ import { listMerchantAccountCurrencies } from '../api/merchantAccountCurrencies'
 import { listPaymentMethods } from '../api/paymentMethods';
 import { listChannelTypes } from '../api/channelTypes';
 import { listCurrencies } from '../api/currencies';
+import { listOrgEntityLocalizations } from '../api/orgEntityLocalizations';
 import {
   listSubMerchantCurrencies,
   syncSubMerchantCurrencies,
@@ -27,6 +28,7 @@ import type { LegalEntity } from '../types/legalEntity';
 import type { Currency } from '../types/currency';
 import type { PaymentMethod } from '../types/paymentMethod';
 import type { ChannelType } from '../types/channelType';
+import type { LocalizationInput } from '../types/orgEntityLocalization';
 import type {
   CreateSubMerchantAccountRequest,
   SubMerchantAccount,
@@ -43,6 +45,7 @@ import { MOCK_COUNTRIES, MOCK_TIMEZONES } from '../types/company';
 import ConfirmDialog from '../components/ConfirmDialog';
 import DualListSelector from '../components/DualListSelector';
 import type { DualListItem } from '../components/DualListSelector';
+import LocalizationsEditor, { ensureAtLeastOneLocalization } from '../components/LocalizationsEditor';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
 import './CompaniesList.css';
@@ -76,6 +79,17 @@ export default function SubMerchantAccountsPage() {
   const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>([]);
   const [channelTypesRef, setChannelTypesRef] = useState<ChannelType[]>([]);
   const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
+  const [localizations, setLocalizations] = useState<LocalizationInput[]>([
+    {
+      lang_code: 'en',
+      display_name: '',
+      brand_name: '',
+      description: '',
+      support_email: '',
+      support_phone: '',
+      is_default: true,
+    },
+  ]);
   const merchantAccounts = useMemo(
     () =>
       allMerchantAccounts.filter((account) => {
@@ -321,7 +335,7 @@ export default function SubMerchantAccountsPage() {
       setItems(data.sub_merchant_accounts || []);
     } catch (error) {
       console.error(error);
-      addToast('שגיאה בטעינת תתי-סוחרים', 'error');
+      addToast('Failed to load sub merchants', 'error');
     } finally {
       setLoading(false);
     }
@@ -344,7 +358,7 @@ export default function SubMerchantAccountsPage() {
     merchantAccounts.forEach((account) => {
       if (!account.merchant_uuid) return;
       if (!byUUID.has(account.merchant_uuid)) {
-        byUUID.set(account.merchant_uuid, `סוחר (דרך חשבון: ${account.name || account.uuid})`);
+        byUUID.set(account.merchant_uuid, `Merchant (via account: ${account.name || account.uuid})`);
       }
     });
     return Array.from(byUUID.entries()).map(([uuid, label]) => ({ uuid, label }));
@@ -358,7 +372,7 @@ export default function SubMerchantAccountsPage() {
     if (!effectiveMerchantUUID || hasSelectedMerchantInOptions) return '';
     const fromAccount = merchantAccounts.find((a) => a.merchant_uuid === effectiveMerchantUUID);
     return fromAccount?.name
-      ? `סוחר (דרך חשבון: ${fromAccount.name})`
+      ? `Merchant (via account: ${fromAccount.name})`
       : `UUID: ${effectiveMerchantUUID}`;
   }, [effectiveMerchantUUID, hasSelectedMerchantInOptions, merchantAccounts]);
 
@@ -392,6 +406,17 @@ export default function SubMerchantAccountsPage() {
     setSelectedCurrencies([]);
     setSelectedPaymentMethods([]);
     setSelectedChannels([]);
+    setLocalizations([
+      {
+        lang_code: 'en',
+        display_name: '',
+        brand_name: '',
+        description: '',
+        support_email: '',
+        support_phone: '',
+        is_default: true,
+      },
+    ]);
   };
 
   const autoFill = () => {
@@ -414,6 +439,26 @@ export default function SubMerchantAccountsPage() {
       default_acquiring_model: 'PLATFORM_MID',
       notes: 'Auto-filled for testing',
     });
+    setLocalizations([
+      {
+        lang_code: 'en',
+        display_name: `Sub Merchant ${rand}`,
+        brand_name: `Sub Merchant ${rand}`,
+        description: 'English localization',
+        support_email: `sub-${rand}@example.com`,
+        support_phone: `+1-202-555-${String(rand).slice(-4)}`,
+        is_default: true,
+      },
+      {
+        lang_code: 'fr',
+        display_name: `Sous Marchand ${rand}`,
+        brand_name: `Sous Marchand ${rand}`,
+        description: 'French localization',
+        support_email: `assistance-${rand}@example.com`,
+        support_phone: `+33-1-${String(rand).slice(-4)}-1000`,
+        is_default: false,
+      },
+    ]);
   };
 
   const startEdit = async (item: SubMerchantAccount) => {
@@ -456,24 +501,40 @@ export default function SubMerchantAccountsPage() {
     } catch {
       setSelectedChannels([]);
     }
+    try {
+      const rows = await listOrgEntityLocalizations('sub_merchant', item.uuid);
+      setLocalizations(rows);
+    } catch {
+      setLocalizations([
+        {
+          lang_code: 'en',
+          display_name: item.name,
+          brand_name: '',
+          description: '',
+          support_email: '',
+          support_phone: '',
+          is_default: true,
+        },
+      ]);
+    }
   };
 
   const save = async () => {
     if (!selectedMerchantAccountUUID || !effectiveMerchantUUID || !form.name || !form.category_code) {
-      addToast('חובה לבחור חשבון סוחר + סוחר ולמלא שם, Category ומטבע', 'error');
+      addToast('Merchant account + merchant + name, category and currency are required', 'error');
       return;
     }
     if (allCurrencies.length === 0) {
-      addToast('אין מטבעות זמינים מטבלת המטבעות', 'error');
+      addToast('No available currencies in reference table', 'error');
       return;
     }
     if (selectedCurrencies.length === 0) {
-      addToast('חובה לבחור לפחות מטבע אחד לתתי-סוחר', 'error');
+      addToast('At least one currency must be selected', 'error');
       return;
     }
     const validSelected = selectedCurrencies.filter((code) => availableCurrencyCodes.has(code));
     if (validSelected.length === 0) {
-      addToast('לא נבחר מטבע תקין מתוך טבלת המטבעות', 'error');
+      addToast('No valid currency selected from reference table', 'error');
       return;
     }
     const selectedCurrency = validSelected[0];
@@ -482,10 +543,14 @@ export default function SubMerchantAccountsPage() {
     try {
       let subMerchantUUID = '';
       if (editing) {
-        const payload: UpdateSubMerchantAccountRequest = { ...form, currency: selectedCurrency };
+        const payload: UpdateSubMerchantAccountRequest = {
+          ...form,
+          currency: selectedCurrency,
+          localizations: ensureAtLeastOneLocalization(localizations, form.name),
+        };
         await updateSubMerchantAccount(editing.uuid, payload);
         subMerchantUUID = editing.uuid;
-        addToast('תת-סוחר עודכן', 'success');
+        addToast('Sub merchant updated', 'success');
         setEditing(null);
       } else {
         const payload: CreateSubMerchantAccountRequest = {
@@ -493,12 +558,13 @@ export default function SubMerchantAccountsPage() {
           merchant_uuid: effectiveMerchantUUID,
           ...form,
           currency: selectedCurrency,
+          localizations: ensureAtLeastOneLocalization(localizations, form.name),
         };
         const created = await createSubMerchantAccount(payload);
         subMerchantUUID = (created as unknown as { uuid?: string; sub_merchant_account?: { uuid?: string } }).uuid
           || (created as unknown as { sub_merchant_account?: { uuid?: string } }).sub_merchant_account?.uuid
           || '';
-        addToast('תת-סוחר נוצר', 'success');
+        addToast('Sub merchant created', 'success');
         setShowCreate(false);
       }
 
@@ -507,7 +573,7 @@ export default function SubMerchantAccountsPage() {
           await syncSubMerchantCurrencies(subMerchantUUID, validSelected);
         } catch (currencySyncError) {
           console.error(currencySyncError);
-          addToast('תת-סוחר נשמר, אך סנכרון המטבעות נכשל', 'error');
+          addToast('Sub merchant saved, but currency sync failed', 'error');
         }
       }
       if (subMerchantUUID && selectedPaymentMethods.length > 0) {
@@ -518,7 +584,7 @@ export default function SubMerchantAccountsPage() {
           });
         } catch (methodsError) {
           console.error(methodsError);
-          addToast('תת-סוחר נשמר, אך סנכרון אמצעי התשלום נכשל', 'error');
+          addToast('Sub merchant saved, but payment methods sync failed', 'error');
         }
       }
       if (subMerchantUUID && selectedChannels.length > 0) {
@@ -529,7 +595,7 @@ export default function SubMerchantAccountsPage() {
           });
         } catch (channelsError) {
           console.error(channelsError);
-          addToast('תת-סוחר נשמר, אך סנכרון ערוצי המכירה נכשל', 'error');
+          addToast('Sub merchant saved, but channels sync failed', 'error');
         }
       }
 
@@ -537,7 +603,7 @@ export default function SubMerchantAccountsPage() {
       await fetchItems();
     } catch (error) {
       console.error(error);
-      addToast('שמירת תת-סוחר נכשלה', 'error');
+      addToast('Failed to save sub merchant', 'error');
     } finally {
       setSaving(false);
     }
@@ -549,11 +615,11 @@ export default function SubMerchantAccountsPage() {
     try {
       await deleteSubMerchantAccount(deleteTarget.uuid);
       setDeleteTarget(null);
-      addToast('תת-סוחר נמחק', 'success');
+      addToast('Sub merchant deleted', 'success');
       await fetchItems();
     } catch (error) {
       console.error(error);
-      addToast('מחיקת תת-סוחר נכשלה', 'error');
+      addToast('Failed to delete sub merchant', 'error');
     } finally {
       setSaving(false);
     }
@@ -562,29 +628,29 @@ export default function SubMerchantAccountsPage() {
   return (
     <div className="companies-page">
       <div className="breadcrumb">
-        <button className="breadcrumb-link" onClick={() => navigate('/merchant-accounts')}>חשבונות סוחר</button>
+        <button className="breadcrumb-link" onClick={() => navigate('/merchant-accounts')}>Merchant Accounts</button>
         <span className="breadcrumb-sep">/</span>
-        <span>תתי-סוחרים</span>
+        <span>Sub Merchants</span>
       </div>
 
       <div className="page-header">
         <div>
-          <h1 className="page-title">תתי-סוחרים</h1>
-          <p className="page-subtitle">{selectedAccountName ? `חשבון נבחר: ${selectedAccountName}` : 'בחר חשבון סוחר'}</p>
+          <h1 className="page-title">Sub Merchants</h1>
+          <p className="page-subtitle">{selectedAccountName ? `Selected account: ${selectedAccountName}` : 'Select a merchant account'}</p>
         </div>
         <button className="btn btn-primary" disabled={!selectedMerchantAccountUUID} onClick={() => { setShowCreate((v) => !v); setEditing(null); resetForm(); }}>
-          {showCreate ? 'סגור טופס' : 'תת-סוחר חדש'}
+          {showCreate ? 'Close Form' : 'New Sub Merchant'}
         </button>
       </div>
 
       {(showCreate || editing) ? (
         <div className="form-section">
           <div className="auto-fill-bar">
-            <button type="button" className="btn btn-auto-fill" onClick={autoFill}>מילוי מהיר</button>
+            <button type="button" className="btn btn-auto-fill" onClick={autoFill}>Quick Fill</button>
           </div>
-          <h3 className="section-title">{editing ? 'עריכת תת-סוחר' : 'יצירת תת-סוחר'}</h3>
+          <h3 className="section-title">{editing ? 'Edit Sub Merchant' : 'Create Sub Merchant'}</h3>
           <div className="form-grid">
-            <div className="form-field"><label className="label">שם *</label><input className="input" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Name *</label><input className="input" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Sub Merchant Code</label><input className="input ltr-input" dir="ltr" value={form.sub_merchant_code} onChange={(e) => setForm((p) => ({ ...p, sub_merchant_code: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Entity Type</label><select className="input" value={form.entity_type} onChange={(e) => setForm((p) => ({ ...p, entity_type: e.target.value }))}>{SUB_MERCHANT_ENTITY_TYPES.map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
             <div className="form-field"><label className="label">Seller Model</label><select className="input" value={form.seller_model} onChange={(e) => setForm((p) => ({ ...p, seller_model: e.target.value }))}>{SUB_MERCHANT_SELLER_MODELS.map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
@@ -593,22 +659,23 @@ export default function SubMerchantAccountsPage() {
             <div className="form-field"><label className="label">Status</label><select className="input" value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}>{SUB_MERCHANT_STATUSES.map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
             <div className="form-field"><label className="label">Onboarding</label><select className="input" value={form.onboarding_status} onChange={(e) => setForm((p) => ({ ...p, onboarding_status: e.target.value }))}>{SUB_MERCHANT_ONBOARDING_STATUSES.map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
             <div className="form-field"><label className="label">KYC</label><select className="input" value={form.kyc_status} onChange={(e) => setForm((p) => ({ ...p, kyc_status: e.target.value }))}>{SUB_MERCHANT_KYC_STATUSES.map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
-            <div className="form-field"><label className="label">מדינה</label><select className="input" value={form.country} onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))}>{MOCK_COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}</select></div>
+            <div className="form-field"><label className="label">Country</label><select className="input" value={form.country} onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))}>{MOCK_COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}</select></div>
             <div className="form-field">
-              <label className="label">מטבע ברירת מחדל</label>
-              <input className="input" value={selectedCurrencies[0] || ''} placeholder="ייבחר מתוך המטבעות הזמינים" disabled />
+              <label className="label">Default Currency</label>
+              <input className="input" value={selectedCurrencies[0] || ''} placeholder="Will be selected from available currencies" disabled />
             </div>
-            <div className="form-field"><label className="label">אזור זמן</label><select className="input" value={form.timezone} onChange={(e) => setForm((p) => ({ ...p, timezone: e.target.value }))}>{MOCK_TIMEZONES.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
+            <div className="form-field"><label className="label">Timezone</label><select className="input" value={form.timezone} onChange={(e) => setForm((p) => ({ ...p, timezone: e.target.value }))}>{MOCK_TIMEZONES.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
             <div className="form-field"><label className="label">Acquiring Model</label><select className="input" value={form.default_acquiring_model} onChange={(e) => setForm((p) => ({ ...p, default_acquiring_model: e.target.value }))}><option value="PLATFORM_MID">PLATFORM_MID</option><option value="SELLER_MID">SELLER_MID</option></select></div>
-            <div className="form-field"><label className="label">הערות</label><input className="input" value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Notes</label><input className="input" value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} /></div>
             <div className="form-field toggle-field"><label className="toggle-label"><div className={`toggle ${form.payments_enabled ? 'active' : ''}`} onClick={() => setForm((p) => ({ ...p, payments_enabled: !p.payments_enabled }))}><div className="toggle-knob" /></div><span>Payments Enabled</span></label></div>
             <div className="form-field toggle-field"><label className="toggle-label"><div className={`toggle ${form.payouts_enabled ? 'active' : ''}`} onClick={() => setForm((p) => ({ ...p, payouts_enabled: !p.payouts_enabled }))}><div className="toggle-knob" /></div><span>Payouts Enabled</span></label></div>
           </div>
+          <LocalizationsEditor localizations={localizations} onChange={setLocalizations} />
           <div style={{ marginTop: '20px' }}>
-            <h4 className="section-title" style={{ marginBottom: '12px' }}>מטבעות זמינים לתת-סוחר</h4>
+            <h4 className="section-title" style={{ marginBottom: '12px' }}>Sub Merchant Currencies</h4>
             <DualListSelector
-              sourceTitle="כל המטבעות (טבלת מטבעות)"
-              targetTitle="מטבעות נבחרים"
+              sourceTitle="All currencies (reference table)"
+              targetTitle="Selected currencies"
               available={currencyDualListItems}
               selected={selectedCurrencies}
               onChange={setSelectedCurrencies}
@@ -616,15 +683,15 @@ export default function SubMerchantAccountsPage() {
             />
           </div>
           <div style={{ marginTop: '20px' }}>
-            <h4 className="section-title" style={{ marginBottom: '12px' }}>אמצעי תשלום לתת-סוחר</h4>
+            <h4 className="section-title" style={{ marginBottom: '12px' }}>Sub Merchant Payment Methods</h4>
             {paymentMethodsLoadError ? (
-              <p style={{ color: 'var(--color-danger)', fontSize: '14px' }}>שגיאה בטעינת אמצעי תשלום: {paymentMethodsLoadError}</p>
+              <p style={{ color: 'var(--color-danger)', fontSize: '14px' }}>Failed to load payment methods: {paymentMethodsLoadError}</p>
             ) : paymentMethodsRef.length === 0 ? (
-              <p style={{ color: 'var(--color-text-muted)', fontSize: '14px' }}>אין אמצעי תשלום זמינים (טבלת עזר ריקה)</p>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: '14px' }}>No available payment methods (empty reference table)</p>
             ) : (
               <DualListSelector
-                sourceTitle="כל אמצעי התשלום"
-                targetTitle="אמצעי תשלום נבחרים"
+                sourceTitle="All payment methods"
+                targetTitle="Selected payment methods"
                 available={paymentMethodDualListItems}
                 selected={selectedPaymentMethods}
                 onChange={setSelectedPaymentMethods}
@@ -633,15 +700,15 @@ export default function SubMerchantAccountsPage() {
             )}
           </div>
           <div style={{ marginTop: '20px' }}>
-            <h4 className="section-title" style={{ marginBottom: '12px' }}>ערוצי מכירה לתת-סוחר</h4>
+            <h4 className="section-title" style={{ marginBottom: '12px' }}>Sub Merchant Channels</h4>
             {channelTypesLoadError ? (
-              <p style={{ color: 'var(--color-danger)', fontSize: '14px' }}>שגיאה בטעינת ערוצי מכירה: {channelTypesLoadError}</p>
+              <p style={{ color: 'var(--color-danger)', fontSize: '14px' }}>Failed to load channels: {channelTypesLoadError}</p>
             ) : channelTypesRef.length === 0 ? (
-              <p style={{ color: 'var(--color-text-muted)', fontSize: '14px' }}>אין ערוצי מכירה זמינים (טבלת עזר ריקה)</p>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: '14px' }}>No available channels (empty reference table)</p>
             ) : (
               <DualListSelector
-                sourceTitle="כל ערוצי המכירה"
-                targetTitle="ערוצי מכירה נבחרים"
+                sourceTitle="All channels"
+                targetTitle="Selected channels"
                 available={channelTypeDualListItems}
                 selected={selectedChannels}
                 onChange={setSelectedChannels}
@@ -650,8 +717,8 @@ export default function SubMerchantAccountsPage() {
             )}
           </div>
           <div className="form-actions">
-            <button className="btn btn-primary" onClick={save} disabled={saving || !hasValidSelectedCurrencies}>{saving ? 'שומר...' : editing ? 'עדכן' : 'צור'}</button>
-            <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); }}>ביטול</button>
+            <button className="btn btn-primary" onClick={save} disabled={saving || !hasValidSelectedCurrencies}>{saving ? 'Saving...' : editing ? 'Update' : 'Create'}</button>
+            <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); }}>Cancel</button>
           </div>
         </div>
       ) : null}
@@ -667,7 +734,7 @@ export default function SubMerchantAccountsPage() {
               if (!routeMerchantAccountUUID) params.delete('merchant_account_uuid');
               setSearchParams(params);
             }}>
-              <option value="">בחר חברה</option>
+              <option value="">Select Company</option>
               {companies.map((company) => <option key={company.uuid} value={company.uuid}>{company.name}</option>)}
             </select>
           </div>
@@ -684,7 +751,7 @@ export default function SubMerchantAccountsPage() {
               }}
               disabled={!selectedCompanyUUID}
             >
-              <option value="">בחר ישות משפטית</option>
+              <option value="">Select Legal Entity</option>
               {legalEntities.map((entity) => <option key={entity.uuid} value={entity.uuid}>{entity.legal_name}</option>)}
             </select>
           </div>
@@ -695,7 +762,7 @@ export default function SubMerchantAccountsPage() {
               if (!routeMerchantAccountUUID) params.delete('merchant_account_uuid');
               setSearchParams(params);
             }} disabled={!selectedLegalEntityUUID && !selectedMerchantAccountUUID}>
-              <option value="">בחר סוחר</option>
+              <option value="">Select Merchant</option>
               {selectedMerchantFallbackLabel ? <option value={effectiveMerchantUUID}>{selectedMerchantFallbackLabel}</option> : null}
               {merchantOptions.map((option) => <option key={option.uuid} value={option.uuid}>{option.label}</option>)}
             </select>
@@ -716,25 +783,25 @@ export default function SubMerchantAccountsPage() {
               }
               setSearchParams(params);
             }} disabled={!!routeMerchantAccountUUID}>
-              <option value="">בחר חשבון סוחר</option>
+              <option value="">Select Merchant Account</option>
               {merchantAccounts.map((m) => <option key={m.uuid} value={m.uuid}>{m.name}</option>)}
             </select>
           </div>
-          <div className="filter-group"><input className="input" placeholder="חיפוש" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
-          <button className="btn btn-primary" type="submit">חיפוש</button>
+          <div className="filter-group"><input className="input" placeholder="Search" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
+          <button className="btn btn-primary" type="submit">Search</button>
         </form>
         {selectedMerchantAccountUUID && !effectiveMerchantUUID ? (
           <p className="error-message" style={{ marginTop: 8 }}>
-            לא זוהה סוחר עבור חשבון הסוחר שנבחר. אנא בחר סוחר ידנית.
+            Merchant could not be resolved for the selected merchant account. Please select a merchant manually.
           </p>
         ) : null}
       </div>
 
       <div className="card table-card">
-        {loading ? <div className="loading-state"><div className="spinner" /><span>טוען תתי-סוחרים...</span></div> : items.length === 0 ? <div className="empty-state"><p>לא נמצאו תתי-סוחרים</p></div> : (
+        {loading ? <div className="loading-state"><div className="spinner" /><span>Loading sub merchants...</span></div> : items.length === 0 ? <div className="empty-state"><p>No sub merchants found</p></div> : (
           <div className="table-wrapper">
             <table className="data-table">
-              <thead><tr><th>שם</th><th>קוד</th><th>סטטוס</th><th>KYC</th><th>מטבע</th><th>פעולות</th></tr></thead>
+              <thead><tr><th>Name</th><th>Code</th><th>Status</th><th>KYC</th><th>Currency</th><th>Actions</th></tr></thead>
               <tbody>
                 {items.map((item) => (
                   <tr key={item.uuid}>
@@ -744,7 +811,7 @@ export default function SubMerchantAccountsPage() {
                     <td>{item.kyc_status || '—'}</td>
                     <td className="cell-mono">{item.currency}</td>
                     <td className="cell-actions">
-                      <button className="btn btn-outline btn-sm" onClick={() => navigate(`/sub-merchants/${item.uuid}/stores?merchant_account_uuid=${item.merchant_account_uuid}`)}>חנויות</button>
+                      <button className="btn btn-outline btn-sm" onClick={() => navigate(`/sub-merchants/${item.uuid}/stores?merchant_account_uuid=${item.merchant_account_uuid}`)}>Stores</button>
                       <button className="action-btn edit" onClick={() => startEdit(item)}>✎</button>
                       <button className="action-btn delete" onClick={() => setDeleteTarget(item)}>🗑</button>
                     </td>
@@ -758,9 +825,9 @@ export default function SubMerchantAccountsPage() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="מחיקת תת-סוחר"
-        message={`למחוק את "${deleteTarget?.name}"?`}
-        confirmLabel="מחק"
+        title="Delete Sub Merchant"
+        message={`Delete "${deleteTarget?.name}"?`}
+        confirmLabel="Delete"
         onConfirm={remove}
         onCancel={() => setDeleteTarget(null)}
       />

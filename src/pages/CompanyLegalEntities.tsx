@@ -2,16 +2,20 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   createLegalEntity,
+  createLegalEntityWithLocalizations,
   deleteLegalEntity,
   listLegalEntities,
   updateLegalEntity,
+  updateLegalEntityWithLocalizations,
 } from '../api/legalEntities';
 import { listCompanies } from '../api/companies';
+import { listOrgEntityLocalizations } from '../api/orgEntityLocalizations';
 import type {
   CreateLegalEntityRequest,
   LegalEntity,
   UpdateLegalEntityRequest,
 } from '../types/legalEntity';
+import type { LocalizationInput } from '../types/orgEntityLocalization';
 import {
   LEGAL_ENTITY_KYC_LABELS,
   LEGAL_ENTITY_STATUS_LABELS,
@@ -36,6 +40,7 @@ export default function CompanyLegalEntities() {
   const [items, setItems] = useState<LegalEntity[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [editingLocalizations, setEditingLocalizations] = useState<LocalizationInput[]>([]);
   const [editing, setEditing] = useState<LegalEntity | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<LegalEntity | null>(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -50,7 +55,7 @@ export default function CompanyLegalEntities() {
 
   const page = Number(searchParams.get('page')) || 1;
 
-  const headerTitle = useMemo(() => 'ישויות משפטיות', []);
+  const headerTitle = useMemo(() => 'Legal Entities', []);
   const selectedCompanyName = useMemo(
     () => companies.find((c) => c.uuid === selectedCompanyUUID)?.name || '',
     [companies, selectedCompanyUUID],
@@ -116,7 +121,7 @@ export default function CompanyLegalEntities() {
       setPagination(data.pagination);
     } catch (error) {
       console.error(error);
-      addToast('שגיאה בטעינת ישויות משפטיות', 'error');
+      addToast('Failed to load legal entities', 'error');
     } finally {
       setLoading(false);
     }
@@ -131,6 +136,9 @@ export default function CompanyLegalEntities() {
     const target = items.find((item) => item.uuid === editUUID);
     if (target) {
       setEditing(target);
+      listOrgEntityLocalizations('legal_entity', target.uuid)
+        .then((rows) => setEditingLocalizations(rows))
+        .catch(() => setEditingLocalizations([]));
       setShowCreate(false);
     }
   }, [editUUID, items, editing]);
@@ -148,13 +156,24 @@ export default function CompanyLegalEntities() {
     if (!selectedCompanyUUID) return;
     setSaving(true);
     try {
-      await createLegalEntity(payload as CreateLegalEntityRequest);
-      addToast('ישות משפטית נוצרה בהצלחה', 'success');
+      const data = payload as CreateLegalEntityRequest;
+      const localizations = data.localizations || [];
+      const base = { ...data };
+      delete base.localizations;
+      if (localizations.length > 0) {
+        await createLegalEntityWithLocalizations({
+          ...(base as CreateLegalEntityRequest),
+          localizations,
+        });
+      } else {
+        await createLegalEntity(base as CreateLegalEntityRequest);
+      }
+      addToast('Legal entity created successfully', 'success');
       setShowCreate(false);
       await fetchEntities();
     } catch (error) {
       console.error(error);
-      addToast('יצירת ישות משפטית נכשלה', 'error');
+      addToast('Failed to create legal entity', 'error');
     } finally {
       setSaving(false);
     }
@@ -164,16 +183,27 @@ export default function CompanyLegalEntities() {
     if (!editing) return;
     setSaving(true);
     try {
-      await updateLegalEntity(editing.uuid, payload as UpdateLegalEntityRequest);
-      addToast('ישות משפטית עודכנה בהצלחה', 'success');
+      const data = payload as UpdateLegalEntityRequest;
+      const localizations = data.localizations || [];
+      const base = { ...data };
+      delete base.localizations;
+      await updateLegalEntity(editing.uuid, base as UpdateLegalEntityRequest);
+      if (localizations.length > 0) {
+        await updateLegalEntityWithLocalizations({
+          uuid: editing.uuid,
+          localizations,
+        });
+      }
+      addToast('Legal entity updated successfully', 'success');
       setEditing(null);
+      setEditingLocalizations([]);
       const params = new URLSearchParams(searchParams);
       params.delete('edit_uuid');
       setSearchParams(params);
       await fetchEntities();
     } catch (error) {
       console.error(error);
-      addToast('עדכון ישות משפטית נכשל', 'error');
+      addToast('Failed to update legal entity', 'error');
     } finally {
       setSaving(false);
     }
@@ -184,12 +214,12 @@ export default function CompanyLegalEntities() {
     setSaving(true);
     try {
       await deleteLegalEntity(deleteTarget.uuid);
-      addToast('ישות משפטית נמחקה בהצלחה', 'success');
+      addToast('Legal entity deleted successfully', 'success');
       setDeleteTarget(null);
       await fetchEntities();
     } catch (error) {
       console.error(error);
-      addToast('מחיקת ישות משפטית נכשלה', 'error');
+      addToast('Failed to delete legal entity', 'error');
     } finally {
       setSaving(false);
     }
@@ -223,6 +253,7 @@ export default function CompanyLegalEntities() {
 
   const closeEdit = () => {
     setEditing(null);
+    setEditingLocalizations([]);
     const params = new URLSearchParams(searchParams);
     params.delete('edit_uuid');
     setSearchParams(params);
@@ -232,7 +263,7 @@ export default function CompanyLegalEntities() {
     <div className="companies-page">
       <div className="breadcrumb">
         <button className="breadcrumb-link" onClick={() => navigate('/companies')}>
-          חברות
+          Companies
         </button>
         {selectedCompanyUUID ? (
           <>
@@ -241,7 +272,7 @@ export default function CompanyLegalEntities() {
               className="breadcrumb-link"
               onClick={() => navigate(`/companies/${selectedCompanyUUID}`)}
             >
-              {selectedCompanyName || 'פרטי חברה'}
+              {selectedCompanyName || 'Company Details'}
             </button>
             <span className="breadcrumb-sep">/</span>
           </>
@@ -254,8 +285,8 @@ export default function CompanyLegalEntities() {
           <h1 className="page-title">{headerTitle}</h1>
           <p className="page-subtitle">
             {selectedCompanyUUID
-              ? `חברה נבחרת: ${selectedCompanyName || selectedCompanyUUID}`
-              : 'בחר חברה כדי לנהל את הישויות המשפטיות שלה'}
+              ? `Selected company: ${selectedCompanyName || selectedCompanyUUID}`
+              : 'Select a company to manage its legal entities'}
           </p>
         </div>
         <button
@@ -263,7 +294,7 @@ export default function CompanyLegalEntities() {
           onClick={() => setShowCreate((prev) => !prev)}
           disabled={!selectedCompanyUUID}
         >
-          {showCreate ? 'סגור טופס' : 'ישות חדשה'}
+          {showCreate ? 'Close Form' : 'New Entity'}
         </button>
       </div>
 
@@ -283,6 +314,7 @@ export default function CompanyLegalEntities() {
           mode="edit"
           loading={saving}
           initial={editing}
+          initialLocalizations={editingLocalizations}
           onSubmit={handleEdit}
           onCancel={closeEdit}
         />
@@ -296,7 +328,7 @@ export default function CompanyLegalEntities() {
               value={selectedCompanyUUID}
               onChange={(e) => handleCompanyChange(e.target.value)}
             >
-              <option value="">בחר חברה</option>
+              <option value="">Select Company</option>
               {companies.map((company) => (
                 <option key={company.uuid} value={company.uuid}>
                   {company.name}
@@ -310,11 +342,11 @@ export default function CompanyLegalEntities() {
               className="input"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="חיפוש לפי שם משפטי / Tax ID"
+              placeholder="Search by legal name / Tax ID"
             />
           </div>
           <button type="submit" className="btn btn-primary">
-            חיפוש
+            Search
           </button>
         </form>
       </div>
@@ -323,11 +355,11 @@ export default function CompanyLegalEntities() {
         {loading ? (
           <div className="loading-state">
             <div className="spinner" />
-            <span>טוען ישויות משפטיות...</span>
+            <span>Loading legal entities...</span>
           </div>
         ) : items.length === 0 ? (
           <div className="empty-state">
-            <p>לא נמצאו ישויות משפטיות</p>
+            <p>No legal entities found</p>
           </div>
         ) : (
           <>
@@ -335,14 +367,14 @@ export default function CompanyLegalEntities() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>שם משפטי</th>
-                    <th>סוג</th>
+                    <th>Legal Name</th>
+                    <th>Type</th>
                     <th>Tax ID</th>
-                    <th>מדינה</th>
+                    <th>Country</th>
                     <th>KYC</th>
-                    <th>סטטוס</th>
-                    <th>נוצר</th>
-                    <th>פעולות</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -360,42 +392,48 @@ export default function CompanyLegalEntities() {
                       <td className="cell-actions">
                         <button
                           className="btn btn-outline btn-sm"
-                          title="ניהול מסמכי ציות"
+                          title="Manage compliance documents"
                           onClick={() =>
                             navigate(
                               `/legal-entities/${entity.uuid}/compliance-documents?company_uuid=${selectedCompanyUUID}`,
                             )
                           }
                         >
-                          מסמכי ציות
+                          Compliance Documents
                         </button>
                         <button
                           className="btn btn-outline btn-sm"
-                          title="ניהול בעלי שליטה"
+                          title="Manage beneficial owners"
                           onClick={() =>
                             navigate(
                               `/legal-entities/${entity.uuid}/beneficial-owners?company_uuid=${selectedCompanyUUID}`,
                             )
                           }
                         >
-                          בעלי שליטה
+                          Beneficial Owners
                         </button>
                         <button
                           className="btn btn-outline btn-sm"
-                          title="ניהול סוחרים"
+                          title="Manage merchants"
                           onClick={() =>
                             navigate(
                               `/legal-entities/${entity.uuid}/merchants?company_uuid=${selectedCompanyUUID}`,
                             )
                           }
                         >
-                          סוחרים
+                          Merchants
                         </button>
                         <button
                           className="action-btn edit"
-                          title="עריכה"
-                          onClick={() => {
+                          title="Edit"
+                          onClick={async () => {
                             setEditing(entity);
+                            try {
+                              const rows = await listOrgEntityLocalizations('legal_entity', entity.uuid);
+                              setEditingLocalizations(rows);
+                            } catch {
+                              setEditingLocalizations([]);
+                            }
                             const params = new URLSearchParams(searchParams);
                             params.set('edit_uuid', entity.uuid);
                             setSearchParams(params);
@@ -405,7 +443,7 @@ export default function CompanyLegalEntities() {
                         </button>
                         <button
                           className="action-btn delete"
-                          title="מחיקה"
+                          title="Delete"
                           onClick={() => setDeleteTarget(entity)}
                         >
                           🗑
@@ -420,7 +458,7 @@ export default function CompanyLegalEntities() {
             {pagination.total_pages > 1 ? (
               <div className="pagination">
                 <span className="pagination-info">
-                  {pagination.total_items} תוצאות | עמוד {pagination.page} מתוך {pagination.total_pages}
+                  {pagination.total_items} results | page {pagination.page} of {pagination.total_pages}
                 </span>
                 <div className="pagination-btns">
                   <button
@@ -428,14 +466,14 @@ export default function CompanyLegalEntities() {
                     disabled={pagination.page <= 1}
                     onClick={() => handlePageChange(pagination.page - 1)}
                   >
-                    הקודם
+                    Previous
                   </button>
                   <button
                     className="btn btn-outline btn-sm"
                     disabled={pagination.page >= pagination.total_pages}
                     onClick={() => handlePageChange(pagination.page + 1)}
                   >
-                    הבא
+                    Next
                   </button>
                 </div>
               </div>
@@ -446,9 +484,9 @@ export default function CompanyLegalEntities() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="מחיקת ישות משפטית"
-        message={`למחוק את "${deleteTarget?.legal_name}"?`}
-        confirmLabel="מחק"
+        title="Delete Legal Entity"
+        message={`Delete "${deleteTarget?.legal_name}"?`}
+        confirmLabel="Delete"
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />

@@ -1,4 +1,5 @@
 import type { Pagination } from './company';
+import type { LocalizationInput } from './orgEntityLocalization';
 
 export interface SubMerchantAccount {
   uuid: string;
@@ -61,6 +62,7 @@ export interface CreateSubMerchantAccountRequest {
   payouts_enabled: boolean;
   default_acquiring_model?: string;
   notes?: string;
+  localizations?: LocalizationInput[];
 }
 
 export interface UpdateSubMerchantAccountRequest {
@@ -80,6 +82,7 @@ export interface UpdateSubMerchantAccountRequest {
   payouts_enabled: boolean;
   default_acquiring_model?: string;
   notes?: string;
+  localizations?: LocalizationInput[];
 }
 
 export const SUB_MERCHANT_ENTITY_TYPES = ['individual', 'sole_proprietor', 'company', 'non_profit'] as const;

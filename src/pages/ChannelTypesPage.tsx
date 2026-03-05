@@ -49,7 +49,7 @@ export default function ChannelTypesPage() {
     } catch (error) {
       console.error('Channel types load error:', error);
       const msg = error instanceof Error ? error.message : String(error);
-      addToast(`טעינת ערוצי מכירה נכשלה: ${msg}`, 'error');
+      addToast(`Failed to load channels: ${msg}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -106,7 +106,7 @@ export default function ChannelTypesPage() {
 
   const save = async () => {
     if (!form.channel_code || !form.display_name) {
-      addToast('יש למלא קוד ערוץ ושם תצוגה', 'error');
+      addToast('Channel code and display name are required', 'error');
       return;
     }
     setSaving(true);
@@ -114,11 +114,11 @@ export default function ChannelTypesPage() {
       const payload = buildPayload();
       if (editing) {
         await updateChannelType(editing.channel_code, payload);
-        addToast('ערוץ המכירה עודכן', 'success');
+        addToast('Channel updated', 'success');
         setEditing(null);
       } else {
         await createChannelType(payload);
-        addToast('ערוץ המכירה נוצר', 'success');
+        addToast('Channel created', 'success');
         setShowCreate(false);
       }
       resetForm();
@@ -126,7 +126,7 @@ export default function ChannelTypesPage() {
     } catch (error) {
       console.error(error);
       const errMsg = error instanceof Error ? error.message : String(error);
-      addToast(`שמירת ערוץ מכירה נכשלה: ${errMsg}`, 'error');
+      addToast(`Failed to save channel: ${errMsg}`, 'error');
     } finally {
       setSaving(false);
     }
@@ -137,14 +137,14 @@ export default function ChannelTypesPage() {
     setSaving(true);
     try {
       await deleteChannelType(deleteTarget.channel_code);
-      addToast('ערוץ המכירה סומן כלא פעיל', 'success');
+      addToast('Channel marked as inactive', 'success');
       setDeleteTarget(null);
       setIsActiveFilter('true');
       await fetchChannelTypes();
     } catch (error) {
       console.error(error);
       const errMsg = error instanceof Error ? error.message : String(error);
-      addToast(`מחיקת ערוץ מכירה נכשלה: ${errMsg}`, 'error');
+      addToast(`Failed to delete channel: ${errMsg}`, 'error');
     } finally {
       setSaving(false);
     }
@@ -154,11 +154,11 @@ export default function ChannelTypesPage() {
     <div className="companies-page">
       <div className="page-header">
         <div>
-          <h1 className="page-title">ערוצי מכירה</h1>
-          <p className="page-subtitle">טבלת עזר - Channel Types</p>
+          <h1 className="page-title">Channel Types</h1>
+          <p className="page-subtitle">Reference Table - Channel Types</p>
         </div>
         <button className="btn btn-primary" onClick={() => (showCreate ? setShowCreate(false) : startCreate())}>
-          {showCreate ? 'סגור טופס' : 'ערוץ מכירה חדש'}
+          {showCreate ? 'Close Form' : 'New Channel'}
         </button>
       </div>
 
@@ -166,10 +166,10 @@ export default function ChannelTypesPage() {
         <div className="form-section">
           <div className="auto-fill-bar">
             <button type="button" className="btn btn-auto-fill" onClick={autoFillForm}>
-              מילוי מהיר
+              Quick Fill
             </button>
           </div>
-          <h3 className="section-title">{editing ? 'עריכת ערוץ מכירה' : 'יצירת ערוץ מכירה'}</h3>
+          <h3 className="section-title">{editing ? 'Edit Channel' : 'Create Channel'}</h3>
           <div className="form-grid">
             <div className="form-field">
               <label className="label">Channel Code *</label>
@@ -211,20 +211,20 @@ export default function ChannelTypesPage() {
               />
             </div>
             <div className="form-field">
-              <label className="label">פעיל</label>
+              <label className="label">Active</label>
               <select
                 className="input"
                 value={form.is_active ? 'true' : 'false'}
                 onChange={(e) => setForm((p) => ({ ...p, is_active: e.target.value === 'true' }))}
               >
-                <option value="true">כן</option>
-                <option value="false">לא</option>
+                <option value="true">Yes</option>
+                <option value="false">No</option>
               </select>
             </div>
           </div>
           <div className="form-actions">
             <button className="btn btn-primary" onClick={save} disabled={saving}>
-              {saving ? 'שומר...' : editing ? 'עדכן' : 'צור'}
+              {saving ? 'Saving...' : editing ? 'Update' : 'Create'}
             </button>
             <button
               className="btn btn-secondary"
@@ -234,7 +234,7 @@ export default function ChannelTypesPage() {
                 resetForm();
               }}
             >
-              ביטול
+              Cancel
             </button>
           </div>
         </div>
@@ -253,18 +253,18 @@ export default function ChannelTypesPage() {
               className="input"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="חיפוש לפי קוד / שם"
+              placeholder="Search by code / name"
             />
           </div>
           <div className="filter-group">
             <select className="input" value={isActiveFilter} onChange={(e) => setIsActiveFilter(e.target.value)}>
-              <option value="">פעיל (הכל)</option>
-              <option value="true">כן</option>
-              <option value="false">לא</option>
+              <option value="">Active (All)</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
             </select>
           </div>
           <button className="btn btn-primary" type="submit">
-            חיפוש
+            Search
           </button>
         </form>
       </div>
@@ -273,11 +273,11 @@ export default function ChannelTypesPage() {
         {loading ? (
           <div className="loading-state">
             <div className="spinner" />
-            <span>טוען ערוצי מכירה...</span>
+            <span>Loading channels...</span>
           </div>
         ) : items.length === 0 ? (
           <div className="empty-state">
-            <p>לא נמצאו ערוצי מכירה</p>
+            <p>No channels found</p>
           </div>
         ) : (
           <div className="table-wrapper">
@@ -288,8 +288,8 @@ export default function ChannelTypesPage() {
                   <th>Channel Code</th>
                   <th>Description</th>
                   <th>Sort</th>
-                  <th>פעיל</th>
-                  <th>פעולות</th>
+                  <th>Active</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -299,7 +299,7 @@ export default function ChannelTypesPage() {
                     <td className="cell-mono">{channelType.channel_code}</td>
                     <td>{channelType.description || '-'}</td>
                     <td>{channelType.sort_order}</td>
-                    <td>{channelType.is_active ? 'כן' : 'לא'}</td>
+                    <td>{channelType.is_active ? 'Yes' : 'No'}</td>
                     <td className="cell-actions">
                       <button className="action-btn edit" onClick={() => startEdit(channelType)}>
                         ✎
@@ -318,9 +318,9 @@ export default function ChannelTypesPage() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="השבתת ערוץ מכירה"
-        message={`לסמן את "${deleteTarget?.display_name}" כלא פעיל?`}
-        confirmLabel="השבת"
+        title="Deactivate Channel"
+        message={`Mark "${deleteTarget?.display_name}" as inactive?`}
+        confirmLabel="Deactivate"
         onConfirm={remove}
         onCancel={() => setDeleteTarget(null)}
       />
