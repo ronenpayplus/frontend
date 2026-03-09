@@ -79,7 +79,9 @@ export async function updateCompany(uuid: string, data: UpdateCompanyRequest): P
   });
 }
 
-export async function updateCompanyWithLocalizations(data: { uuid: string; localizations: CompanyLocalizationInput[] }): Promise<{ success: boolean }> {
+export async function updateCompanyWithLocalizations(
+  data: UpdateCompanyRequest & { uuid: string; localizations: CompanyLocalizationInput[] },
+): Promise<{ success: boolean }> {
   return request<{ success: boolean }>(`${API_BASE}/update-with-localizations`, {
     method: 'PUT',
     body: JSON.stringify(data),

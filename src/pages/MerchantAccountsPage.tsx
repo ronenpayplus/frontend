@@ -12,12 +12,11 @@ import {
 } from '../api/merchantAccounts';
 import {
   listMerchantAccountCurrencies,
-  syncMerchantAccountCurrencies,
 } from '../api/merchantAccountCurrencies';
 import { listPaymentMethods } from '../api/paymentMethods';
-import { listMerchantAccountMethods, setMerchantAccountMethods } from '../api/merchantAccountMethods';
+import { listMerchantAccountMethods } from '../api/merchantAccountMethods';
 import { listChannelTypes } from '../api/channelTypes';
-import { listMerchantAccountChannels, setMerchantAccountChannels } from '../api/merchantAccountChannels';
+import { listMerchantAccountChannels } from '../api/merchantAccountChannels';
 import { listOrgEntityLocalizations } from '../api/orgEntityLocalizations';
 import type { PaymentMethod } from '../types/paymentMethod';
 import type { ChannelType } from '../types/channelType';
@@ -106,6 +105,7 @@ export default function MerchantAccountsPage() {
     name: '',
     merchant_code: '',
     mcc: '',
+    short_descriptor: '',
     charges_enabled: true,
     payouts_enabled: false,
     country: 'IL',
@@ -255,6 +255,7 @@ export default function MerchantAccountsPage() {
       name: '',
       merchant_code: '',
       mcc: '',
+      short_descriptor: '',
       charges_enabled: true,
       payouts_enabled: false,
       country: 'IL',
@@ -290,6 +291,7 @@ export default function MerchantAccountsPage() {
       name: `Merchant Account ${rand}`,
       merchant_code: `MA-${rand}`,
       mcc: '5411',
+      short_descriptor: `MA${rand}`,
       charges_enabled: true,
       payouts_enabled: false,
       country: 'IL',
@@ -332,6 +334,7 @@ export default function MerchantAccountsPage() {
       name: item.name,
       merchant_code: item.merchant_code,
       mcc: item.mcc,
+      short_descriptor: item.short_descriptor || '',
       charges_enabled: item.charges_enabled,
       payouts_enabled: item.payouts_enabled,
       country: item.country,
@@ -404,23 +407,48 @@ export default function MerchantAccountsPage() {
       addToast('Select at least one available currency', 'error');
       return;
     }
+    if (selectedPaymentMethods.length === 0) {
+      addToast('Select at least one payment method', 'error');
+      return;
+    }
+    if (selectedChannels.length === 0) {
+      addToast('Select at least one channel', 'error');
+      return;
+    }
 
     setSaving(true);
     try {
       const availableCurrencyCodes = new Set(currencies.map((c) => c.alpha3));
       const validSelectedCurrencies = selectedCurrencies.filter((code) => availableCurrencyCodes.has(code));
+      if (validSelectedCurrencies.length === 0) {
+        addToast('No valid currency selected from reference table', 'error');
+        setSaving(false);
+        return;
+      }
       const baseCurrency =
         form.currency && validSelectedCurrencies.includes(form.currency)
           ? form.currency
           : validSelectedCurrencies[0];
+      const flowCurrencies = validSelectedCurrencies.map((code, idx) => ({
+        currency_code: code,
+        is_default: idx === 0,
+      }));
+      const flowMethods = selectedPaymentMethods.map((code) => ({
+        method_code: code,
+        is_enabled: true,
+      }));
+      const flowChannels = selectedChannels.map((code) => ({
+        channel_type: code,
+      }));
 
-      let accountUUID: string;
       if (editing) {
-        accountUUID = editing.uuid;
         const payload: UpdateMerchantAccountRequest = {
           uuid: editing.uuid,
           ...form,
           currency: baseCurrency,
+          currencies: flowCurrencies,
+          methods: flowMethods,
+          channels: flowChannels,
           localizations: ensureAtLeastOneLocalization(localizations, form.name),
         };
         await updateMerchantAccount(editing.uuid, payload);
@@ -431,44 +459,12 @@ export default function MerchantAccountsPage() {
           company_uuid: resolvedCompanyUUID,
           ...form,
           currency: baseCurrency,
+          currencies: flowCurrencies,
+          methods: flowMethods,
+          channels: flowChannels,
           localizations: ensureAtLeastOneLocalization(localizations, form.name),
         };
-        const result = await createMerchantAccount(payload);
-        accountUUID = (result as unknown as { merchant_account?: { uuid?: string }; uuid?: string })
-          ?.merchant_account?.uuid || (result as unknown as { uuid?: string })?.uuid || '';
-      }
-
-      if (accountUUID && selectedCurrencies.length > 0) {
-        try {
-          await syncMerchantAccountCurrencies(accountUUID, selectedCurrencies);
-        } catch (currError) {
-          console.error('Currency sync error:', currError);
-          addToast('Merchant account saved, but currency sync failed', 'error');
-        }
-      }
-
-      if (accountUUID && selectedPaymentMethods.length > 0) {
-        try {
-          await setMerchantAccountMethods({
-            merchant_account_uuid: accountUUID,
-            methods: selectedPaymentMethods.map((code) => ({ method_code: code, is_enabled: true })),
-          });
-        } catch (pmError) {
-          console.error('Payment methods sync error:', pmError);
-          addToast('Merchant account saved, but payment methods sync failed', 'error');
-        }
-      }
-
-      if (accountUUID && selectedChannels.length > 0) {
-        try {
-          await setMerchantAccountChannels({
-            merchant_account_uuid: accountUUID,
-            channels: selectedChannels.map((code) => ({ channel_type: code })),
-          });
-        } catch (chError) {
-          console.error('Channels sync error:', chError);
-          addToast('Merchant account saved, but channel sync failed', 'error');
-        }
+        await createMerchantAccount(payload);
       }
 
       addToast(
@@ -538,6 +534,7 @@ export default function MerchantAccountsPage() {
             <div className="form-field"><label className="label">Name *</label><input className="input" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Merchant Code *</label><input className="input ltr-input" dir="ltr" value={form.merchant_code} onChange={(e) => setForm((p) => ({ ...p, merchant_code: e.target.value }))} /></div>
             <div className="form-field"><label className="label">MCC *</label><input className="input ltr-input" dir="ltr" value={form.mcc} onChange={(e) => setForm((p) => ({ ...p, mcc: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Short Descriptor</label><input className="input ltr-input" dir="ltr" maxLength={25} value={form.short_descriptor} onChange={(e) => setForm((p) => ({ ...p, short_descriptor: e.target.value }))} placeholder="Appears on statements (max 25)" /></div>
             <div className="form-field"><label className="label">Status</label><select className="input" value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}>{Object.keys(STATUS_LABELS).map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}</select></div>
             <div className="form-field"><label className="label">KYC</label><select className="input" value={form.kyc_status} onChange={(e) => setForm((p) => ({ ...p, kyc_status: e.target.value }))}>{KYC_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
             <div className="form-field"><label className="label">Country</label><select className="input" value={form.country} onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))}>{MOCK_COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}</select></div>
@@ -600,7 +597,13 @@ export default function MerchantAccountsPage() {
           </div>
 
           <div className="form-actions">
-            <button className="btn btn-primary" onClick={handleSave} disabled={saving || !hasValidSelectedCurrencies}>{saving ? 'Saving...' : editing ? 'Update' : 'Create'}</button>
+            <button
+              className="btn btn-primary"
+              onClick={handleSave}
+              disabled={saving || !hasValidSelectedCurrencies || selectedPaymentMethods.length === 0 || selectedChannels.length === 0}
+            >
+              {saving ? 'Saving...' : editing ? 'Update' : 'Create'}
+            </button>
             <button className="btn btn-secondary" onClick={() => { setShowCreate(false); setEditing(null); resetForm(); }}>Cancel</button>
           </div>
         </div>

@@ -68,10 +68,9 @@ export async function updateStore(uuid: string, data: UpdateStoreRequest): Promi
   });
 }
 
-export async function updateStoreWithLocalizations(data: {
-  uuid: string;
-  localizations: LocalizationInput[];
-}): Promise<{ success: boolean }> {
+export async function updateStoreWithLocalizations(
+  data: UpdateStoreRequest & { uuid: string; localizations: LocalizationInput[] },
+): Promise<{ success: boolean }> {
   return request<{ success: boolean }>(`${API_BASE}/update-with-localizations`, {
     method: 'PUT',
     body: JSON.stringify(data),

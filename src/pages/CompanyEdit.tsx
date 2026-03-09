@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   getCompany,
   listCompanyLocalizations,
-  updateCompany,
   updateCompanyWithLocalizations,
 } from '../api/companies';
 import { listLegalEntities } from '../api/legalEntities';
@@ -101,16 +100,18 @@ export default function CompanyEdit() {
     if (!uuid) return;
     setSaving(true);
     try {
-      const localizationsPayload = data.localizations || [];
-      const payload = { ...data };
-      delete payload.localizations;
-      await updateCompany(uuid, payload as UpdateCompanyRequest);
-      if (localizationsPayload.length > 0) {
-        await updateCompanyWithLocalizations({
-          uuid,
-          localizations: localizationsPayload,
-        });
-      }
+      const localizationsPayload = data.localizations && data.localizations.length > 0
+        ? data.localizations
+        : [{
+          lang_code: 'en',
+          display_name: data.name,
+          is_default: true,
+        }];
+      await updateCompanyWithLocalizations({
+        ...(data as UpdateCompanyRequest),
+        uuid,
+        localizations: localizationsPayload,
+      });
       addToast('Company updated successfully', 'success');
       setTimeout(() => navigate(`/companies/${uuid}`), 500);
     } catch (err) {

@@ -1,4 +1,5 @@
 import type { Pagination } from './company';
+import type { AddressInput } from './address';
 
 export interface BeneficialOwner {
   uuid: string;
@@ -9,9 +10,19 @@ export interface BeneficialOwner {
   nationality: string;
   national_id?: string;
   national_id_type?: string;
+  email?: string;
+  job_title?: string;
+  owner_entity_type?: string;
+  company_name?: string;
+  company_type?: string;
+  company_country?: string;
+  company_registration_number?: string;
+  company_tax_id?: string;
+  company_website?: string;
   ownership_percentage: number;
   role: string;
   address_id?: number;
+  address?: AddressInput;
   pep_status: boolean;
   sanctions_clear?: boolean;
   verification_status: string;
@@ -43,9 +54,19 @@ export interface CreateBeneficialOwnerRequest {
   nationality: string;
   national_id?: string;
   national_id_type?: string;
+  email?: string;
+  job_title?: string;
+  owner_entity_type?: string;
+  company_name?: string;
+  company_type?: string;
+  company_country?: string;
+  company_registration_number?: string;
+  company_tax_id?: string;
+  company_website?: string;
   ownership_percentage: number;
   role: string;
   address_id?: number;
+  address?: AddressInput;
   pep_status: boolean;
   sanctions_clear?: boolean;
 }
@@ -57,13 +78,30 @@ export interface UpdateBeneficialOwnerRequest {
   nationality: string;
   national_id?: string;
   national_id_type?: string;
+  email?: string;
+  job_title?: string;
+  owner_entity_type?: string;
+  company_name?: string;
+  company_type?: string;
+  company_country?: string;
+  company_registration_number?: string;
+  company_tax_id?: string;
+  company_website?: string;
   ownership_percentage: number;
   role: string;
   address_id?: number;
+  address?: AddressInput;
   pep_status: boolean;
   sanctions_clear?: boolean;
   verification_status: string;
 }
+
+export const OWNER_ENTITY_TYPES = ['individual', 'corporate'] as const;
+
+export const OWNER_ENTITY_TYPE_LABELS: Record<string, string> = {
+  individual: 'Individual',
+  corporate: 'Corporate Entity',
+};
 
 export const BENEFICIAL_OWNER_ROLES = ['owner', 'director', 'controller', 'signatory'] as const;
 export const BENEFICIAL_OWNER_NATIONAL_ID_TYPES = ['passport', 'national_id', 'drivers_license', 'other'] as const;

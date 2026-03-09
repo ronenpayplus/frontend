@@ -46,8 +46,16 @@ export default function LegalEntityForm({
     registration_number: initial?.registration_number ?? '',
     date_of_incorporation: initial?.date_of_incorporation?.slice(0, 10) ?? '',
     country: initial?.country ?? 'IL',
-    registered_address_id: initial?.registered_address_id ?? 1,
+    registered_address_id: initial?.registered_address_id ?? '',
     operating_address_id: initial?.operating_address_id ?? '',
+    registered_address_country: initial?.country ?? 'IL',
+    registered_address_city: '',
+    registered_address_line1: '',
+    registered_address_postal_code: '',
+    operating_address_country: initial?.country ?? 'IL',
+    operating_address_city: '',
+    operating_address_line1: '',
+    operating_address_postal_code: '',
     kyc_status: initial?.kyc_status ?? 'pending',
     status: initial?.status ?? 'active',
   });
@@ -87,8 +95,10 @@ export default function LegalEntityForm({
     if (!form.legal_name.trim()) next.legal_name = 'Legal name is required';
     if (!form.tax_id.trim()) next.tax_id = 'Tax ID is required';
     if (!form.country) next.country = 'Country is required';
-    if (!form.registered_address_id || Number(form.registered_address_id) <= 0) {
-      next.registered_address_id = 'Registered address ID is required (must be > 0)';
+    const hasRegisteredAddressID = Number(form.registered_address_id) > 0;
+    const hasRegisteredAddressInline = !!(form.registered_address_line1.trim() && form.registered_address_city.trim() && form.registered_address_country);
+    if (!hasRegisteredAddressID && !hasRegisteredAddressInline) {
+      next.registered_address_id = 'Provide registered address ID or inline registered address';
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -107,6 +117,14 @@ export default function LegalEntityForm({
       country: 'IL',
       registered_address_id: 1,
       operating_address_id: '',
+      registered_address_country: 'IL',
+      registered_address_city: `Tel Aviv ${rand}`,
+      registered_address_line1: `${rand} Business St`,
+      registered_address_postal_code: `${rand}`,
+      operating_address_country: 'IL',
+      operating_address_city: '',
+      operating_address_line1: '',
+      operating_address_postal_code: '',
       kyc_status: 'pending',
       status: 'active',
     });
@@ -146,9 +164,27 @@ export default function LegalEntityForm({
       registration_number: form.registration_number || undefined,
       date_of_incorporation: form.date_of_incorporation || undefined,
       country: form.country,
-      registered_address_id: Number(form.registered_address_id),
+      registered_address_id: Number(form.registered_address_id) > 0 ? Number(form.registered_address_id) : undefined,
+      registered_address: form.registered_address_line1.trim() && form.registered_address_city.trim()
+        ? {
+          address_type: 'registered',
+          country_code: form.registered_address_country,
+          city: form.registered_address_city.trim(),
+          postal_code: form.registered_address_postal_code.trim() || undefined,
+          line1: form.registered_address_line1.trim(),
+        }
+        : undefined,
       operating_address_id: form.operating_address_id
         ? Number(form.operating_address_id)
+        : undefined,
+      operating_address: form.operating_address_line1.trim() && form.operating_address_city.trim()
+        ? {
+          address_type: 'operating',
+          country_code: form.operating_address_country,
+          city: form.operating_address_city.trim(),
+          postal_code: form.operating_address_postal_code.trim() || undefined,
+          line1: form.operating_address_line1.trim(),
+        }
         : undefined,
       localizations: ensureAtLeastOneLocalization(localizations, form.legal_name),
     };
@@ -283,11 +319,31 @@ export default function LegalEntityForm({
               type="number"
               min={1}
               value={form.registered_address_id}
-              onChange={(e) => setValue('registered_address_id', Number(e.target.value))}
+              onChange={(e) => setValue('registered_address_id', e.target.value)}
             />
             {errors.registered_address_id ? (
               <span className="field-error">{errors.registered_address_id}</span>
             ) : null}
+          </div>
+          <div className="form-field">
+            <label className="label">Registered Address Country</label>
+            <select className="input" value={form.registered_address_country} onChange={(e) => setValue('registered_address_country', e.target.value)}>
+              {MOCK_COUNTRIES.map((c) => (
+                <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
+              ))}
+            </select>
+          </div>
+          <div className="form-field">
+            <label className="label">Registered Address City</label>
+            <input className="input" value={form.registered_address_city} onChange={(e) => setValue('registered_address_city', e.target.value)} />
+          </div>
+          <div className="form-field">
+            <label className="label">Registered Address Line 1</label>
+            <input className="input" value={form.registered_address_line1} onChange={(e) => setValue('registered_address_line1', e.target.value)} />
+          </div>
+          <div className="form-field">
+            <label className="label">Registered Postal Code</label>
+            <input className="input ltr-input" dir="ltr" value={form.registered_address_postal_code} onChange={(e) => setValue('registered_address_postal_code', e.target.value)} />
           </div>
 
           <div className="form-field">
@@ -299,6 +355,26 @@ export default function LegalEntityForm({
               value={form.operating_address_id}
               onChange={(e) => setValue('operating_address_id', e.target.value)}
             />
+          </div>
+          <div className="form-field">
+            <label className="label">Operating Address Country</label>
+            <select className="input" value={form.operating_address_country} onChange={(e) => setValue('operating_address_country', e.target.value)}>
+              {MOCK_COUNTRIES.map((c) => (
+                <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
+              ))}
+            </select>
+          </div>
+          <div className="form-field">
+            <label className="label">Operating Address City</label>
+            <input className="input" value={form.operating_address_city} onChange={(e) => setValue('operating_address_city', e.target.value)} />
+          </div>
+          <div className="form-field">
+            <label className="label">Operating Address Line 1</label>
+            <input className="input" value={form.operating_address_line1} onChange={(e) => setValue('operating_address_line1', e.target.value)} />
+          </div>
+          <div className="form-field">
+            <label className="label">Operating Postal Code</label>
+            <input className="input ltr-input" dir="ltr" value={form.operating_address_postal_code} onChange={(e) => setValue('operating_address_postal_code', e.target.value)} />
           </div>
 
           {isEdit ? (

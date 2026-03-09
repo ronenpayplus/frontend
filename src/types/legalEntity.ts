@@ -1,5 +1,6 @@
 import type { Pagination } from './company';
 import type { LocalizationInput } from './orgEntityLocalization';
+import type { AddressInput } from './address';
 
 export interface LegalEntity {
   uuid: string;
@@ -46,8 +47,10 @@ export interface CreateLegalEntityRequest {
   registration_number?: string;
   date_of_incorporation?: string;
   country: string;
-  registered_address_id: number;
+  registered_address_id?: number;
+  registered_address?: AddressInput;
   operating_address_id?: number;
+  operating_address?: AddressInput;
   created_by?: string;
   localizations?: LocalizationInput[];
 }
@@ -61,8 +64,10 @@ export interface UpdateLegalEntityRequest {
   registration_number?: string;
   date_of_incorporation?: string;
   country: string;
-  registered_address_id: number;
+  registered_address_id?: number;
+  registered_address?: AddressInput;
   operating_address_id?: number;
+  operating_address?: AddressInput;
   kyc_status: string;
   status: string;
   updated_by?: string;

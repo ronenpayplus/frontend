@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createCompany, createCompanyWithLocalizations } from '../api/companies';
+import { createCompanyWithLocalizations } from '../api/companies';
 import type { CreateCompanyRequest } from '../types/company';
 import CompanyForm from '../components/CompanyForm';
 import Toast from '../components/Toast';
@@ -15,15 +15,19 @@ export default function CompanyCreate() {
   const handleSubmit = async (data: CreateCompanyRequest) => {
     setLoading(true);
     try {
-      const localizations = data.localizations || [];
+      const localizations = data.localizations && data.localizations.length > 0
+        ? data.localizations
+        : [{
+          lang_code: 'en',
+          display_name: data.name,
+          is_default: true,
+        }];
       const payload = { ...data };
       delete payload.localizations;
-      const result = localizations.length > 0
-        ? await createCompanyWithLocalizations({
-          ...(payload as CreateCompanyRequest),
-          localizations,
-        })
-        : await createCompany(payload as CreateCompanyRequest);
+      const result = await createCompanyWithLocalizations({
+        ...(payload as CreateCompanyRequest),
+        localizations,
+      });
       addToast('Company created successfully', 'success');
       setTimeout(() => navigate(`/companies/${result.uuid}`), 500);
     } catch (err) {

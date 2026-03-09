@@ -81,10 +81,9 @@ export async function updateLegalEntity(
   });
 }
 
-export async function updateLegalEntityWithLocalizations(data: {
-  uuid: string;
-  localizations: LocalizationInput[];
-}): Promise<{ success: boolean }> {
+export async function updateLegalEntityWithLocalizations(
+  data: UpdateLegalEntityRequest & { uuid: string; localizations: LocalizationInput[] },
+): Promise<{ success: boolean }> {
   return request<{ success: boolean }>(`${API_BASE}/update-with-localizations`, {
     method: 'PUT',
     body: JSON.stringify(data),

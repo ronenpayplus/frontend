@@ -19,6 +19,7 @@ import BeneficialOwnersPage from './pages/BeneficialOwnersPage';
 import CompanyContactsPage from './pages/CompanyContactsPage';
 import ComplianceDocumentsPage from './pages/ComplianceDocumentsPage';
 import SubMerchantAccountsPage from './pages/SubMerchantAccountsPage';
+import AddressesPage from './pages/AddressesPage';
 
 export default function App() {
   return (
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="/beneficial-owners" element={<BeneficialOwnersPage />} />
           <Route path="/compliance-documents" element={<ComplianceDocumentsPage />} />
           <Route path="/contacts" element={<CompanyContactsPage />} />
+          <Route path="/addresses" element={<AddressesPage />} />
           <Route path="/merchants" element={<LegalEntityMerchants />} />
           <Route path="/merchants/:uuid/merchant-accounts" element={<MerchantAccountsPage />} />
           <Route path="/merchant-accounts" element={<MerchantAccountsPage />} />

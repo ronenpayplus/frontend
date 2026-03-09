@@ -42,6 +42,10 @@ export default function MerchantForm({
     contact_email: initial?.contact_email ?? '',
     contact_phone: initial?.contact_phone ?? '',
     address_id: initial?.address_id ?? '',
+    address_country_code: 'IL',
+    address_city: '',
+    address_line1: '',
+    address_postal_code: '',
     notes: initial?.notes ?? '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -93,6 +97,10 @@ export default function MerchantForm({
       contact_email: `merchant-${rand}@example.com`,
       contact_phone: `+972-50-${rand}-000`,
       address_id: '',
+      address_country_code: 'IL',
+      address_city: `Tel Aviv ${rand}`,
+      address_line1: `${rand} Market St`,
+      address_postal_code: `${rand}`,
       notes: 'Auto-filled test merchant',
     });
     setLocalizations([
@@ -134,6 +142,15 @@ export default function MerchantForm({
       contact_email: form.contact_email || undefined,
       contact_phone: form.contact_phone || undefined,
       address_id: form.address_id ? Number(form.address_id) : undefined,
+      address: form.address_line1.trim() && form.address_city.trim()
+        ? {
+          address_type: 'operating',
+          country_code: form.address_country_code,
+          city: form.address_city.trim(),
+          line1: form.address_line1.trim(),
+          postal_code: form.address_postal_code.trim() || undefined,
+        }
+        : undefined,
       notes: form.notes || undefined,
       localizations: ensureAtLeastOneLocalization(localizations, form.name),
     };
@@ -268,6 +285,28 @@ export default function MerchantForm({
               value={form.address_id}
               onChange={(e) => setValue('address_id', e.target.value)}
             />
+          </div>
+          <div className="form-field">
+            <label className="label">Address Country</label>
+            <input
+              className="input ltr-input"
+              dir="ltr"
+              maxLength={2}
+              value={form.address_country_code}
+              onChange={(e) => setValue('address_country_code', e.target.value.toUpperCase())}
+            />
+          </div>
+          <div className="form-field">
+            <label className="label">Address City</label>
+            <input className="input" value={form.address_city} onChange={(e) => setValue('address_city', e.target.value)} />
+          </div>
+          <div className="form-field">
+            <label className="label">Address Line 1</label>
+            <input className="input" value={form.address_line1} onChange={(e) => setValue('address_line1', e.target.value)} />
+          </div>
+          <div className="form-field">
+            <label className="label">Address Postal Code</label>
+            <input className="input ltr-input" dir="ltr" value={form.address_postal_code} onChange={(e) => setValue('address_postal_code', e.target.value)} />
           </div>
 
           <div className="form-field span-full">

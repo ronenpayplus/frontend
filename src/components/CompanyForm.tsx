@@ -76,6 +76,7 @@ export default function CompanyForm({
     default_country: company?.default_country || '',
     timezone: company?.timezone || '',
     mcc: company?.mcc || '',
+    industry: company?.industry || '',
     high_risk_merchant: company?.high_risk_merchant || false,
     is_blocked: company?.is_blocked || false,
     risk_profile: company?.risk_profile || '',
@@ -118,6 +119,7 @@ export default function CompanyForm({
       default_country: 'IL',
       timezone: 'Asia/Jerusalem',
       mcc: '5411',
+      industry: 'fintech',
       high_risk_merchant: false,
       is_blocked: false,
       risk_profile: 'low',
@@ -436,6 +438,17 @@ export default function CompanyForm({
               value={form.mcc}
               onChange={(e) => set('mcc', e.target.value)}
               placeholder="e.g. 5411"
+            />
+          </div>
+
+          <div className="form-field">
+            <label className="label">Industry</label>
+            <input
+              className="input"
+              value={form.industry}
+              onChange={(e) => set('industry', e.target.value)}
+              placeholder="e.g. fintech, retail, healthcare"
+              maxLength={100}
             />
           </div>
         </div>

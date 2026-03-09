@@ -76,10 +76,9 @@ export async function updateMerchant(uuid: string, data: UpdateMerchantRequest):
   });
 }
 
-export async function updateMerchantWithLocalizations(data: {
-  uuid: string;
-  localizations: LocalizationInput[];
-}): Promise<{ success: boolean }> {
+export async function updateMerchantWithLocalizations(
+  data: UpdateMerchantRequest & { uuid: string; localizations: LocalizationInput[] },
+): Promise<{ success: boolean }> {
   return request<{ success: boolean }>(`${API_BASE}/update-with-localizations`, {
     method: 'PUT',
     body: JSON.stringify(data),

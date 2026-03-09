@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
-  createMerchant,
   createMerchantWithLocalizations,
   deleteMerchant,
   listMerchants,
-  updateMerchant,
   updateMerchantWithLocalizations,
 } from '../api/merchants';
 import { listCompanies } from '../api/companies';
@@ -141,17 +139,15 @@ export default function LegalEntityMerchants() {
     setSaving(true);
     try {
       const data = payload as CreateMerchantRequest;
-      const localizations = data.localizations || [];
-      const base = { ...data };
-      delete base.localizations;
-      if (localizations.length > 0) {
-        await createMerchantWithLocalizations({
-          ...(base as CreateMerchantRequest),
-          localizations,
-        });
-      } else {
-        await createMerchant(base as CreateMerchantRequest);
-      }
+      const localizations = data.localizations || [{
+        lang_code: 'en',
+        display_name: data.name,
+        is_default: true,
+      }];
+      await createMerchantWithLocalizations({
+        ...(data as CreateMerchantRequest),
+        localizations,
+      });
       addToast('Merchant created successfully', 'success');
       setShowCreate(false);
       await fetchMerchants();
@@ -168,16 +164,18 @@ export default function LegalEntityMerchants() {
     setSaving(true);
     try {
       const data = payload as UpdateMerchantRequest;
-      const localizations = data.localizations || [];
-      const base = { ...data };
-      delete base.localizations;
-      await updateMerchant(editing.uuid, { ...(base as UpdateMerchantRequest), uuid: editing.uuid });
-      if (localizations.length > 0) {
-        await updateMerchantWithLocalizations({
-          uuid: editing.uuid,
-          localizations,
-        });
-      }
+      const localizations = data.localizations && data.localizations.length > 0
+        ? data.localizations
+        : [{
+          lang_code: 'en',
+          display_name: data.name,
+          is_default: true,
+        }];
+      await updateMerchantWithLocalizations({
+        ...(data as UpdateMerchantRequest),
+        uuid: editing.uuid,
+        localizations,
+      });
       addToast('Merchant updated successfully', 'success');
       setEditing(null);
       setEditingLocalizations([]);

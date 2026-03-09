@@ -11,6 +11,7 @@ export interface Company {
   default_country: string;
   timezone: string;
   mcc?: string;
+  industry?: string;
   high_risk_merchant: boolean;
   is_blocked: boolean;
   risk_profile?: string;
@@ -66,6 +67,7 @@ export interface CreateCompanyRequest {
   default_country: string;
   timezone: string;
   mcc?: string;
+  industry?: string;
   high_risk_merchant: boolean;
   risk_profile?: string;
   website?: string;
@@ -91,6 +93,7 @@ export interface UpdateCompanyRequest {
   default_country: string;
   timezone: string;
   mcc?: string;
+  industry?: string;
   high_risk_merchant: boolean;
   is_blocked: boolean;
   risk_profile?: string;

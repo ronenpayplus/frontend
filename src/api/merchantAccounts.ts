@@ -56,16 +56,19 @@ export async function getMerchantAccount(uuid: string): Promise<{ merchant_accou
 export async function createMerchantAccount(
   data: CreateMerchantAccountRequest,
 ): Promise<{ uuid: string }> {
+  const currencies = data.currencies && data.currencies.length > 0
+    ? data.currencies
+    : [{
+      currency_code: data.currency,
+      is_default: true,
+    }];
   return request<{ uuid: string }>(`${API_BASE}/create-with-currencies`, {
     method: 'POST',
     body: JSON.stringify({
       ...data,
-      currencies: [
-        {
-          currency_code: data.currency,
-          is_default: true,
-        },
-      ],
+      currencies,
+      methods: data.methods,
+      channels: data.channels,
       localizations: data.localizations,
     }),
   });
@@ -75,17 +78,20 @@ export async function updateMerchantAccount(
   uuid: string,
   data: UpdateMerchantAccountRequest,
 ): Promise<{ success: boolean }> {
+  const currencies = data.currencies && data.currencies.length > 0
+    ? data.currencies
+    : [{
+      currency_code: data.currency,
+      is_default: true,
+    }];
   return request<{ success: boolean }>(`${API_BASE}/update-with-currencies`, {
     method: 'PUT',
     body: JSON.stringify({
       ...data,
       uuid: data.uuid || uuid,
-      currencies: [
-        {
-          currency_code: data.currency,
-          is_default: true,
-        },
-      ],
+      currencies,
+      methods: data.methods,
+      channels: data.channels,
       localizations: data.localizations as LocalizationInput[] | undefined,
     }),
   });

@@ -1,5 +1,6 @@
 import type { Pagination } from './company';
 import type { LocalizationInput } from './orgEntityLocalization';
+import type { AddressInput } from './address';
 
 export interface Merchant {
   uuid: string;
@@ -15,6 +16,7 @@ export interface Merchant {
   contact_email?: string;
   contact_phone?: string;
   address_id?: number;
+  address?: AddressInput;
   notes?: string;
   created_at: string;
   updated_at?: string;
@@ -48,6 +50,7 @@ export interface CreateMerchantRequest {
   contact_email?: string;
   contact_phone?: string;
   address_id?: number;
+  address?: AddressInput;
   notes?: string;
   created_by?: string;
   localizations?: LocalizationInput[];

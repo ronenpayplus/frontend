@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
-  createLegalEntity,
   createLegalEntityWithLocalizations,
   deleteLegalEntity,
   listLegalEntities,
-  updateLegalEntity,
   updateLegalEntityWithLocalizations,
 } from '../api/legalEntities';
 import { listCompanies } from '../api/companies';
@@ -157,17 +155,15 @@ export default function CompanyLegalEntities() {
     setSaving(true);
     try {
       const data = payload as CreateLegalEntityRequest;
-      const localizations = data.localizations || [];
-      const base = { ...data };
-      delete base.localizations;
-      if (localizations.length > 0) {
-        await createLegalEntityWithLocalizations({
-          ...(base as CreateLegalEntityRequest),
-          localizations,
-        });
-      } else {
-        await createLegalEntity(base as CreateLegalEntityRequest);
-      }
+      const localizations = data.localizations || [{
+        lang_code: 'en',
+        display_name: data.legal_name,
+        is_default: true,
+      }];
+      await createLegalEntityWithLocalizations({
+        ...(data as CreateLegalEntityRequest),
+        localizations,
+      });
       addToast('Legal entity created successfully', 'success');
       setShowCreate(false);
       await fetchEntities();
@@ -184,16 +180,18 @@ export default function CompanyLegalEntities() {
     setSaving(true);
     try {
       const data = payload as UpdateLegalEntityRequest;
-      const localizations = data.localizations || [];
-      const base = { ...data };
-      delete base.localizations;
-      await updateLegalEntity(editing.uuid, base as UpdateLegalEntityRequest);
-      if (localizations.length > 0) {
-        await updateLegalEntityWithLocalizations({
-          uuid: editing.uuid,
-          localizations,
-        });
-      }
+      const localizations = data.localizations && data.localizations.length > 0
+        ? data.localizations
+        : [{
+          lang_code: 'en',
+          display_name: data.legal_name,
+          is_default: true,
+        }];
+      await updateLegalEntityWithLocalizations({
+        ...(data as UpdateLegalEntityRequest),
+        uuid: editing.uuid,
+        localizations,
+      });
       addToast('Legal entity updated successfully', 'success');
       setEditing(null);
       setEditingLocalizations([]);

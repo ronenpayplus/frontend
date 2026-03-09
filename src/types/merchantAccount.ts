@@ -1,6 +1,20 @@
 import type { Pagination } from './company';
 import type { LocalizationInput } from './orgEntityLocalization';
 
+export interface MerchantAccountCurrencyInput {
+  currency_code: string;
+  is_default: boolean;
+}
+
+export interface MerchantAccountMethodInput {
+  method_code: string;
+  is_enabled: boolean;
+}
+
+export interface MerchantAccountChannelInput {
+  channel_type: string;
+}
+
 export interface MerchantAccount {
   uuid: string;
   merchant_uuid: string;
@@ -22,6 +36,7 @@ export interface MerchantAccount {
   currency: string;
   timezone: string;
   descriptor?: string;
+  short_descriptor?: string;
   settlement_type?: string;
   payout_schedule?: string;
   phone?: string;
@@ -70,6 +85,7 @@ export interface CreateMerchantAccountRequest {
   contract_type?: string;
   volume_tier?: string;
   descriptor?: string;
+  short_descriptor?: string;
   settlement_type?: string;
   payout_schedule?: string;
   phone?: string;
@@ -81,6 +97,9 @@ export interface CreateMerchantAccountRequest {
   default_acquiring_model?: string;
   notes?: string;
   localizations?: LocalizationInput[];
+  currencies?: MerchantAccountCurrencyInput[];
+  methods?: MerchantAccountMethodInput[];
+  channels?: MerchantAccountChannelInput[];
 }
 
 export interface UpdateMerchantAccountRequest {
@@ -100,6 +119,7 @@ export interface UpdateMerchantAccountRequest {
   contract_type?: string;
   volume_tier?: string;
   descriptor?: string;
+  short_descriptor?: string;
   settlement_type?: string;
   payout_schedule?: string;
   phone?: string;
@@ -111,4 +131,7 @@ export interface UpdateMerchantAccountRequest {
   default_acquiring_model?: string;
   notes?: string;
   localizations?: LocalizationInput[];
+  currencies?: MerchantAccountCurrencyInput[];
+  methods?: MerchantAccountMethodInput[];
+  channels?: MerchantAccountChannelInput[];
 }

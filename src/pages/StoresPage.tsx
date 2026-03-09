@@ -4,7 +4,6 @@ import {
   createStoreWithLocalizations,
   deleteStore,
   listStores,
-  updateStore,
   updateStoreWithLocalizations,
 } from '../api/stores';
 import { listMerchantAccounts } from '../api/merchantAccounts';
@@ -61,6 +60,11 @@ export default function StoresPage() {
     timezone: 'Asia/Jerusalem',
     channel_type: 'POS',
     status: 'ACTIVE',
+    address_id: '',
+    address_country_code: 'IL',
+    address_city: '',
+    address_line1: '',
+    address_postal_code: '',
     phone: '',
     email: '',
   });
@@ -204,6 +208,11 @@ export default function StoresPage() {
     timezone: 'Asia/Jerusalem',
     channel_type: 'POS',
     status: 'ACTIVE',
+    address_id: '',
+    address_country_code: 'IL',
+    address_city: '',
+    address_line1: '',
+    address_postal_code: '',
     phone: '',
     email: '',
   });
@@ -230,6 +239,11 @@ export default function StoresPage() {
       timezone: s.timezone,
       channel_type: s.channel_type,
       status: s.status,
+      address_id: s.address_id ? String(s.address_id) : '',
+      address_country_code: 'IL',
+      address_city: '',
+      address_line1: '',
+      address_postal_code: '',
       phone: s.phone || '',
       email: s.email || '',
     });
@@ -250,6 +264,11 @@ export default function StoresPage() {
       timezone: 'Asia/Jerusalem',
       channel_type: 'POS',
       status: 'ACTIVE',
+      address_id: '',
+      address_country_code: 'IL',
+      address_city: `Tel Aviv ${rand}`,
+      address_line1: `${rand} Main St`,
+      address_postal_code: `${rand}`,
       phone: `+972-50-${rand}-000`,
       email: `store-${rand}@example.com`,
     });
@@ -284,14 +303,40 @@ export default function StoresPage() {
     try {
       const resolvedLocalizations = ensureAtLeastOneLocalization(localizations, form.name);
       if (editing) {
-        const payload: UpdateStoreRequest = { ...form, localizations: resolvedLocalizations };
-        await updateStore(editing.uuid, payload);
-        await updateStoreWithLocalizations({ uuid: editing.uuid, localizations: resolvedLocalizations });
+        const payload: UpdateStoreRequest = {
+          ...form,
+          address_id: form.address_id ? Number(form.address_id) : undefined,
+          address: form.address_line1.trim() && form.address_city.trim()
+            ? {
+              address_type: 'operating',
+              country_code: form.address_country_code,
+              city: form.address_city.trim(),
+              line1: form.address_line1.trim(),
+              postal_code: form.address_postal_code.trim() || undefined,
+            }
+            : undefined,
+          localizations: resolvedLocalizations,
+        };
+        await updateStoreWithLocalizations({
+          ...payload,
+          uuid: editing.uuid,
+          localizations: resolvedLocalizations,
+        });
         addToast('Store updated', 'success');
         setEditing(null);
       } else {
         const payload: CreateStoreRequest = {
           ...form,
+          address_id: form.address_id ? Number(form.address_id) : undefined,
+          address: form.address_line1.trim() && form.address_city.trim()
+            ? {
+              address_type: 'operating',
+              country_code: form.address_country_code,
+              city: form.address_city.trim(),
+              line1: form.address_line1.trim(),
+              postal_code: form.address_postal_code.trim() || undefined,
+            }
+            : undefined,
           merchant_account_uuid: selectedMerchantAccountUUID,
           localizations: resolvedLocalizations,
         };
@@ -375,6 +420,11 @@ export default function StoresPage() {
             <div className="form-field"><label className="label">Store Type</label><select className="input" value={form.store_type} onChange={(e) => setForm((p) => ({ ...p, store_type: e.target.value }))}>{STORE_TYPES.map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
             <div className="form-field"><label className="label">Channel</label><select className="input" value={form.channel_type} onChange={(e) => setForm((p) => ({ ...p, channel_type: e.target.value }))}>{STORE_CHANNEL_TYPES.map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
             <div className="form-field"><label className="label">Status</label><select className="input" value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}>{STORE_STATUSES.map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
+            <div className="form-field"><label className="label">Address ID</label><input className="input ltr-input" dir="ltr" value={form.address_id} onChange={(e) => setForm((p) => ({ ...p, address_id: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Address Country</label><input className="input ltr-input" dir="ltr" maxLength={2} value={form.address_country_code} onChange={(e) => setForm((p) => ({ ...p, address_country_code: e.target.value.toUpperCase() }))} /></div>
+            <div className="form-field"><label className="label">Address City</label><input className="input" value={form.address_city} onChange={(e) => setForm((p) => ({ ...p, address_city: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Address Line 1</label><input className="input" value={form.address_line1} onChange={(e) => setForm((p) => ({ ...p, address_line1: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Address Postal Code</label><input className="input ltr-input" dir="ltr" value={form.address_postal_code} onChange={(e) => setForm((p) => ({ ...p, address_postal_code: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Timezone</label><select className="input" value={form.timezone} onChange={(e) => setForm((p) => ({ ...p, timezone: e.target.value }))}>{MOCK_TIMEZONES.map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
             <div className="form-field"><label className="label">Phone</label><input className="input ltr-input" dir="ltr" value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Email</label><input className="input ltr-input" dir="ltr" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} /></div>

@@ -20,6 +20,8 @@ import {
   BENEFICIAL_OWNER_ROLES,
   BENEFICIAL_OWNER_ROLE_LABELS,
   BENEFICIAL_OWNER_VERIFICATION_STATUSES,
+  OWNER_ENTITY_TYPES,
+  OWNER_ENTITY_TYPE_LABELS,
 } from '../types/beneficialOwner';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
@@ -34,9 +36,22 @@ type BeneficialOwnerFormState = {
   nationality: string;
   national_id: string;
   national_id_type: string;
+  email: string;
+  job_title: string;
+  owner_entity_type: string;
+  company_name: string;
+  company_type: string;
+  company_country: string;
+  company_registration_number: string;
+  company_tax_id: string;
+  company_website: string;
   ownership_percentage: number;
   role: string;
   address_id: string;
+  address_country_code: string;
+  address_city: string;
+  address_line1: string;
+  address_postal_code: string;
   pep_status: boolean;
   sanctions_clear: boolean;
   verification_status: string;
@@ -49,9 +64,22 @@ const defaultForm: BeneficialOwnerFormState = {
   nationality: 'IL',
   national_id: '',
   national_id_type: 'national_id',
+  email: '',
+  job_title: '',
+  owner_entity_type: 'individual',
+  company_name: '',
+  company_type: '',
+  company_country: '',
+  company_registration_number: '',
+  company_tax_id: '',
+  company_website: '',
   ownership_percentage: 50,
   role: 'owner',
   address_id: '',
+  address_country_code: 'IL',
+  address_city: '',
+  address_line1: '',
+  address_postal_code: '',
   pep_status: false,
   sanctions_clear: true,
   verification_status: 'pending',
@@ -168,9 +196,22 @@ export default function BeneficialOwnersPage() {
       nationality: 'IL',
       national_id: `ID-${rand}`,
       national_id_type: 'national_id',
+      email: `john${rand}@example.com`,
+      job_title: 'CEO',
+      owner_entity_type: 'individual',
+      company_name: '',
+      company_type: '',
+      company_country: '',
+      company_registration_number: '',
+      company_tax_id: '',
+      company_website: '',
       ownership_percentage: 55,
       role: 'owner',
       address_id: '',
+      address_country_code: 'IL',
+      address_city: `Tel Aviv ${rand}`,
+      address_line1: `${rand} Main St`,
+      address_postal_code: `${rand}`,
       pep_status: false,
       sanctions_clear: true,
       verification_status: 'pending',
@@ -187,9 +228,22 @@ export default function BeneficialOwnersPage() {
       nationality: item.nationality,
       national_id: item.national_id || '',
       national_id_type: item.national_id_type || 'national_id',
+      email: item.email || '',
+      job_title: item.job_title || '',
+      owner_entity_type: item.owner_entity_type || 'individual',
+      company_name: item.company_name || '',
+      company_type: item.company_type || '',
+      company_country: item.company_country || '',
+      company_registration_number: item.company_registration_number || '',
+      company_tax_id: item.company_tax_id || '',
+      company_website: item.company_website || '',
       ownership_percentage: item.ownership_percentage,
       role: item.role,
       address_id: item.address_id ? String(item.address_id) : '',
+      address_country_code: 'IL',
+      address_city: '',
+      address_line1: '',
+      address_postal_code: '',
       pep_status: item.pep_status,
       sanctions_clear: item.sanctions_clear ?? true,
       verification_status: item.verification_status || 'pending',
@@ -204,9 +258,29 @@ export default function BeneficialOwnersPage() {
     nationality: form.nationality.trim().toUpperCase(),
     national_id: form.national_id.trim() || undefined,
     national_id_type: form.national_id_type || undefined,
+    email: form.email.trim() || undefined,
+    job_title: form.job_title.trim() || undefined,
+    owner_entity_type: form.owner_entity_type || 'individual',
+    ...(form.owner_entity_type === 'corporate' ? {
+      company_name: form.company_name.trim() || undefined,
+      company_type: form.company_type.trim() || undefined,
+      company_country: form.company_country.trim().toUpperCase() || undefined,
+      company_registration_number: form.company_registration_number.trim() || undefined,
+      company_tax_id: form.company_tax_id.trim() || undefined,
+      company_website: form.company_website.trim() || undefined,
+    } : {}),
     ownership_percentage: Number(form.ownership_percentage),
     role: form.role,
     address_id: form.address_id ? Number(form.address_id) : undefined,
+    address: form.address_line1.trim() && form.address_city.trim()
+      ? {
+        address_type: 'operating',
+        country_code: form.address_country_code,
+        city: form.address_city.trim(),
+        line1: form.address_line1.trim(),
+        postal_code: form.address_postal_code.trim() || undefined,
+      }
+      : undefined,
     pep_status: form.pep_status,
     sanctions_clear: form.sanctions_clear,
   });
@@ -218,9 +292,29 @@ export default function BeneficialOwnersPage() {
     nationality: form.nationality.trim().toUpperCase(),
     national_id: form.national_id.trim() || undefined,
     national_id_type: form.national_id_type || undefined,
+    email: form.email.trim() || undefined,
+    job_title: form.job_title.trim() || undefined,
+    owner_entity_type: form.owner_entity_type || 'individual',
+    ...(form.owner_entity_type === 'corporate' ? {
+      company_name: form.company_name.trim() || undefined,
+      company_type: form.company_type.trim() || undefined,
+      company_country: form.company_country.trim().toUpperCase() || undefined,
+      company_registration_number: form.company_registration_number.trim() || undefined,
+      company_tax_id: form.company_tax_id.trim() || undefined,
+      company_website: form.company_website.trim() || undefined,
+    } : {}),
     ownership_percentage: Number(form.ownership_percentage),
     role: form.role,
     address_id: form.address_id ? Number(form.address_id) : undefined,
+    address: form.address_line1.trim() && form.address_city.trim()
+      ? {
+        address_type: 'operating',
+        country_code: form.address_country_code,
+        city: form.address_city.trim(),
+        line1: form.address_line1.trim(),
+        postal_code: form.address_postal_code.trim() || undefined,
+      }
+      : undefined,
     pep_status: form.pep_status,
     sanctions_clear: form.sanctions_clear,
     verification_status: form.verification_status,
@@ -307,7 +401,30 @@ export default function BeneficialOwnersPage() {
             <div className="form-field"><label className="label">Ownership % *</label><input type="number" min={0} max={100} step="0.01" className="input ltr-input" dir="ltr" value={form.ownership_percentage} onChange={(e) => setForm((p) => ({ ...p, ownership_percentage: Number(e.target.value) }))} /></div>
             <div className="form-field"><label className="label">National ID</label><input className="input ltr-input" dir="ltr" value={form.national_id} onChange={(e) => setForm((p) => ({ ...p, national_id: e.target.value }))} /></div>
             <div className="form-field"><label className="label">National ID Type</label><select className="input" value={form.national_id_type} onChange={(e) => setForm((p) => ({ ...p, national_id_type: e.target.value }))}>{BENEFICIAL_OWNER_NATIONAL_ID_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
+            <div className="form-field"><label className="label">Email</label><input type="email" className="input ltr-input" dir="ltr" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} placeholder="email@example.com" /></div>
+            <div className="form-field"><label className="label">Job Title</label><input className="input" value={form.job_title} onChange={(e) => setForm((p) => ({ ...p, job_title: e.target.value }))} placeholder="e.g. CEO, CFO" /></div>
+            <div className="form-field"><label className="label">Entity Type</label><select className="input" value={form.owner_entity_type} onChange={(e) => setForm((p) => ({ ...p, owner_entity_type: e.target.value }))}>{OWNER_ENTITY_TYPES.map((t) => <option key={t} value={t}>{OWNER_ENTITY_TYPE_LABELS[t] || t}</option>)}</select></div>
+          </div>
+          {form.owner_entity_type === 'corporate' && (
+            <>
+              <h4 className="section-title" style={{ marginTop: '16px', marginBottom: '12px' }}>Corporate Details</h4>
+              <div className="form-grid">
+                <div className="form-field"><label className="label">Company Name</label><input className="input" value={form.company_name} onChange={(e) => setForm((p) => ({ ...p, company_name: e.target.value }))} /></div>
+                <div className="form-field"><label className="label">Company Type</label><input className="input" value={form.company_type} onChange={(e) => setForm((p) => ({ ...p, company_type: e.target.value }))} placeholder="e.g. LLC, Corporation" /></div>
+                <div className="form-field"><label className="label">Company Country</label><input className="input ltr-input" dir="ltr" maxLength={2} value={form.company_country} onChange={(e) => setForm((p) => ({ ...p, company_country: e.target.value.toUpperCase() }))} placeholder="ISO 2-letter (e.g. US)" /></div>
+                <div className="form-field"><label className="label">Registration Number</label><input className="input ltr-input" dir="ltr" value={form.company_registration_number} onChange={(e) => setForm((p) => ({ ...p, company_registration_number: e.target.value }))} /></div>
+                <div className="form-field"><label className="label">Tax ID</label><input className="input ltr-input" dir="ltr" value={form.company_tax_id} onChange={(e) => setForm((p) => ({ ...p, company_tax_id: e.target.value }))} /></div>
+                <div className="form-field"><label className="label">Website</label><input className="input ltr-input" dir="ltr" value={form.company_website} onChange={(e) => setForm((p) => ({ ...p, company_website: e.target.value }))} placeholder="https://example.com" /></div>
+              </div>
+            </>
+          )}
+          <h4 className="section-title" style={{ marginTop: '16px', marginBottom: '12px' }}>Address & Compliance</h4>
+          <div className="form-grid">
             <div className="form-field"><label className="label">Address ID</label><input type="number" className="input ltr-input" dir="ltr" value={form.address_id} onChange={(e) => setForm((p) => ({ ...p, address_id: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Address Country</label><input className="input ltr-input" dir="ltr" maxLength={2} value={form.address_country_code} onChange={(e) => setForm((p) => ({ ...p, address_country_code: e.target.value.toUpperCase() }))} /></div>
+            <div className="form-field"><label className="label">Address City</label><input className="input" value={form.address_city} onChange={(e) => setForm((p) => ({ ...p, address_city: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Address Line 1</label><input className="input" value={form.address_line1} onChange={(e) => setForm((p) => ({ ...p, address_line1: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Address Postal Code</label><input className="input ltr-input" dir="ltr" value={form.address_postal_code} onChange={(e) => setForm((p) => ({ ...p, address_postal_code: e.target.value }))} /></div>
             <div className="form-field"><label className="label">PEP</label><select className="input" value={form.pep_status ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, pep_status: e.target.value === 'true' }))}><option value="false">No</option><option value="true">Yes</option></select></div>
             <div className="form-field"><label className="label">Sanctions Clear</label><select className="input" value={form.sanctions_clear ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, sanctions_clear: e.target.value === 'true' }))}><option value="true">Yes</option><option value="false">No</option></select></div>
             {editing ? (
@@ -373,11 +490,12 @@ export default function BeneficialOwnersPage() {
               <thead>
                 <tr>
                   <th>Name</th>
+                  <th>Type</th>
                   <th>Role</th>
                   <th>Ownership %</th>
+                  <th>Email</th>
                   <th>Nationality</th>
                   <th>Verification</th>
-                  <th>PEP</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -385,11 +503,12 @@ export default function BeneficialOwnersPage() {
                 {items.map((item) => (
                   <tr key={item.uuid}>
                     <td className="cell-name">{item.first_name} {item.last_name}</td>
+                    <td>{OWNER_ENTITY_TYPE_LABELS[item.owner_entity_type || 'individual'] || 'Individual'}</td>
                     <td>{BENEFICIAL_OWNER_ROLE_LABELS[item.role] || item.role}</td>
                     <td>{item.ownership_percentage}</td>
+                    <td className="cell-mono">{item.email || '—'}</td>
                     <td className="cell-mono">{item.nationality}</td>
                     <td>{item.verification_status}</td>
-                    <td>{item.pep_status ? 'Yes' : 'No'}</td>
                     <td className="cell-actions">
                       <button className="action-btn edit" onClick={() => startEdit(item)}>✎</button>
                       <button className="action-btn delete" onClick={() => setDeleteTarget(item)}>🗑</button>

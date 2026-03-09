@@ -1,5 +1,6 @@
 import type { Pagination } from './company';
 import type { LocalizationInput } from './orgEntityLocalization';
+import type { AddressInput } from './address';
 
 export interface Store {
   uuid: string;
@@ -41,6 +42,7 @@ export interface CreateStoreRequest {
   channel_type: string;
   status?: string;
   address_id?: number;
+  address?: AddressInput;
   phone?: string;
   email?: string;
   localizations?: LocalizationInput[];
@@ -54,6 +56,7 @@ export interface UpdateStoreRequest {
   channel_type: string;
   status: string;
   address_id?: number;
+  address?: AddressInput;
   phone?: string;
   email?: string;
   localizations?: LocalizationInput[];

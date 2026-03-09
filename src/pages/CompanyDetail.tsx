@@ -113,6 +113,7 @@ export default function CompanyDetail() {
             <DetailItem label="Number" value={company.number} mono />
             <DetailItem label="Company Type" value={COMPANY_TYPE_LABELS[company.company_type] || company.company_type} />
             <DetailItem label="Business Type" value={BUSINESS_TYPE_LABELS[company.business_type || ''] || company.business_type} />
+            <DetailItem label="Industry" value={company.industry} />
             <DetailItem label="Platform Account Type" value={company.platform_account_type} />
             <DetailItem label="Contract Type" value={company.contract_type} />
           </div>
