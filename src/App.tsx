@@ -20,6 +20,8 @@ import CompanyContactsPage from './pages/CompanyContactsPage';
 import ComplianceDocumentsPage from './pages/ComplianceDocumentsPage';
 import SubMerchantAccountsPage from './pages/SubMerchantAccountsPage';
 import AddressesPage from './pages/AddressesPage';
+import LocationsPage from './pages/LocationsPage';
+import StationsPage from './pages/StationsPage';
 
 export default function App() {
   return (
@@ -49,6 +51,9 @@ export default function App() {
           <Route path="/merchant-accounts/:uuid/stores" element={<StoresPage />} />
           <Route path="/sub-merchants/:uuid/stores" element={<StoresPage />} />
           <Route path="/stores" element={<StoresPage />} />
+          <Route path="/locations" element={<LocationsPage />} />
+          <Route path="/stores/:uuid/stations" element={<StationsPage />} />
+          <Route path="/stations" element={<StationsPage />} />
           <Route path="/stores/:uuid/terminal-groups" element={<TerminalGroupsPage />} />
           <Route path="/terminal-groups" element={<TerminalGroupsPage />} />
           <Route path="/terminal-groups/:uuid/terminals" element={<TerminalsPage />} />

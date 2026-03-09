@@ -182,4 +182,33 @@ All prefixed with `kyb_` — see field names above.
 6. **`src/pages/MerchantAccountsPage.tsx`** — Add `short_descriptor` input next to `descriptor`
 7. **Create `src/types/onboardingApplication.ts`** if implementing onboarding (17 KYB fields)
 
-No API endpoint URLs changed. No breaking changes — all new fields are optional.
+No API endpoint URLs changed for existing entities. No breaking changes — all new fields are optional.
+
+---
+
+## 5. Station — NEW entity (child of Store)
+
+### Endpoints:
+- `POST /v2/companies/stations/create-with-address-and-location` — Create station (with inline address)
+- `GET /v2/companies/stations/list?store_uuid=...&station_type=...&status=...&search=...&page=1&page_size=20` — List
+- `GET /v2/companies/stations/get/:uuid` — Get by UUID
+- `PUT /v2/companies/stations/update-with-address-and-location` — Update (body includes `uuid`)
+- `DELETE /v2/companies/stations/delete/:uuid` — Delete
+
+### Type file: `src/types/station.ts` (NEW)
+### API file: `src/api/stations.ts` (NEW)
+### Page file: `src/pages/StationsPage.tsx` (NEW)
+
+### Station types: `CHECKOUT`, `KIOSK`, `SERVICE_DESK`, `FUEL_PUMP`, `CHARGING`, `OTHER`
+### Station statuses: `ACTIVE`, `SUSPENDED`, `CLOSED`, `MAINTENANCE`
+
+---
+
+## 6. Location — API behavior change
+
+The `/locations/create`, `/locations/update/:uuid`, and `/locations/delete/:uuid` endpoints now use business flows that:
+- Accept an inline `address` object (creates the address automatically)
+- Accept an `address_id` referencing an existing address
+- On delete, clean up orphaned addresses
+
+No type changes needed — the frontend types already supported `address?: AddressInput`.

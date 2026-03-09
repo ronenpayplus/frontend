@@ -12,13 +12,23 @@ import { listCompanies } from '../api/companies';
 import { listLegalEntities } from '../api/legalEntities';
 import { listMerchants } from '../api/merchants';
 import { listOrgEntityLocalizations } from '../api/orgEntityLocalizations';
+import { listLocations } from '../api/locations';
+import {
+  listStoreLocationLinks,
+  createStoreLocationLink,
+  deleteStoreLocationLink,
+} from '../api/storeLocationLinks';
 import type { MerchantAccount } from '../types/merchantAccount';
 import type { Company } from '../types/company';
 import type { LegalEntity } from '../types/legalEntity';
 import type { Merchant } from '../types/merchant';
 import type { CreateStoreRequest, Store, UpdateStoreRequest } from '../types/store';
 import type { LocalizationInput } from '../types/orgEntityLocalization';
+import type { Location as CompanyLocation } from '../types/location';
+import type { StoreLocationLink } from '../types/storeLocationLink';
 import { STORE_CHANNEL_TYPES, STORE_STATUSES, STORE_TYPES } from '../types/store';
+import { LOCATION_TYPE_LABELS } from '../types/location';
+import { STORE_LOCATION_ROLES, STORE_LOCATION_ROLE_LABELS } from '../types/storeLocationLink';
 import { MOCK_TIMEZONES } from '../types/company';
 import ConfirmDialog from '../components/ConfirmDialog';
 import LocalizationsEditor, { ensureAtLeastOneLocalization } from '../components/LocalizationsEditor';
@@ -79,6 +89,10 @@ export default function StoresPage() {
       is_default: true,
     },
   ]);
+  const [availableLocations, setAvailableLocations] = useState<CompanyLocation[]>([]);
+  const [storeLinks, setStoreLinks] = useState<StoreLocationLink[]>([]);
+  const [linkForm, setLinkForm] = useState({ location_uuid: '', role: 'SALES', priority: 1 });
+  const [linkSaving, setLinkSaving] = useState(false);
   const merchantAccounts = useMemo(
     () =>
       allMerchantAccounts.filter((account) => {
@@ -160,6 +174,26 @@ export default function StoresPage() {
       setSearchParams(params);
     }
   }, [selectedMerchantAccount, searchParams, setSearchParams]);
+
+  const resolvedCompanyUUID = selectedCompanyUUID || selectedMerchantAccount?.company_uuid || '';
+  useEffect(() => {
+    if (!resolvedCompanyUUID) {
+      setAvailableLocations([]);
+      return;
+    }
+    listLocations({ company_uuid: resolvedCompanyUUID, status: 'ACTIVE', page: 1, page_size: 500 })
+      .then((data) => setAvailableLocations(data.locations || []))
+      .catch(() => setAvailableLocations([]));
+  }, [resolvedCompanyUUID]);
+
+  const loadStoreLinks = useCallback(async (storeUUID: string) => {
+    try {
+      const data = await listStoreLocationLinks(storeUUID);
+      setStoreLinks(data.store_location_links || []);
+    } catch {
+      setStoreLinks([]);
+    }
+  }, []);
 
   useEffect(() => {
     if ((!isSubMerchantRoute && routeMerchantAccountUUID) || selectedMerchantAccountUUID || merchantAccounts.length === 0) return;
@@ -253,6 +287,8 @@ export default function StoresPage() {
     } catch {
       resetLocalizations();
     }
+    loadStoreLinks(s.uuid);
+    setLinkForm({ location_uuid: '', role: 'SALES', priority: 1 });
   };
 
   const autoFillStoreForm = () => {
@@ -292,6 +328,49 @@ export default function StoresPage() {
         is_default: false,
       },
     ]);
+  };
+
+  const handleAddLink = async () => {
+    if (!editing || !linkForm.location_uuid || !linkForm.role) {
+      addToast('Select a location and role', 'error');
+      return;
+    }
+    setLinkSaving(true);
+    try {
+      await createStoreLocationLink({
+        store_uuid: editing.uuid,
+        location_uuid: linkForm.location_uuid,
+        role: linkForm.role,
+        priority: Number(linkForm.priority) || 1,
+      });
+      addToast('Location linked', 'success');
+      setLinkForm({ location_uuid: '', role: 'SALES', priority: 1 });
+      loadStoreLinks(editing.uuid);
+    } catch (error) {
+      console.error(error);
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      addToast(`Failed to link location: ${msg}`, 'error');
+    } finally {
+      setLinkSaving(false);
+    }
+  };
+
+  const handleRemoveLink = async (link: StoreLocationLink) => {
+    setLinkSaving(true);
+    try {
+      await deleteStoreLocationLink({
+        store_uuid: link.store_uuid,
+        location_uuid: link.location_uuid,
+        role: link.role,
+      });
+      addToast('Location unlinked', 'success');
+      if (editing) loadStoreLinks(editing.uuid);
+    } catch (error) {
+      console.error(error);
+      addToast('Failed to unlink location', 'error');
+    } finally {
+      setLinkSaving(false);
+    }
   };
 
   const save = async () => {
@@ -430,6 +509,73 @@ export default function StoresPage() {
             <div className="form-field"><label className="label">Email</label><input className="input ltr-input" dir="ltr" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} /></div>
           </div>
           <LocalizationsEditor localizations={localizations} onChange={setLocalizations} />
+
+          {editing && (
+            <div style={{ marginTop: '20px' }}>
+              <h4 className="section-title" style={{ marginBottom: '12px' }}>Linked Locations</h4>
+              {storeLinks.length > 0 ? (
+                <div className="table-wrapper" style={{ marginBottom: '16px' }}>
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Location</th>
+                        <th>Role</th>
+                        <th>Priority</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {storeLinks.map((link) => {
+                        const loc = availableLocations.find((l) => l.uuid === link.location_uuid);
+                        return (
+                          <tr key={`${link.location_uuid}-${link.role}`}>
+                            <td className="cell-name">{loc ? `${loc.name} (${LOCATION_TYPE_LABELS[loc.location_type] || loc.location_type})` : link.location_uuid}</td>
+                            <td>{STORE_LOCATION_ROLE_LABELS[link.role] || link.role}</td>
+                            <td>{link.priority}</td>
+                            <td className="cell-actions">
+                              <button className="action-btn delete" disabled={linkSaving} onClick={() => handleRemoveLink(link)}>🗑</button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '14px', marginBottom: '12px' }}>No locations linked to this store</p>
+              )}
+              <div className="form-grid" style={{ alignItems: 'end' }}>
+                <div className="form-field">
+                  <label className="label">Location</label>
+                  <select className="input" value={linkForm.location_uuid} onChange={(e) => setLinkForm((p) => ({ ...p, location_uuid: e.target.value }))}>
+                    <option value="">Select location</option>
+                    {availableLocations.map((loc) => (
+                      <option key={loc.uuid} value={loc.uuid}>{loc.name} ({LOCATION_TYPE_LABELS[loc.location_type] || loc.location_type})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-field">
+                  <label className="label">Role</label>
+                  <select className="input" value={linkForm.role} onChange={(e) => setLinkForm((p) => ({ ...p, role: e.target.value }))}>
+                    {STORE_LOCATION_ROLES.map((r) => <option key={r} value={r}>{STORE_LOCATION_ROLE_LABELS[r] || r}</option>)}
+                  </select>
+                </div>
+                <div className="form-field">
+                  <label className="label">Priority</label>
+                  <input type="number" min={1} className="input ltr-input" dir="ltr" value={linkForm.priority} onChange={(e) => setLinkForm((p) => ({ ...p, priority: Number(e.target.value) }))} />
+                </div>
+                <div className="form-field">
+                  <button type="button" className="btn btn-secondary" disabled={linkSaving || !linkForm.location_uuid} onClick={handleAddLink}>
+                    {linkSaving ? 'Linking...' : 'Link Location'}
+                  </button>
+                </div>
+              </div>
+              {availableLocations.length === 0 && (
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '13px', marginTop: '8px' }}>No locations available. Create locations for this company first.</p>
+              )}
+            </div>
+          )}
+
           <div className="form-actions">
             <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'Saving...' : editing ? 'Update' : 'Create'}</button>
             <button
@@ -438,6 +584,7 @@ export default function StoresPage() {
                 setShowCreate(false);
                 setEditing(null);
                 resetLocalizations();
+                setStoreLinks([]);
               }}
             >
               Cancel

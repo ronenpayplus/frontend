@@ -119,6 +119,27 @@ export default function Layout() {
             <span>Stores</span>
           </NavLink>
           <NavLink
+            to="/locations"
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 21s-7-5.4-7-11a7 7 0 1 1 14 0c0 5.6-7 11-7 11z" />
+              <circle cx="12" cy="10" r="2.5" />
+            </svg>
+            <span>Locations</span>
+          </NavLink>
+          <NavLink
+            to="/stations"
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="4" y="4" width="16" height="12" rx="2" />
+              <line x1="8" y1="20" x2="16" y2="20" />
+              <line x1="12" y1="16" x2="12" y2="20" />
+            </svg>
+            <span>Stations</span>
+          </NavLink>
+          <NavLink
             to="/terminal-groups"
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
           >
