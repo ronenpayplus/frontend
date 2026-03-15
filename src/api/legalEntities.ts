@@ -7,7 +7,7 @@ import type {
 } from '../types/legalEntity';
 import type { LocalizationInput } from '../types/orgEntityLocalization';
 
-const API_BASE = '/v2/companies/legal-entities';
+const API_BASE = '/v2/accounts/legal-entities';
 
 interface ApiEnvelope<T> {
   results: {
@@ -40,7 +40,7 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 
 export async function listLegalEntities(params: ListLegalEntitiesParams): Promise<ListLegalEntitiesResponse> {
   const query = new URLSearchParams();
-  query.set('company_uuid', params.company_uuid);
+  query.set('account_uuid', params.account_uuid);
   if (params.search) query.set('search', params.search);
   if (params.status) query.set('status', params.status);
   if (params.entity_type) query.set('entity_type', params.entity_type);

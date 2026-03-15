@@ -1,47 +1,47 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  getCompany,
-  listCompanyLocalizations,
-  updateCompanyWithLocalizations,
-} from '../api/companies';
+  getAccount,
+  listAccountLocalizations,
+  updateAccountWithLocalizations,
+} from '../api/accounts';
 import { listLegalEntities } from '../api/legalEntities';
 import type {
-  Company,
-  CompanyLocalizationInput,
-  CreateCompanyRequest,
-  UpdateCompanyRequest,
-} from '../types/company';
+  Account,
+  AccountLocalizationInput,
+  CreateAccountRequest,
+  UpdateAccountRequest,
+} from '../types/account';
 import type { LegalEntity } from '../types/legalEntity';
 import {
   LEGAL_ENTITY_KYC_LABELS,
   LEGAL_ENTITY_STATUS_LABELS,
   LEGAL_ENTITY_TYPE_LABELS,
 } from '../types/legalEntity';
-import CompanyForm from '../components/CompanyForm';
+import AccountForm from '../components/AccountForm';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import './CompanyCreate.css';
-import './CompaniesList.css';
+import './AccountCreate.css';
+import './AccountsList.css';
 
-export default function CompanyEdit() {
+export default function AccountEdit() {
   const { uuid } = useParams<{ uuid: string }>();
   const navigate = useNavigate();
-  const [company, setCompany] = useState<Company | null>(null);
+  const [account, setAccount] = useState<Account | null>(null);
   const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
-  const [localizations, setLocalizations] = useState<CompanyLocalizationInput[]>([]);
+  const [localizations, setLocalizations] = useState<AccountLocalizationInput[]>([]);
   const [pageLoading, setPageLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toasts, addToast, removeToast } = useToast();
 
-  const loadCompany = useCallback(async () => {
+  const loadAccount = useCallback(async () => {
     if (!uuid) return;
     try {
-      const data = await getCompany(uuid);
-      setCompany(data.company);
+      const data = await getAccount(uuid);
+      setAccount(data.account);
     } catch (err) {
       console.error(err);
-      addToast('Failed to load company details', 'error');
+      addToast('Failed to load account details', 'error');
     } finally {
       setPageLoading(false);
     }
@@ -51,7 +51,7 @@ export default function CompanyEdit() {
     if (!uuid) return;
     try {
       const data = await listLegalEntities({
-        company_uuid: uuid,
+        account_uuid: uuid,
         page: 1,
         page_size: 50,
       });
@@ -65,7 +65,7 @@ export default function CompanyEdit() {
   const loadLocalizations = useCallback(async () => {
     if (!uuid) return;
     try {
-      const rows = await listCompanyLocalizations(uuid);
+      const rows = await listAccountLocalizations(uuid);
       setLocalizations(rows.map((row) => ({
         lang_code: row.lang_code || '',
         display_name: row.display_name || '',
@@ -91,12 +91,12 @@ export default function CompanyEdit() {
   }, [uuid]);
 
   useEffect(() => {
-    loadCompany();
+    loadAccount();
     loadLegalEntities();
     loadLocalizations();
-  }, [loadCompany, loadLegalEntities, loadLocalizations]);
+  }, [loadAccount, loadLegalEntities, loadLocalizations]);
 
-  const handleSubmit = async (data: CreateCompanyRequest | UpdateCompanyRequest) => {
+  const handleSubmit = async (data: CreateAccountRequest | UpdateAccountRequest) => {
     if (!uuid) return;
     setSaving(true);
     try {
@@ -107,15 +107,15 @@ export default function CompanyEdit() {
           display_name: data.name,
           is_default: true,
         }];
-      await updateCompanyWithLocalizations({
-        ...(data as UpdateCompanyRequest),
+      await updateAccountWithLocalizations({
+        ...(data as UpdateAccountRequest),
         uuid,
         localizations: localizationsPayload,
       });
-      addToast('Company updated successfully', 'success');
-      setTimeout(() => navigate(`/companies/${uuid}`), 500);
+      addToast('Account updated successfully', 'success');
+      setTimeout(() => navigate(`/accounts/${uuid}`), 500);
     } catch (err) {
-      addToast('Failed to update company', 'error');
+      addToast('Failed to update account', 'error');
       console.error(err);
       setSaving(false);
     }
@@ -125,16 +125,16 @@ export default function CompanyEdit() {
     return (
       <div className="loading-state">
         <div className="spinner" />
-        <span>Loading company details...</span>
+        <span>Loading account details...</span>
       </div>
     );
   }
 
-  if (!company) {
+  if (!account) {
     return (
       <div className="empty-state">
-        <p>Company not found</p>
-        <button className="btn btn-primary" onClick={() => navigate('/companies')}>
+        <p>Account not found</p>
+        <button className="btn btn-primary" onClick={() => navigate('/accounts')}>
           Back to list
         </button>
       </div>
@@ -142,25 +142,25 @@ export default function CompanyEdit() {
   }
 
   return (
-    <div className="company-create-page">
+    <div className="account-create-page">
       <div className="page-header">
         <div className="breadcrumb">
-          <button className="breadcrumb-link" onClick={() => navigate('/companies')}>Companies</button>
+          <button className="breadcrumb-link" onClick={() => navigate('/accounts')}>Accounts</button>
           <span className="breadcrumb-sep">/</span>
-          <button className="breadcrumb-link" onClick={() => navigate(`/companies/${uuid}`)}>
-            {company.name}
+          <button className="breadcrumb-link" onClick={() => navigate(`/accounts/${uuid}`)}>
+            {account.name}
           </button>
           <span className="breadcrumb-sep">/</span>
           <span>Edit</span>
         </div>
-        <h1 className="page-title">Edit {company.name}</h1>
+        <h1 className="page-title">Edit {account.name}</h1>
       </div>
 
-      <CompanyForm
-        company={company}
+      <AccountForm
+        account={account}
         initialLocalizations={localizations}
         onSubmit={handleSubmit}
-        onCancel={() => navigate(`/companies/${uuid}`)}
+        onCancel={() => navigate(`/accounts/${uuid}`)}
         isEdit
         loading={saving}
       />
@@ -183,7 +183,7 @@ export default function CompanyEdit() {
           </div>
           <button
             className="btn btn-secondary"
-            onClick={() => navigate(`/companies/${uuid}/legal-entities`)}
+            onClick={() => navigate(`/accounts/${uuid}/legal-entities`)}
           >
             Manage Legal Entities
           </button>
@@ -191,10 +191,10 @@ export default function CompanyEdit() {
 
         {legalEntities.length === 0 ? (
           <div className="empty-state" style={{ padding: 24 }}>
-            <p>No legal entities for this company yet</p>
+            <p>No legal entities for this account yet</p>
             <button
               className="btn btn-primary"
-              onClick={() => navigate(`/companies/${uuid}/legal-entities`)}
+              onClick={() => navigate(`/accounts/${uuid}/legal-entities`)}
             >
               Create first legal entity
             </button>
@@ -225,7 +225,7 @@ export default function CompanyEdit() {
                         className="btn btn-outline btn-sm"
                         onClick={() =>
                           navigate(
-                            `/companies/${uuid}/legal-entities?edit_uuid=${entity.uuid}`,
+                            `/accounts/${uuid}/legal-entities?edit_uuid=${entity.uuid}`,
                           )
                         }
                       >

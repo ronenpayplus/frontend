@@ -6,7 +6,7 @@ import type {
   UpdateChannelTypeRequest,
 } from '../types/channelType';
 
-const API_BASE = '/v2/companies/channel-types';
+const API_BASE = '/v2/accounts/channel-types';
 
 interface ApiEnvelope<T> {
   results: {

@@ -6,7 +6,7 @@ import type {
   UpdateLocationRequest,
 } from '../types/location';
 
-const API_BASE = '/v2/companies/locations';
+const API_BASE = '/v2/accounts/locations';
 
 interface ApiEnvelope<T> {
   results: { status: string; code: number; description: string; message: unknown };
@@ -31,7 +31,7 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 
 export async function listLocations(params: ListLocationsParams = {}): Promise<ListLocationsResponse> {
   const query = new URLSearchParams();
-  if (params.company_uuid) query.set('company_uuid', params.company_uuid);
+  if (params.account_uuid) query.set('account_uuid', params.account_uuid);
   if (params.location_type) query.set('location_type', params.location_type);
   if (params.status) query.set('status', params.status);
   if (params.search) query.set('search', params.search);

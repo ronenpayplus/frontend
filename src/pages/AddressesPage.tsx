@@ -13,8 +13,8 @@ import type {
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import './CompaniesList.css';
-import './CompanyCreate.css';
+import './AccountsList.css';
+import './AccountCreate.css';
 
 type AddressFormState = {
   address_type: string;
@@ -26,7 +26,7 @@ type AddressFormState = {
   line1: string;
   line2: string;
   line3: string;
-  company_name: string;
+  account_name: string;
   contact_name: string;
   phone: string;
   latitude: string;
@@ -45,7 +45,7 @@ const defaultForm: AddressFormState = {
   line1: '',
   line2: '',
   line3: '',
-  company_name: '',
+  account_name: '',
   contact_name: '',
   phone: '',
   latitude: '',
@@ -108,7 +108,7 @@ export default function AddressesPage() {
       line1: `${rand} Main St`,
       line2: '',
       line3: '',
-      company_name: `Company ${rand}`,
+      account_name: `Account ${rand}`,
       contact_name: `Contact ${rand}`,
       phone: `+972-3-${rand}-000`,
       latitude: '',
@@ -131,7 +131,7 @@ export default function AddressesPage() {
       line1: item.line1 || '',
       line2: item.line2 || '',
       line3: item.line3 || '',
-      company_name: item.company_name || '',
+      account_name: item.account_name || '',
       contact_name: item.contact_name || '',
       phone: item.phone || '',
       latitude: item.latitude != null ? String(item.latitude) : '',
@@ -151,7 +151,7 @@ export default function AddressesPage() {
     line1: form.line1.trim(),
     line2: form.line2.trim() || undefined,
     line3: form.line3.trim() || undefined,
-    company_name: form.company_name.trim() || undefined,
+    account_name: form.account_name.trim() || undefined,
     contact_name: form.contact_name.trim() || undefined,
     phone: form.phone.trim() || undefined,
     latitude: form.latitude.trim() ? Number(form.latitude) : undefined,
@@ -207,7 +207,7 @@ export default function AddressesPage() {
   };
 
   return (
-    <div className="companies-page">
+    <div className="accounts-page">
       <div className="page-header">
         <div>
           <h1 className="page-title">Addresses</h1>
@@ -234,7 +234,7 @@ export default function AddressesPage() {
             <div className="form-field"><label className="label">Line 1 *</label><input className="input" value={form.line1} onChange={(e) => setForm((p) => ({ ...p, line1: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Line 2</label><input className="input" value={form.line2} onChange={(e) => setForm((p) => ({ ...p, line2: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Line 3</label><input className="input" value={form.line3} onChange={(e) => setForm((p) => ({ ...p, line3: e.target.value }))} /></div>
-            <div className="form-field"><label className="label">Company Name</label><input className="input" value={form.company_name} onChange={(e) => setForm((p) => ({ ...p, company_name: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Account Name</label><input className="input" value={form.account_name} onChange={(e) => setForm((p) => ({ ...p, account_name: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Contact Name</label><input className="input" value={form.contact_name} onChange={(e) => setForm((p) => ({ ...p, contact_name: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Phone</label><input className="input ltr-input" dir="ltr" value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Latitude</label><input className="input ltr-input" dir="ltr" value={form.latitude} onChange={(e) => setForm((p) => ({ ...p, latitude: e.target.value }))} /></div>

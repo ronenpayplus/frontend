@@ -1,6 +1,6 @@
 import type { OrgEntityLocalization, OrgEntityOwnerType } from '../types/orgEntityLocalization';
 
-const API_BASE = '/v2/companies';
+const API_BASE = '/v2/accounts';
 
 interface ApiEnvelope<T> {
   results: {

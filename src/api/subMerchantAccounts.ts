@@ -6,7 +6,7 @@ import type {
   UpdateSubMerchantAccountRequest,
 } from '../types/subMerchantAccount';
 
-const API_BASE = '/v2/companies/sub-merchants';
+const API_BASE = '/v2/accounts/sub-merchants';
 
 interface ApiEnvelope<T> {
   results: {

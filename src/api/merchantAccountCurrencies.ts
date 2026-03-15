@@ -5,7 +5,7 @@ import type {
   MerchantAccountCurrency,
 } from '../types/merchantAccountCurrency';
 
-const API_BASE = '/v2/companies/merchant-account-currencies';
+const API_BASE = '/v2/accounts/merchant-account-currencies';
 
 interface ApiEnvelope<T> {
   results: {

@@ -1,24 +1,24 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
-  createCompanyContact,
-  deleteCompanyContact,
-  listCompanyContacts,
-  updateCompanyContact,
-} from '../api/companyContacts';
-import { getCompany, listCompanies } from '../api/companies';
-import type { Company } from '../types/company';
+  createAccountContact,
+  deleteAccountContact,
+  listAccountContacts,
+  updateAccountContact,
+} from '../api/accountContacts';
+import { getAccount, listAccounts } from '../api/accounts';
+import type { Account } from '../types/account';
 import type {
-  CompanyContact,
-  CreateCompanyContactRequest,
-  UpdateCompanyContactRequest,
-} from '../types/companyContact';
-import { COMPANY_CONTACT_TYPES, COMPANY_CONTACT_TYPE_LABELS } from '../types/companyContact';
+  AccountContact,
+  CreateAccountContactRequest,
+  UpdateAccountContactRequest,
+} from '../types/accountContact';
+import { ACCOUNT_CONTACT_TYPES, ACCOUNT_CONTACT_TYPE_LABELS } from '../types/accountContact';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import './CompaniesList.css';
-import './CompanyCreate.css';
+import './AccountsList.css';
+import './AccountCreate.css';
 
 type ContactFormState = {
   contact_type: string;
@@ -50,21 +50,21 @@ const defaultForm: ContactFormState = {
   is_primary: true,
 };
 
-export default function CompanyContactsPage() {
+export default function AccountContactsPage() {
   const navigate = useNavigate();
-  const { uuid: routeCompanyUUID } = useParams<{ uuid: string }>();
+  const { uuid: routeAccountUUID } = useParams<{ uuid: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { toasts, addToast, removeToast } = useToast();
 
-  const selectedCompanyUUID = routeCompanyUUID || searchParams.get('company_uuid') || '';
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-  const [items, setItems] = useState<CompanyContact[]>([]);
+  const selectedAccountUUID = routeAccountUUID || searchParams.get('account_uuid') || '';
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+  const [items, setItems] = useState<AccountContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
-  const [editing, setEditing] = useState<CompanyContact | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<CompanyContact | null>(null);
+  const [editing, setEditing] = useState<AccountContact | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AccountContact | null>(null);
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [typeFilter, setTypeFilter] = useState(searchParams.get('contact_type') || '');
   const [defaultFilter, setDefaultFilter] = useState(searchParams.get('is_default') || '');
@@ -72,39 +72,39 @@ export default function CompanyContactsPage() {
   const [form, setForm] = useState<ContactFormState>(defaultForm);
 
   useEffect(() => {
-    listCompanies({ page: 1, page_size: 300 })
-      .then((data) => setCompanies(data.companies || []))
-      .catch(() => setCompanies([]));
+    listAccounts({ page: 1, page_size: 300 })
+      .then((data) => setAccounts(data.accounts || []))
+      .catch(() => setAccounts([]));
   }, []);
 
   useEffect(() => {
-    if (!selectedCompanyUUID) {
-      setSelectedCompany(null);
+    if (!selectedAccountUUID) {
+      setSelectedAccount(null);
       return;
     }
-    getCompany(selectedCompanyUUID)
-      .then((data) => setSelectedCompany(data.company))
-      .catch(() => setSelectedCompany(null));
-  }, [selectedCompanyUUID]);
+    getAccount(selectedAccountUUID)
+      .then((data) => setSelectedAccount(data.account))
+      .catch(() => setSelectedAccount(null));
+  }, [selectedAccountUUID]);
 
   useEffect(() => {
-    if (!routeCompanyUUID && !selectedCompanyUUID && companies.length > 0) {
+    if (!routeAccountUUID && !selectedAccountUUID && accounts.length > 0) {
       const params = new URLSearchParams(searchParams);
-      params.set('company_uuid', companies[0].uuid);
+      params.set('account_uuid', accounts[0].uuid);
       setSearchParams(params);
     }
-  }, [routeCompanyUUID, selectedCompanyUUID, companies, searchParams, setSearchParams]);
+  }, [routeAccountUUID, selectedAccountUUID, accounts, searchParams, setSearchParams]);
 
   const fetchContacts = useCallback(async () => {
-    if (!selectedCompanyUUID) {
+    if (!selectedAccountUUID) {
       setItems([]);
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
-      const data = await listCompanyContacts({
-        company_uuid: selectedCompanyUUID,
+      const data = await listAccountContacts({
+        account_uuid: selectedAccountUUID,
         search: search || undefined,
         contact_type: typeFilter || undefined,
         is_default: defaultFilter || undefined,
@@ -119,15 +119,15 @@ export default function CompanyContactsPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCompanyUUID, search, typeFilter, defaultFilter, primaryFilter, addToast]);
+  }, [selectedAccountUUID, search, typeFilter, defaultFilter, primaryFilter, addToast]);
 
   useEffect(() => {
     fetchContacts();
   }, [fetchContacts]);
 
   const subtitle = useMemo(
-    () => (selectedCompany ? `Selected company: ${selectedCompany.name}` : 'Select a company to manage contacts'),
-    [selectedCompany],
+    () => (selectedAccount ? `Selected account: ${selectedAccount.name}` : 'Select a account to manage contacts'),
+    [selectedAccount],
   );
 
   const resetForm = () => setForm(defaultForm);
@@ -150,7 +150,7 @@ export default function CompanyContactsPage() {
     });
   };
 
-  const startEdit = (item: CompanyContact) => {
+  const startEdit = (item: AccountContact) => {
     setShowCreate(false);
     setEditing(item);
     setForm({
@@ -169,8 +169,8 @@ export default function CompanyContactsPage() {
     });
   };
 
-  const createPayload = (): CreateCompanyContactRequest => ({
-    company_uuid: selectedCompanyUUID,
+  const createPayload = (): CreateAccountContactRequest => ({
+    account_uuid: selectedAccountUUID,
     contact_type: form.contact_type || undefined,
     first_name: form.first_name.trim() || undefined,
     last_name: form.last_name.trim() || undefined,
@@ -185,7 +185,7 @@ export default function CompanyContactsPage() {
     is_primary: form.is_primary,
   });
 
-  const updatePayload = (): UpdateCompanyContactRequest => ({
+  const updatePayload = (): UpdateAccountContactRequest => ({
     contact_type: form.contact_type || undefined,
     first_name: form.first_name.trim() || undefined,
     last_name: form.last_name.trim() || undefined,
@@ -201,18 +201,18 @@ export default function CompanyContactsPage() {
   });
 
   const save = async () => {
-    if (!selectedCompanyUUID || !form.full_name) {
-      addToast('Select a company and enter full name', 'error');
+    if (!selectedAccountUUID || !form.full_name) {
+      addToast('Select a account and enter full name', 'error');
       return;
     }
     setSaving(true);
     try {
       if (editing) {
-        await updateCompanyContact(editing.uuid, updatePayload());
+        await updateAccountContact(editing.uuid, updatePayload());
         addToast('Contact updated', 'success');
         setEditing(null);
       } else {
-        await createCompanyContact(createPayload());
+        await createAccountContact(createPayload());
         addToast('Contact created', 'success');
         setShowCreate(false);
       }
@@ -230,7 +230,7 @@ export default function CompanyContactsPage() {
     if (!deleteTarget) return;
     setSaving(true);
     try {
-      await deleteCompanyContact(deleteTarget.uuid);
+      await deleteAccountContact(deleteTarget.uuid);
       addToast('Contact deleted', 'success');
       setDeleteTarget(null);
       await fetchContacts();
@@ -243,19 +243,19 @@ export default function CompanyContactsPage() {
   };
 
   return (
-    <div className="companies-page">
+    <div className="accounts-page">
       <div className="breadcrumb">
-        <button className="breadcrumb-link" onClick={() => navigate('/companies')}>Companies</button>
+        <button className="breadcrumb-link" onClick={() => navigate('/accounts')}>Accounts</button>
         <span className="breadcrumb-sep">/</span>
         <span>Contacts</span>
       </div>
 
       <div className="page-header">
         <div>
-          <h1 className="page-title">Company Contacts</h1>
+          <h1 className="page-title">Account Contacts</h1>
           <p className="page-subtitle">{subtitle}</p>
         </div>
-        <button className="btn btn-primary" disabled={!selectedCompanyUUID} onClick={() => { setShowCreate((v) => !v); setEditing(null); resetForm(); }}>
+        <button className="btn btn-primary" disabled={!selectedAccountUUID} onClick={() => { setShowCreate((v) => !v); setEditing(null); resetForm(); }}>
           {showCreate ? 'Close Form' : 'New Contact'}
         </button>
       </div>
@@ -268,7 +268,7 @@ export default function CompanyContactsPage() {
           <h3 className="section-title">{editing ? 'Edit Contact' : 'Create Contact'}</h3>
           <div className="form-grid">
             <div className="form-field"><label className="label">Full Name *</label><input className="input" value={form.full_name} onChange={(e) => setForm((p) => ({ ...p, full_name: e.target.value }))} /></div>
-            <div className="form-field"><label className="label">Contact Type</label><select className="input" value={form.contact_type} onChange={(e) => setForm((p) => ({ ...p, contact_type: e.target.value }))}>{COMPANY_CONTACT_TYPES.map((t) => <option key={t} value={t}>{COMPANY_CONTACT_TYPE_LABELS[t] || t}</option>)}</select></div>
+            <div className="form-field"><label className="label">Contact Type</label><select className="input" value={form.contact_type} onChange={(e) => setForm((p) => ({ ...p, contact_type: e.target.value }))}>{ACCOUNT_CONTACT_TYPES.map((t) => <option key={t} value={t}>{ACCOUNT_CONTACT_TYPE_LABELS[t] || t}</option>)}</select></div>
             <div className="form-field"><label className="label">First Name</label><input className="input" value={form.first_name} onChange={(e) => setForm((p) => ({ ...p, first_name: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Last Name</label><input className="input" value={form.last_name} onChange={(e) => setForm((p) => ({ ...p, last_name: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Email</label><input className="input ltr-input" dir="ltr" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} /></div>
@@ -290,18 +290,18 @@ export default function CompanyContactsPage() {
       <div className="card filters-card">
         <form className="filters-form" onSubmit={(e) => { e.preventDefault(); fetchContacts(); }}>
           <div className="filter-group">
-            <select className="input" value={selectedCompanyUUID} onChange={(e) => {
+            <select className="input" value={selectedAccountUUID} onChange={(e) => {
               const params = new URLSearchParams(searchParams);
-              if (e.target.value) params.set('company_uuid', e.target.value);
-              else params.delete('company_uuid');
+              if (e.target.value) params.set('account_uuid', e.target.value);
+              else params.delete('account_uuid');
               setSearchParams(params);
-            }} disabled={!!routeCompanyUUID}>
-              <option value="">Select Company</option>
-              {companies.map((c) => <option key={c.uuid} value={c.uuid}>{c.name}</option>)}
+            }} disabled={!!routeAccountUUID}>
+              <option value="">Select Account</option>
+              {accounts.map((c) => <option key={c.uuid} value={c.uuid}>{c.name}</option>)}
             </select>
           </div>
           <div className="filter-group"><input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name / email" /></div>
-          <div className="filter-group"><select className="input" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}><option value="">Contact Type (All)</option>{COMPANY_CONTACT_TYPES.map((t) => <option key={t} value={t}>{COMPANY_CONTACT_TYPE_LABELS[t] || t}</option>)}</select></div>
+          <div className="filter-group"><select className="input" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}><option value="">Contact Type (All)</option>{ACCOUNT_CONTACT_TYPES.map((t) => <option key={t} value={t}>{ACCOUNT_CONTACT_TYPE_LABELS[t] || t}</option>)}</select></div>
           <div className="filter-group"><select className="input" value={defaultFilter} onChange={(e) => setDefaultFilter(e.target.value)}><option value="">Default (All)</option><option value="true">Yes</option><option value="false">No</option></select></div>
           <div className="filter-group"><select className="input" value={primaryFilter} onChange={(e) => setPrimaryFilter(e.target.value)}><option value="">Primary (All)</option><option value="true">Yes</option><option value="false">No</option></select></div>
           <button className="btn btn-primary" type="submit">Search</button>
@@ -331,7 +331,7 @@ export default function CompanyContactsPage() {
                 {items.map((item) => (
                   <tr key={item.uuid}>
                     <td className="cell-name">{item.full_name}</td>
-                    <td>{COMPANY_CONTACT_TYPE_LABELS[item.contact_type] || item.contact_type || '—'}</td>
+                    <td>{ACCOUNT_CONTACT_TYPE_LABELS[item.contact_type] || item.contact_type || '—'}</td>
                     <td className="cell-mono">{item.email || '—'}</td>
                     <td className="cell-mono">{item.phone || item.mobile || '—'}</td>
                     <td>{item.is_default ? 'Yes' : 'No'}</td>

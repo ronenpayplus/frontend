@@ -1,4 +1,4 @@
-# Next Agent Handoff - PayPlus Companies Frontend
+# Next Agent Handoff - PayPlus Accounts Frontend
 
 This document summarizes the current implementation state, backend contract discoveries, known issues, and recommended next steps.
 
@@ -6,7 +6,7 @@ This document summarizes the current implementation state, backend contract disc
 
 - Frontend stack: React + Vite + TypeScript + pure CSS.
 - UI language/layout: Hebrew RTL by default, with LTR handling for technical fields.
-- Backend integration: live backend via `/v2/companies/*`.
+- Backend integration: live backend via `/v2/accounts/*`.
 - Response envelope pattern (important): most endpoints return:
   - `{"results": {...}, "data": {...}}`
   - frontend API clients unwrap `data`.
@@ -15,7 +15,7 @@ This document summarizes the current implementation state, backend contract disc
 
 Implemented pages and CRUD flows:
 
-- `companies`
+- `accounts`
 - `legal-entities`
 - `merchants`
 - `merchant-accounts`
@@ -23,7 +23,7 @@ Implemented pages and CRUD flows:
 - `terminal-groups`
 - `terminals`
 - `beneficial-owners`
-- `company contacts`
+- `account contacts`
 - `compliance-documents`
 - `sub-merchants` (sub merchant accounts)
 
@@ -64,7 +64,7 @@ Applied fixes:
 - Currencies update sends `id` in body.
 - Timezones update sends `id` in body.
 - Beneficial Owners update sends `uuid` in body.
-- Company Contacts update sends `uuid` in body.
+- Account Contacts update sends `uuid` in body.
 - Compliance Documents update sends `uuid` in body.
 - Sub Merchant update sends `uuid` in body.
 
@@ -74,7 +74,7 @@ Observed from live API:
 
 - `merchant-accounts/list` and `merchant-accounts/get/:uuid` return empty:
   - `merchant_uuid`
-  - `company_uuid`
+  - `account_uuid`
   - `legal_entity_uuid`
 
 This directly impacts any UI flow that tries to infer parent merchant from merchant account response.
@@ -179,11 +179,11 @@ Likely cause hypotheses:
 - `src/api/beneficialOwners.ts`
 - `src/types/beneficialOwner.ts`
 
-### Company contacts
+### Account contacts
 
-- `src/pages/CompanyContactsPage.tsx`
-- `src/api/companyContacts.ts`
-- `src/types/companyContact.ts`
+- `src/pages/AccountContactsPage.tsx`
+- `src/api/accountContacts.ts`
+- `src/types/accountContact.ts`
 
 ### Compliance docs
 
@@ -203,8 +203,8 @@ Likely cause hypotheses:
 - `src/App.tsx`
 - `src/components/Layout.tsx`
 - `src/components/Layout.css`
-- `src/pages/CompanyLegalEntities.tsx` (added drilldowns)
-- `src/pages/CompanyDetail.tsx` (contacts shortcut)
+- `src/pages/AccountLegalEntities.tsx` (added drilldowns)
+- `src/pages/AccountDetail.tsx` (contacts shortcut)
 - `src/pages/MerchantAccountsPage.tsx` (sub-merchants shortcut)
 
 ## 10) Build/Lint Status

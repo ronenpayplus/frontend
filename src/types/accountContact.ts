@@ -1,8 +1,8 @@
-import type { Pagination } from './company';
+import type { Pagination } from './account';
 
-export interface CompanyContact {
+export interface AccountContact {
   uuid: string;
-  company_uuid: string;
+  account_uuid: string;
   contact_type: string;
   first_name?: string;
   last_name?: string;
@@ -19,8 +19,8 @@ export interface CompanyContact {
   updated_at?: string;
 }
 
-export interface ListCompanyContactsParams {
-  company_uuid: string;
+export interface ListAccountContactsParams {
+  account_uuid: string;
   search?: string;
   contact_type?: string;
   is_default?: string;
@@ -29,13 +29,13 @@ export interface ListCompanyContactsParams {
   page_size?: number;
 }
 
-export interface ListCompanyContactsResponse {
-  contacts: CompanyContact[];
+export interface ListAccountContactsResponse {
+  contacts: AccountContact[];
   pagination: Pagination;
 }
 
-export interface CreateCompanyContactRequest {
-  company_uuid: string;
+export interface CreateAccountContactRequest {
+  account_uuid: string;
   contact_type?: string;
   first_name?: string;
   last_name?: string;
@@ -50,7 +50,7 @@ export interface CreateCompanyContactRequest {
   is_primary: boolean;
 }
 
-export interface UpdateCompanyContactRequest {
+export interface UpdateAccountContactRequest {
   contact_type?: string;
   first_name?: string;
   last_name?: string;
@@ -65,9 +65,9 @@ export interface UpdateCompanyContactRequest {
   is_primary: boolean;
 }
 
-export const COMPANY_CONTACT_TYPES = ['general', 'technical', 'billing', 'compliance', 'support', 'legal'] as const;
+export const ACCOUNT_CONTACT_TYPES = ['general', 'technical', 'billing', 'compliance', 'support', 'legal'] as const;
 
-export const COMPANY_CONTACT_TYPE_LABELS: Record<string, string> = {
+export const ACCOUNT_CONTACT_TYPE_LABELS: Record<string, string> = {
   general: 'General',
   technical: 'Technical',
   billing: 'Billing',

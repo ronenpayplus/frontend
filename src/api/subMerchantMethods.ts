@@ -4,7 +4,7 @@ import type {
   SetSubMerchantMethodsResponse,
 } from '../types/subMerchantMethod';
 
-const API_BASE = '/v2/companies/sub-merchant-methods';
+const API_BASE = '/v2/accounts/sub-merchant-methods';
 
 interface ApiEnvelope<T> {
   results: {

@@ -4,8 +4,8 @@ import type { CreateTimezoneRequest, TimezoneRef, UpdateTimezoneRequest } from '
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import './CompaniesList.css';
-import './CompanyCreate.css';
+import './AccountsList.css';
+import './AccountCreate.css';
 
 type TimezoneFormState = {
   tz_name: string;
@@ -150,7 +150,7 @@ export default function TimezonesPage() {
   };
 
   return (
-    <div className="companies-page">
+    <div className="accounts-page">
       <div className="page-header">
         <div>
           <h1 className="page-title">Timezones</h1>

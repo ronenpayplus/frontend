@@ -1,9 +1,9 @@
-export interface Company {
+export interface Account {
   uuid: string;
   name: string;
   number: string;
   status: string;
-  company_type: string;
+  account_type: string;
   business_type?: string;
   platform_account_type?: string;
   contract_type?: string;
@@ -23,13 +23,13 @@ export interface Company {
   volume_tier?: string;
   monthly_volume_limit?: number;
   message_for_client?: string;
-  localizations?: CompanyLocalization[];
+  localizations?: AccountLocalization[];
   activated_at?: string;
   created_at: string;
   updated_at?: string;
 }
 
-export interface CompanyLocalizationInput {
+export interface AccountLocalizationInput {
   lang_code: string;
   display_name: string;
   brand_name?: string;
@@ -48,7 +48,7 @@ export interface CompanyLocalizationInput {
   is_default: boolean;
 }
 
-export interface CompanyLocalization extends CompanyLocalizationInput {
+export interface AccountLocalization extends AccountLocalizationInput {
   uuid: string;
   owner_type: string;
   owner_uuid: string;
@@ -56,10 +56,10 @@ export interface CompanyLocalization extends CompanyLocalizationInput {
   updated_at?: string;
 }
 
-export interface CreateCompanyRequest {
+export interface CreateAccountRequest {
   name: string;
   number: string;
-  company_type: string;
+  account_type: string;
   business_type?: string;
   platform_account_type?: string;
   contract_type?: string;
@@ -76,16 +76,16 @@ export interface CreateCompanyRequest {
   volume_tier?: string;
   monthly_volume_limit?: number;
   message_for_client?: string;
-  localizations?: CompanyLocalizationInput[];
-  parent_company_uuid?: string;
+  localizations?: AccountLocalizationInput[];
+  parent_account_uuid?: string;
   created_by?: string;
 }
 
-export interface UpdateCompanyRequest {
+export interface UpdateAccountRequest {
   name: string;
   number: string;
   status: string;
-  company_type: string;
+  account_type: string;
   business_type?: string;
   platform_account_type?: string;
   contract_type?: string;
@@ -105,7 +105,7 @@ export interface UpdateCompanyRequest {
   volume_tier?: string;
   monthly_volume_limit?: number;
   message_for_client?: string;
-  localizations?: CompanyLocalizationInput[];
+  localizations?: AccountLocalizationInput[];
   updated_by?: string;
 }
 
@@ -116,15 +116,15 @@ export interface Pagination {
   total_pages: number;
 }
 
-export interface ListCompaniesResponse {
-  companies: Company[];
+export interface ListAccountsResponse {
+  accounts: Account[];
   pagination: Pagination;
 }
 
-export interface ListCompaniesParams {
+export interface ListAccountsParams {
   search?: string;
   status?: string;
-  company_type?: string;
+  account_type?: string;
   country?: string;
   created_at_from?: string;
   created_at_to?: string;
@@ -132,16 +132,16 @@ export interface ListCompaniesParams {
   page_size?: number;
 }
 
-export const COMPANY_STATUSES = [
+export const ACCOUNT_STATUSES = [
   'NEW', 'PENDING_KYC', 'ACTIVE', 'RESTRICTED', 'SUSPENDED', 'CLOSED', 'TERMINATED',
 ] as const;
 
-export const COMPANY_TYPES = [
-  'holding_company', 'operating_company', 'single_entity',
+export const ACCOUNT_TYPES = [
+  'holding_account', 'operating_account', 'single_entity',
 ] as const;
 
 export const BUSINESS_TYPES = [
-  'individual', 'company', 'non_profit', 'government_entity',
+  'individual', 'account', 'non_profit', 'government_entity',
 ] as const;
 
 export const PLATFORM_ACCOUNT_TYPES = [
@@ -178,15 +178,15 @@ export const STATUS_LABELS: Record<string, string> = {
   TERMINATED: 'Terminated',
 };
 
-export const COMPANY_TYPE_LABELS: Record<string, string> = {
-  holding_company: 'Holding Company',
-  operating_company: 'Operating Company',
+export const ACCOUNT_TYPE_LABELS: Record<string, string> = {
+  holding_account: 'Holding Account',
+  operating_account: 'Operating Account',
   single_entity: 'Single Entity',
 };
 
 export const BUSINESS_TYPE_LABELS: Record<string, string> = {
   individual: 'Individual',
-  company: 'Company',
+  account: 'Account',
   non_profit: 'Non-profit',
   government_entity: 'Government Entity',
 };

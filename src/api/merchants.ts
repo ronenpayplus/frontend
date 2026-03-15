@@ -7,7 +7,7 @@ import type {
 } from '../types/merchant';
 import type { LocalizationInput } from '../types/orgEntityLocalization';
 
-const API_BASE = '/v2/companies/merchants';
+const API_BASE = '/v2/accounts/merchants';
 
 interface ApiEnvelope<T> {
   results: {

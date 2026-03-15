@@ -1,4 +1,4 @@
-import type { Pagination } from './company';
+import type { Pagination } from './account';
 import type { LocalizationInput } from './orgEntityLocalization';
 import type { AddressInput } from './address';
 

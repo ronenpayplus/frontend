@@ -1,12 +1,12 @@
 import type {
-  CompanyContact,
-  CreateCompanyContactRequest,
-  ListCompanyContactsParams,
-  ListCompanyContactsResponse,
-  UpdateCompanyContactRequest,
-} from '../types/companyContact';
+  AccountContact,
+  CreateAccountContactRequest,
+  ListAccountContactsParams,
+  ListAccountContactsResponse,
+  UpdateAccountContactRequest,
+} from '../types/accountContact';
 
-const API_BASE = '/v2/companies/contacts';
+const API_BASE = '/v2/accounts/contacts';
 
 interface ApiEnvelope<T> {
   results: {
@@ -36,26 +36,26 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
   return envelope.data;
 }
 
-export async function listCompanyContacts(
-  params: ListCompanyContactsParams,
-): Promise<ListCompanyContactsResponse> {
+export async function listAccountContacts(
+  params: ListAccountContactsParams,
+): Promise<ListAccountContactsResponse> {
   const query = new URLSearchParams();
-  query.set('company_uuid', params.company_uuid);
+  query.set('account_uuid', params.account_uuid);
   if (params.search) query.set('search', params.search);
   if (params.contact_type) query.set('contact_type', params.contact_type);
   if (params.is_default) query.set('is_default', params.is_default);
   if (params.is_primary) query.set('is_primary', params.is_primary);
   query.set('page', String(params.page ?? 1));
   query.set('page_size', String(params.page_size ?? 10));
-  return request<ListCompanyContactsResponse>(`${API_BASE}/list?${query.toString()}`);
+  return request<ListAccountContactsResponse>(`${API_BASE}/list?${query.toString()}`);
 }
 
-export async function getCompanyContact(uuid: string): Promise<{ contact: CompanyContact }> {
-  return request<{ contact: CompanyContact }>(`${API_BASE}/get/${uuid}`);
+export async function getAccountContact(uuid: string): Promise<{ contact: AccountContact }> {
+  return request<{ contact: AccountContact }>(`${API_BASE}/get/${uuid}`);
 }
 
-export async function createCompanyContact(
-  data: CreateCompanyContactRequest,
+export async function createAccountContact(
+  data: CreateAccountContactRequest,
 ): Promise<{ uuid: string }> {
   return request<{ uuid: string }>(`${API_BASE}/create`, {
     method: 'POST',
@@ -63,9 +63,9 @@ export async function createCompanyContact(
   });
 }
 
-export async function updateCompanyContact(
+export async function updateAccountContact(
   uuid: string,
-  data: UpdateCompanyContactRequest,
+  data: UpdateAccountContactRequest,
 ): Promise<{ success: boolean }> {
   return request<{ success: boolean }>(`${API_BASE}/update/${uuid}`, {
     method: 'PUT',
@@ -73,7 +73,7 @@ export async function updateCompanyContact(
   });
 }
 
-export async function deleteCompanyContact(uuid: string): Promise<{ success: boolean }> {
+export async function deleteAccountContact(uuid: string): Promise<{ success: boolean }> {
   return request<{ success: boolean }>(`${API_BASE}/delete/${uuid}`, {
     method: 'DELETE',
   });

@@ -1,5 +1,5 @@
 export type OrgEntityOwnerType =
-  | 'company'
+  | 'account'
   | 'legal_entity'
   | 'merchant'
   | 'merchant_account'

@@ -6,7 +6,7 @@ import type {
   UpdateComplianceDocumentRequest,
 } from '../types/complianceDocument';
 
-const API_BASE = '/v2/companies/compliance-documents';
+const API_BASE = '/v2/accounts/compliance-documents';
 
 interface ApiEnvelope<T> {
   results: {

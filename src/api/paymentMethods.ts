@@ -6,7 +6,7 @@ import type {
   UpdatePaymentMethodRequest,
 } from '../types/paymentMethod';
 
-const API_BASE = '/v2/companies/payment-methods';
+const API_BASE = '/v2/accounts/payment-methods';
 
 interface ApiEnvelope<T> {
   results: {

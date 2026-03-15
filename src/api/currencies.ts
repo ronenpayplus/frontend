@@ -6,7 +6,7 @@ import type {
   UpdateCurrencyRequest,
 } from '../types/currency';
 
-const API_BASE = '/v2/companies/currencies';
+const API_BASE = '/v2/accounts/currencies';
 
 interface ApiEnvelope<T> {
   results: {

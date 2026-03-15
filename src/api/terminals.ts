@@ -6,7 +6,7 @@ import type {
   UpdateTerminalRequest,
 } from '../types/terminal';
 
-const API_BASE = '/v2/companies/terminals';
+const API_BASE = '/v2/accounts/terminals';
 
 interface ApiEnvelope<T> {
   results: {

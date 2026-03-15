@@ -11,13 +11,13 @@ import {
   type LegalEntity,
   type UpdateLegalEntityRequest,
 } from '../types/legalEntity';
-import { MOCK_COUNTRIES } from '../types/company';
+import { MOCK_COUNTRIES } from '../types/account';
 import type { LocalizationInput } from '../types/orgEntityLocalization';
 import LocalizationsEditor, { ensureAtLeastOneLocalization } from './LocalizationsEditor';
-import './CompanyForm.css';
+import './AccountForm.css';
 
 interface LegalEntityFormProps {
-  companyUUID: string;
+  accountUUID: string;
   initial?: LegalEntity | null;
   mode: 'create' | 'edit';
   loading: boolean;
@@ -27,7 +27,7 @@ interface LegalEntityFormProps {
 }
 
 export default function LegalEntityForm({
-  companyUUID,
+  accountUUID,
   initial,
   mode,
   loading,
@@ -200,12 +200,12 @@ export default function LegalEntityForm({
 
     await onSubmit({
       ...base,
-      company_uuid: companyUUID,
+      account_uuid: accountUUID,
     } as CreateLegalEntityRequest);
   };
 
   return (
-    <form className="company-form" onSubmit={handleSubmit}>
+    <form className="account-form" onSubmit={handleSubmit}>
       <div className="auto-fill-bar">
         <button type="button" className="btn btn-auto-fill" onClick={handleAutoFill}>
           Quick Fill

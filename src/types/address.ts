@@ -8,7 +8,7 @@ export interface AddressInput {
   line1: string;
   line2?: string;
   line3?: string;
-  company_name?: string;
+  account_name?: string;
   contact_name?: string;
   phone?: string;
 }

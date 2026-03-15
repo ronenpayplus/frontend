@@ -4,7 +4,7 @@ import type {
   SetMerchantAccountChannelsResponse,
 } from '../types/merchantAccountChannel';
 
-const API_BASE = '/v2/companies/merchant-account-channels';
+const API_BASE = '/v2/accounts/merchant-account-channels';
 
 interface ApiEnvelope<T> {
   results: {

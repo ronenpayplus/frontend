@@ -6,7 +6,7 @@ import type {
   UpdateCountryRequest,
 } from '../types/country';
 
-const API_BASE = '/v2/companies/countries';
+const API_BASE = '/v2/accounts/countries';
 
 interface ApiEnvelope<T> {
   results: {

@@ -4,8 +4,8 @@ import type { CreateCurrencyRequest, Currency, UpdateCurrencyRequest } from '../
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import './CompaniesList.css';
-import './CompanyCreate.css';
+import './AccountsList.css';
+import './AccountCreate.css';
 
 type CurrencyFormState = {
   alpha3: string;
@@ -161,7 +161,7 @@ export default function CurrenciesPage() {
   };
 
   return (
-    <div className="companies-page">
+    <div className="accounts-page">
       <div className="page-header">
         <div>
           <h1 className="page-title">Currencies</h1>

@@ -1,4 +1,4 @@
-i want you to create a frontend using react vite (typescript), for my backend, specifically, only for the companies entity (crud). 
+i want you to create a frontend using react vite (typescript), for my backend, specifically, only for the accounts entity (crud). 
 
 before starting to build, please examine the backend deeply, to understand exactly how to communicate with it. for enums like currency/timezone, etc, just use mock data. 
 

@@ -1,7 +1,7 @@
 import type { CreateStoreRequest, ListStoresParams, ListStoresResponse, Store, UpdateStoreRequest } from '../types/store';
 import type { LocalizationInput } from '../types/orgEntityLocalization';
 
-const API_BASE = '/v2/companies/stores';
+const API_BASE = '/v2/accounts/stores';
 
 interface ApiEnvelope<T> {
   results: {

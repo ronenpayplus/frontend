@@ -6,7 +6,7 @@ import type {
   UpdateBeneficialOwnerRequest,
 } from '../types/beneficialOwner';
 
-const API_BASE = '/v2/companies/beneficial-owners';
+const API_BASE = '/v2/accounts/beneficial-owners';
 
 interface ApiEnvelope<T> {
   results: {

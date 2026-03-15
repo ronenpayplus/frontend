@@ -7,7 +7,7 @@ import type {
 } from '../types/merchantAccount';
 import type { LocalizationInput } from '../types/orgEntityLocalization';
 
-const API_BASE = '/v2/companies/merchant-accounts';
+const API_BASE = '/v2/accounts/merchant-accounts';
 
 interface ApiEnvelope<T> {
   results: {
@@ -40,7 +40,7 @@ export async function listMerchantAccounts(
 ): Promise<ListMerchantAccountsResponse> {
   const query = new URLSearchParams();
   if (params.merchant_uuid) query.set('merchant_uuid', params.merchant_uuid);
-  if (params.company_uuid) query.set('company_uuid', params.company_uuid);
+  if (params.account_uuid) query.set('account_uuid', params.account_uuid);
   if (params.legal_entity_uuid) query.set('legal_entity_uuid', params.legal_entity_uuid);
   if (params.status) query.set('status', params.status);
   if (params.search) query.set('search', params.search);

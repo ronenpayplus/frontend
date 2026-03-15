@@ -5,10 +5,10 @@ import {
   MERCHANT_BUSINESS_MODEL_LABELS,
   MERCHANT_STATUSES,
 } from '../types/merchant';
-import { STATUS_LABELS } from '../types/company';
+import { STATUS_LABELS } from '../types/account';
 import type { LocalizationInput } from '../types/orgEntityLocalization';
 import LocalizationsEditor, { ensureAtLeastOneLocalization } from './LocalizationsEditor';
-import './CompanyForm.css';
+import './AccountForm.css';
 
 interface MerchantFormProps {
   legalEntityUUID: string;
@@ -167,7 +167,7 @@ export default function MerchantForm({
   };
 
   return (
-    <form className="company-form" onSubmit={handleSubmit}>
+    <form className="account-form" onSubmit={handleSubmit}>
       <div className="auto-fill-bar">
         <button type="button" className="btn btn-auto-fill" onClick={autoFill}>
           Quick Fill

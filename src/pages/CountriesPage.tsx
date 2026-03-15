@@ -4,8 +4,8 @@ import type { Country, CreateCountryRequest, UpdateCountryRequest } from '../typ
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import './CompaniesList.css';
-import './CompanyCreate.css';
+import './AccountsList.css';
+import './AccountCreate.css';
 
 type CountryFormState = {
   alpha2: string;
@@ -183,7 +183,7 @@ export default function CountriesPage() {
   };
 
   return (
-    <div className="companies-page">
+    <div className="accounts-page">
       <div className="page-header">
         <div>
           <h1 className="page-title">Countries</h1>

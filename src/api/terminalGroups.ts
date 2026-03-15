@@ -6,7 +6,7 @@ import type {
   UpdateTerminalGroupRequest,
 } from '../types/terminalGroup';
 
-const API_BASE = '/v2/companies/terminal-groups';
+const API_BASE = '/v2/accounts/terminal-groups';
 
 interface ApiEnvelope<T> {
   results: {

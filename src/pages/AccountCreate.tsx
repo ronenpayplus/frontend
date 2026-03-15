@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createCompanyWithLocalizations } from '../api/companies';
-import type { CreateCompanyRequest } from '../types/company';
-import CompanyForm from '../components/CompanyForm';
+import { createAccountWithLocalizations } from '../api/accounts';
+import type { CreateAccountRequest } from '../types/account';
+import AccountForm from '../components/AccountForm';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import './CompanyCreate.css';
+import './AccountCreate.css';
 
-export default function CompanyCreate() {
+export default function AccountCreate() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const { toasts, addToast, removeToast } = useToast();
 
-  const handleSubmit = async (data: CreateCompanyRequest) => {
+  const handleSubmit = async (data: CreateAccountRequest) => {
     setLoading(true);
     try {
       const localizations = data.localizations && data.localizations.length > 0
@@ -24,33 +24,33 @@ export default function CompanyCreate() {
         }];
       const payload = { ...data };
       delete payload.localizations;
-      const result = await createCompanyWithLocalizations({
-        ...(payload as CreateCompanyRequest),
+      const result = await createAccountWithLocalizations({
+        ...(payload as CreateAccountRequest),
         localizations,
       });
-      addToast('Company created successfully', 'success');
-      setTimeout(() => navigate(`/companies/${result.uuid}`), 500);
+      addToast('Account created successfully', 'success');
+      setTimeout(() => navigate(`/accounts/${result.uuid}`), 500);
     } catch (err) {
-      addToast('Failed to create company', 'error');
+      addToast('Failed to create account', 'error');
       console.error(err);
       setLoading(false);
     }
   };
 
   return (
-    <div className="company-create-page">
+    <div className="account-create-page">
       <div className="page-header">
         <div className="breadcrumb">
-          <button className="breadcrumb-link" onClick={() => navigate('/companies')}>Companies</button>
+          <button className="breadcrumb-link" onClick={() => navigate('/accounts')}>Accounts</button>
           <span className="breadcrumb-sep">/</span>
-          <span>New Company</span>
+          <span>New Account</span>
         </div>
-        <h1 className="page-title">Create New Company</h1>
+        <h1 className="page-title">Create New Account</h1>
       </div>
 
-      <CompanyForm
+      <AccountForm
         onSubmit={handleSubmit}
-        onCancel={() => navigate('/companies')}
+        onCancel={() => navigate('/accounts')}
         loading={loading}
       />
 

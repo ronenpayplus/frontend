@@ -6,21 +6,21 @@ import {
   listMerchants,
   updateMerchantWithLocalizations,
 } from '../api/merchants';
-import { listCompanies } from '../api/companies';
+import { listAccounts } from '../api/accounts';
 import { getLegalEntity, listLegalEntities } from '../api/legalEntities';
 import { listOrgEntityLocalizations } from '../api/orgEntityLocalizations';
-import type { Company } from '../types/company';
+import type { Account } from '../types/account';
 import type { LegalEntity } from '../types/legalEntity';
 import type { CreateMerchantRequest, Merchant, UpdateMerchantRequest } from '../types/merchant';
 import type { LocalizationInput } from '../types/orgEntityLocalization';
 import { MERCHANT_BUSINESS_MODEL_LABELS } from '../types/merchant';
-import { STATUS_LABELS } from '../types/company';
+import { STATUS_LABELS } from '../types/account';
 import MerchantForm from '../components/MerchantForm';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import './CompaniesList.css';
-import './CompanyCreate.css';
+import './AccountsList.css';
+import './AccountCreate.css';
 
 export default function LegalEntityMerchants() {
   const navigate = useNavigate();
@@ -28,9 +28,9 @@ export default function LegalEntityMerchants() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toasts, addToast, removeToast } = useToast();
 
-  const selectedCompanyUUID = searchParams.get('company_uuid') || '';
+  const selectedAccountUUID = searchParams.get('account_uuid') || '';
   const selectedLegalEntityUUID = routeLegalEntityUUID || searchParams.get('legal_entity_uuid') || '';
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
   const [selectedLegalEntity, setSelectedLegalEntity] = useState<LegalEntity | null>(null);
   const [items, setItems] = useState<Merchant[]>([]);
@@ -44,20 +44,20 @@ export default function LegalEntityMerchants() {
   const page = Number(searchParams.get('page')) || 1;
 
   useEffect(() => {
-    listCompanies({ page: 1, page_size: 300 })
-      .then((data) => setCompanies(data.companies || []))
-      .catch(() => setCompanies([]));
+    listAccounts({ page: 1, page_size: 300 })
+      .then((data) => setAccounts(data.accounts || []))
+      .catch(() => setAccounts([]));
   }, []);
 
   useEffect(() => {
-    if (!selectedCompanyUUID) {
+    if (!selectedAccountUUID) {
       setLegalEntities([]);
       return;
     }
-    listLegalEntities({ company_uuid: selectedCompanyUUID, page: 1, page_size: 300 })
+    listLegalEntities({ account_uuid: selectedAccountUUID, page: 1, page_size: 300 })
       .then((data) => setLegalEntities(data.legal_entities || []))
       .catch(() => setLegalEntities([]));
-  }, [selectedCompanyUUID]);
+  }, [selectedAccountUUID]);
 
   useEffect(() => {
     if (!selectedLegalEntityUUID) {
@@ -74,8 +74,8 @@ export default function LegalEntityMerchants() {
   useEffect(() => {
     if (!selectedLegalEntity) return;
     const params = new URLSearchParams(searchParams);
-    if (selectedLegalEntity.company_uuid && selectedLegalEntity.company_uuid !== selectedCompanyUUID) {
-      params.set('company_uuid', selectedLegalEntity.company_uuid);
+    if (selectedLegalEntity.account_uuid && selectedLegalEntity.account_uuid !== selectedAccountUUID) {
+      params.set('account_uuid', selectedLegalEntity.account_uuid);
     }
     if (!params.get('legal_entity_uuid') && selectedLegalEntity.uuid) {
       params.set('legal_entity_uuid', selectedLegalEntity.uuid);
@@ -87,7 +87,7 @@ export default function LegalEntityMerchants() {
       if (prev.some((x) => x.uuid === selectedLegalEntity.uuid)) return prev;
       return [selectedLegalEntity, ...prev];
     });
-  }, [selectedLegalEntity, selectedCompanyUUID, searchParams, setSearchParams]);
+  }, [selectedLegalEntity, selectedAccountUUID, searchParams, setSearchParams]);
 
   const fetchMerchants = useCallback(async () => {
     if (!selectedLegalEntityUUID) {
@@ -128,7 +128,7 @@ export default function LegalEntityMerchants() {
     e.preventDefault();
     const params = new URLSearchParams(searchParams);
     params.set('page', '1');
-    if (selectedCompanyUUID) params.set('company_uuid', selectedCompanyUUID);
+    if (selectedAccountUUID) params.set('account_uuid', selectedAccountUUID);
     if (selectedLegalEntityUUID) params.set('legal_entity_uuid', selectedLegalEntityUUID);
     if (search) params.set('search', search);
     setSearchParams(params);
@@ -205,7 +205,7 @@ export default function LegalEntityMerchants() {
   };
 
   return (
-    <div className="companies-page">
+    <div className="accounts-page">
       <div className="breadcrumb">
         <button className="breadcrumb-link" onClick={() => navigate('/legal-entities')}>
           Legal Entities
@@ -258,11 +258,11 @@ export default function LegalEntityMerchants() {
           <div className="filter-group">
             <select
               className="input"
-              value={selectedCompanyUUID}
+              value={selectedAccountUUID}
               onChange={(e) => {
                 const params = new URLSearchParams(searchParams);
-                if (e.target.value) params.set('company_uuid', e.target.value);
-                else params.delete('company_uuid');
+                if (e.target.value) params.set('account_uuid', e.target.value);
+                else params.delete('account_uuid');
                 if (!routeLegalEntityUUID) params.delete('legal_entity_uuid');
                 params.set('page', '1');
                 setSearchParams(params);
@@ -270,10 +270,10 @@ export default function LegalEntityMerchants() {
                 setEditing(null);
               }}
             >
-              <option value="">Select Company</option>
-              {companies.map((company) => (
-                <option key={company.uuid} value={company.uuid}>
-                  {company.name}
+              <option value="">Select Account</option>
+              {accounts.map((account) => (
+                <option key={account.uuid} value={account.uuid}>
+                  {account.name}
                 </option>
               ))}
             </select>
@@ -291,7 +291,7 @@ export default function LegalEntityMerchants() {
                 setShowCreate(false);
                 setEditing(null);
               }}
-              disabled={!selectedCompanyUUID || !!routeLegalEntityUUID}
+              disabled={!selectedAccountUUID || !!routeLegalEntityUUID}
             >
               <option value="">Select Legal Entity</option>
               {legalEntities.map((le) => (
@@ -352,7 +352,7 @@ export default function LegalEntityMerchants() {
                         className="btn btn-outline btn-sm"
                         onClick={() =>
                           navigate(
-                            `/merchants/${m.uuid}/merchant-accounts?legal_entity_uuid=${selectedLegalEntityUUID}&company_uuid=${selectedLegalEntity?.company_uuid || ''}`,
+                            `/merchants/${m.uuid}/merchant-accounts?legal_entity_uuid=${selectedLegalEntityUUID}&account_uuid=${selectedLegalEntity?.account_uuid || ''}`,
                           )
                         }
                       >

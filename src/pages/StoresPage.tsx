@@ -8,7 +8,7 @@ import {
 } from '../api/stores';
 import { listMerchantAccounts } from '../api/merchantAccounts';
 import { getSubMerchantAccount } from '../api/subMerchantAccounts';
-import { listCompanies } from '../api/companies';
+import { listAccounts } from '../api/accounts';
 import { listLegalEntities } from '../api/legalEntities';
 import { listMerchants } from '../api/merchants';
 import { listOrgEntityLocalizations } from '../api/orgEntityLocalizations';
@@ -19,23 +19,23 @@ import {
   deleteStoreLocationLink,
 } from '../api/storeLocationLinks';
 import type { MerchantAccount } from '../types/merchantAccount';
-import type { Company } from '../types/company';
+import type { Account } from '../types/account';
 import type { LegalEntity } from '../types/legalEntity';
 import type { Merchant } from '../types/merchant';
 import type { CreateStoreRequest, Store, UpdateStoreRequest } from '../types/store';
 import type { LocalizationInput } from '../types/orgEntityLocalization';
-import type { Location as CompanyLocation } from '../types/location';
+import type { Location as AccountLocation } from '../types/location';
 import type { StoreLocationLink } from '../types/storeLocationLink';
 import { STORE_CHANNEL_TYPES, STORE_STATUSES, STORE_TYPES } from '../types/store';
 import { LOCATION_TYPE_LABELS } from '../types/location';
 import { STORE_LOCATION_ROLES, STORE_LOCATION_ROLE_LABELS } from '../types/storeLocationLink';
-import { MOCK_TIMEZONES } from '../types/company';
+import { MOCK_TIMEZONES } from '../types/account';
 import ConfirmDialog from '../components/ConfirmDialog';
 import LocalizationsEditor, { ensureAtLeastOneLocalization } from '../components/LocalizationsEditor';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import './CompaniesList.css';
-import './CompanyCreate.css';
+import './AccountsList.css';
+import './AccountCreate.css';
 
 export default function StoresPage() {
   const navigate = useNavigate();
@@ -46,12 +46,12 @@ export default function StoresPage() {
 
   const isSubMerchantRoute = location.pathname.startsWith('/sub-merchants/');
   const routeSubMerchantUUID = isSubMerchantRoute ? routeMerchantAccountUUID : '';
-  const selectedCompanyUUID = searchParams.get('company_uuid') || '';
+  const selectedAccountUUID = searchParams.get('account_uuid') || '';
   const selectedLegalEntityUUID = searchParams.get('legal_entity_uuid') || '';
   const selectedMerchantUUID = searchParams.get('merchant_uuid') || '';
   const selectedSubMerchantUUID = routeSubMerchantUUID || searchParams.get('sub_merchant_uuid') || '';
   const selectedMerchantAccountUUID = (!isSubMerchantRoute ? routeMerchantAccountUUID : '') || searchParams.get('merchant_account_uuid') || '';
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [allMerchantAccounts, setAllMerchantAccounts] = useState<MerchantAccount[]>([]);
@@ -89,38 +89,38 @@ export default function StoresPage() {
       is_default: true,
     },
   ]);
-  const [availableLocations, setAvailableLocations] = useState<CompanyLocation[]>([]);
+  const [availableLocations, setAvailableLocations] = useState<AccountLocation[]>([]);
   const [storeLinks, setStoreLinks] = useState<StoreLocationLink[]>([]);
   const [linkForm, setLinkForm] = useState({ location_uuid: '', role: 'SALES', priority: 1 });
   const [linkSaving, setLinkSaving] = useState(false);
   const merchantAccounts = useMemo(
     () =>
       allMerchantAccounts.filter((account) => {
-        if (selectedCompanyUUID && account.company_uuid !== selectedCompanyUUID) return false;
+        if (selectedAccountUUID && account.account_uuid !== selectedAccountUUID) return false;
         if (selectedLegalEntityUUID && account.legal_entity_uuid !== selectedLegalEntityUUID) return false;
         if (selectedMerchantUUID && account.merchant_uuid !== selectedMerchantUUID) return false;
         return true;
       }),
-    [allMerchantAccounts, selectedCompanyUUID, selectedLegalEntityUUID, selectedMerchantUUID],
+    [allMerchantAccounts, selectedAccountUUID, selectedLegalEntityUUID, selectedMerchantUUID],
   );
   const selectedMerchantAccount =
     allMerchantAccounts.find((a) => a.uuid === selectedMerchantAccountUUID) || null;
 
   useEffect(() => {
-    listCompanies({ page: 1, page_size: 300 })
-      .then((data) => setCompanies(data.companies || []))
-      .catch(() => setCompanies([]));
+    listAccounts({ page: 1, page_size: 300 })
+      .then((data) => setAccounts(data.accounts || []))
+      .catch(() => setAccounts([]));
   }, []);
 
   useEffect(() => {
-    if (!selectedCompanyUUID) {
+    if (!selectedAccountUUID) {
       setLegalEntities([]);
       return;
     }
-    listLegalEntities({ company_uuid: selectedCompanyUUID, page: 1, page_size: 300 })
+    listLegalEntities({ account_uuid: selectedAccountUUID, page: 1, page_size: 300 })
       .then((data) => setLegalEntities(data.legal_entities || []))
       .catch(() => setLegalEntities([]));
-  }, [selectedCompanyUUID]);
+  }, [selectedAccountUUID]);
 
   useEffect(() => {
     if (!selectedLegalEntityUUID) {
@@ -153,7 +153,7 @@ export default function StoresPage() {
           const params = new URLSearchParams(searchParams);
           params.set('merchant_account_uuid', accountUUID);
           params.set('sub_merchant_uuid', selectedSubMerchantUUID);
-          if (account?.company_uuid) params.set('company_uuid', account.company_uuid);
+          if (account?.account_uuid) params.set('account_uuid', account.account_uuid);
           if (account?.legal_entity_uuid) params.set('legal_entity_uuid', account.legal_entity_uuid);
           if (account?.merchant_uuid) params.set('merchant_uuid', account.merchant_uuid);
           if (params.toString() !== searchParams.toString()) {
@@ -167,7 +167,7 @@ export default function StoresPage() {
   useEffect(() => {
     if (!selectedMerchantAccount) return;
     const params = new URLSearchParams(searchParams);
-    if (selectedMerchantAccount.company_uuid) params.set('company_uuid', selectedMerchantAccount.company_uuid);
+    if (selectedMerchantAccount.account_uuid) params.set('account_uuid', selectedMerchantAccount.account_uuid);
     if (selectedMerchantAccount.legal_entity_uuid) params.set('legal_entity_uuid', selectedMerchantAccount.legal_entity_uuid);
     if (selectedMerchantAccount.merchant_uuid) params.set('merchant_uuid', selectedMerchantAccount.merchant_uuid);
     if (params.toString() !== searchParams.toString()) {
@@ -175,16 +175,16 @@ export default function StoresPage() {
     }
   }, [selectedMerchantAccount, searchParams, setSearchParams]);
 
-  const resolvedCompanyUUID = selectedCompanyUUID || selectedMerchantAccount?.company_uuid || '';
+  const resolvedAccountUUID = selectedAccountUUID || selectedMerchantAccount?.account_uuid || '';
   useEffect(() => {
-    if (!resolvedCompanyUUID) {
+    if (!resolvedAccountUUID) {
       setAvailableLocations([]);
       return;
     }
-    listLocations({ company_uuid: resolvedCompanyUUID, status: 'ACTIVE', page: 1, page_size: 500 })
+    listLocations({ account_uuid: resolvedAccountUUID, status: 'ACTIVE', page: 1, page_size: 500 })
       .then((data) => setAvailableLocations(data.locations || []))
       .catch(() => setAvailableLocations([]));
-  }, [resolvedCompanyUUID]);
+  }, [resolvedAccountUUID]);
 
   const loadStoreLinks = useCallback(async (storeUUID: string) => {
     try {
@@ -453,7 +453,7 @@ export default function StoresPage() {
   };
 
   return (
-    <div className="companies-page">
+    <div className="accounts-page">
       <div className="breadcrumb">
         {selectedSubMerchantUUID ? (
           <>
@@ -571,7 +571,7 @@ export default function StoresPage() {
                 </div>
               </div>
               {availableLocations.length === 0 && (
-                <p style={{ color: 'var(--color-text-muted)', fontSize: '13px', marginTop: '8px' }}>No locations available. Create locations for this company first.</p>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '13px', marginTop: '8px' }}>No locations available. Create locations for this account first.</p>
               )}
             </div>
           )}
@@ -598,10 +598,10 @@ export default function StoresPage() {
           <div className="filter-group">
             <select
               className="input"
-              value={selectedCompanyUUID}
+              value={selectedAccountUUID}
               onChange={(e) => {
                 const params = new URLSearchParams(searchParams);
-                if (e.target.value) params.set('company_uuid', e.target.value); else params.delete('company_uuid');
+                if (e.target.value) params.set('account_uuid', e.target.value); else params.delete('account_uuid');
                 params.delete('legal_entity_uuid');
                 params.delete('merchant_uuid');
                 params.delete('merchant_account_uuid');
@@ -609,8 +609,8 @@ export default function StoresPage() {
               }}
               disabled={!!selectedSubMerchantUUID}
             >
-              <option value="">Select Company</option>
-              {companies.map((company) => <option key={company.uuid} value={company.uuid}>{company.name}</option>)}
+              <option value="">Select Account</option>
+              {accounts.map((account) => <option key={account.uuid} value={account.uuid}>{account.name}</option>)}
             </select>
           </div>
           <div className="filter-group">
@@ -624,7 +624,7 @@ export default function StoresPage() {
                 params.delete('merchant_account_uuid');
                 setSearchParams(params);
               }}
-              disabled={!selectedCompanyUUID || !!selectedSubMerchantUUID}
+              disabled={!selectedAccountUUID || !!selectedSubMerchantUUID}
             >
               <option value="">Select Legal Entity</option>
               {legalEntities.map((entity) => <option key={entity.uuid} value={entity.uuid}>{entity.legal_name}</option>)}
@@ -652,7 +652,7 @@ export default function StoresPage() {
               if (e.target.value) params.set('merchant_account_uuid', e.target.value); else params.delete('merchant_account_uuid');
               if (e.target.value) {
                 const account = allMerchantAccounts.find((a) => a.uuid === e.target.value) || null;
-                if (account?.company_uuid) params.set('company_uuid', account.company_uuid);
+                if (account?.account_uuid) params.set('account_uuid', account.account_uuid);
                 if (account?.legal_entity_uuid) params.set('legal_entity_uuid', account.legal_entity_uuid);
                 if (account?.merchant_uuid) params.set('merchant_uuid', account.merchant_uuid);
               }

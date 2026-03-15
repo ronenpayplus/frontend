@@ -1,4 +1,4 @@
-import type { Pagination } from './company';
+import type { Pagination } from './account';
 
 export interface AddressEntity {
   uuid: string;
@@ -11,7 +11,7 @@ export interface AddressEntity {
   line1: string;
   line2?: string;
   line3?: string;
-  company_name?: string;
+  account_name?: string;
   contact_name?: string;
   phone?: string;
   latitude?: number;
@@ -48,7 +48,7 @@ export interface CreateAddressRequest {
   line1: string;
   line2?: string;
   line3?: string;
-  company_name?: string;
+  account_name?: string;
   contact_name?: string;
   phone?: string;
   latitude?: number;

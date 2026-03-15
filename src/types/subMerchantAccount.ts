@@ -1,4 +1,4 @@
-import type { Pagination } from './company';
+import type { Pagination } from './account';
 import type { LocalizationInput } from './orgEntityLocalization';
 
 export interface SubMerchantAccount {
@@ -85,7 +85,7 @@ export interface UpdateSubMerchantAccountRequest {
   localizations?: LocalizationInput[];
 }
 
-export const SUB_MERCHANT_ENTITY_TYPES = ['individual', 'sole_proprietor', 'company', 'non_profit'] as const;
+export const SUB_MERCHANT_ENTITY_TYPES = ['individual', 'sole_proprietor', 'account', 'non_profit'] as const;
 export const SUB_MERCHANT_SELLER_MODELS = ['PLATFORM_MOR', 'SELLER_MOR'] as const;
 export const SUB_MERCHANT_STATUSES = ['NEW', 'PENDING_KYC', 'ACTIVE', 'RESTRICTED', 'UNDER_REVIEW', 'SUSPENDED', 'BLOCKED', 'CLOSED', 'TERMINATED'] as const;
 export const SUB_MERCHANT_ONBOARDING_STATUSES = ['NEW', 'DOCUMENTS_REQUIRED', 'PENDING_VERIFICATION', 'IN_REVIEW', 'APPROVED', 'REJECTED', 'ACTIVE'] as const;

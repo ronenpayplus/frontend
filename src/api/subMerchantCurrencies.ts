@@ -5,7 +5,7 @@ import type {
   SubMerchantCurrency,
 } from '../types/subMerchantCurrency';
 
-const API_BASE = '/v2/companies/sub-merchant-currencies';
+const API_BASE = '/v2/accounts/sub-merchant-currencies';
 
 interface ApiEnvelope<T> {
   results: {

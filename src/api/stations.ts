@@ -6,7 +6,7 @@ import type {
   UpdateStationRequest,
 } from '../types/station';
 
-const API_BASE = '/v2/companies/stations';
+const API_BASE = '/v2/accounts/stations';
 
 interface ApiEnvelope<T> {
   results: { status: string; code: number; description: string; message: unknown };

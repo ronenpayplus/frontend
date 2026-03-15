@@ -6,9 +6,9 @@ import {
   listBeneficialOwners,
   updateBeneficialOwner,
 } from '../api/beneficialOwners';
-import { listCompanies } from '../api/companies';
+import { listAccounts } from '../api/accounts';
 import { getLegalEntity, listLegalEntities } from '../api/legalEntities';
-import type { Company } from '../types/company';
+import type { Account } from '../types/account';
 import type { LegalEntity } from '../types/legalEntity';
 import type {
   BeneficialOwner,
@@ -26,8 +26,8 @@ import {
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import './CompaniesList.css';
-import './CompanyCreate.css';
+import './AccountsList.css';
+import './AccountCreate.css';
 
 type BeneficialOwnerFormState = {
   first_name: string;
@@ -39,12 +39,12 @@ type BeneficialOwnerFormState = {
   email: string;
   job_title: string;
   owner_entity_type: string;
-  company_name: string;
-  company_type: string;
-  company_country: string;
-  company_registration_number: string;
-  company_tax_id: string;
-  company_website: string;
+  account_name: string;
+  account_type: string;
+  account_country: string;
+  account_registration_number: string;
+  account_tax_id: string;
+  account_website: string;
   ownership_percentage: number;
   role: string;
   address_id: string;
@@ -67,12 +67,12 @@ const defaultForm: BeneficialOwnerFormState = {
   email: '',
   job_title: '',
   owner_entity_type: 'individual',
-  company_name: '',
-  company_type: '',
-  company_country: '',
-  company_registration_number: '',
-  company_tax_id: '',
-  company_website: '',
+  account_name: '',
+  account_type: '',
+  account_country: '',
+  account_registration_number: '',
+  account_tax_id: '',
+  account_website: '',
   ownership_percentage: 50,
   role: 'owner',
   address_id: '',
@@ -91,9 +91,9 @@ export default function BeneficialOwnersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toasts, addToast, removeToast } = useToast();
 
-  const selectedCompanyUUID = searchParams.get('company_uuid') || '';
+  const selectedAccountUUID = searchParams.get('account_uuid') || '';
   const selectedLegalEntityUUID = routeLegalEntityUUID || searchParams.get('legal_entity_uuid') || '';
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
   const [selectedLegalEntity, setSelectedLegalEntity] = useState<LegalEntity | null>(null);
   const [items, setItems] = useState<BeneficialOwner[]>([]);
@@ -108,20 +108,20 @@ export default function BeneficialOwnersPage() {
   const [form, setForm] = useState<BeneficialOwnerFormState>(defaultForm);
 
   useEffect(() => {
-    listCompanies({ page: 1, page_size: 300 })
-      .then((data) => setCompanies(data.companies || []))
-      .catch(() => setCompanies([]));
+    listAccounts({ page: 1, page_size: 300 })
+      .then((data) => setAccounts(data.accounts || []))
+      .catch(() => setAccounts([]));
   }, []);
 
   useEffect(() => {
-    if (!selectedCompanyUUID) {
+    if (!selectedAccountUUID) {
       setLegalEntities([]);
       return;
     }
-    listLegalEntities({ company_uuid: selectedCompanyUUID, page: 1, page_size: 300 })
+    listLegalEntities({ account_uuid: selectedAccountUUID, page: 1, page_size: 300 })
       .then((data) => setLegalEntities(data.legal_entities || []))
       .catch(() => setLegalEntities([]));
-  }, [selectedCompanyUUID]);
+  }, [selectedAccountUUID]);
 
   useEffect(() => {
     if (!selectedLegalEntityUUID) {
@@ -136,8 +136,8 @@ export default function BeneficialOwnersPage() {
   useEffect(() => {
     if (!selectedLegalEntity) return;
     const params = new URLSearchParams(searchParams);
-    if (selectedLegalEntity.company_uuid && selectedLegalEntity.company_uuid !== selectedCompanyUUID) {
-      params.set('company_uuid', selectedLegalEntity.company_uuid);
+    if (selectedLegalEntity.account_uuid && selectedLegalEntity.account_uuid !== selectedAccountUUID) {
+      params.set('account_uuid', selectedLegalEntity.account_uuid);
     }
     if (!params.get('legal_entity_uuid') && selectedLegalEntity.uuid) {
       params.set('legal_entity_uuid', selectedLegalEntity.uuid);
@@ -149,7 +149,7 @@ export default function BeneficialOwnersPage() {
       if (prev.some((x) => x.uuid === selectedLegalEntity.uuid)) return prev;
       return [selectedLegalEntity, ...prev];
     });
-  }, [selectedLegalEntity, selectedCompanyUUID, searchParams, setSearchParams]);
+  }, [selectedLegalEntity, selectedAccountUUID, searchParams, setSearchParams]);
 
   const fetchItems = useCallback(async () => {
     if (!selectedLegalEntityUUID) {
@@ -199,12 +199,12 @@ export default function BeneficialOwnersPage() {
       email: `john${rand}@example.com`,
       job_title: 'CEO',
       owner_entity_type: 'individual',
-      company_name: '',
-      company_type: '',
-      company_country: '',
-      company_registration_number: '',
-      company_tax_id: '',
-      company_website: '',
+      account_name: '',
+      account_type: '',
+      account_country: '',
+      account_registration_number: '',
+      account_tax_id: '',
+      account_website: '',
       ownership_percentage: 55,
       role: 'owner',
       address_id: '',
@@ -231,12 +231,12 @@ export default function BeneficialOwnersPage() {
       email: item.email || '',
       job_title: item.job_title || '',
       owner_entity_type: item.owner_entity_type || 'individual',
-      company_name: item.company_name || '',
-      company_type: item.company_type || '',
-      company_country: item.company_country || '',
-      company_registration_number: item.company_registration_number || '',
-      company_tax_id: item.company_tax_id || '',
-      company_website: item.company_website || '',
+      account_name: item.account_name || '',
+      account_type: item.account_type || '',
+      account_country: item.account_country || '',
+      account_registration_number: item.account_registration_number || '',
+      account_tax_id: item.account_tax_id || '',
+      account_website: item.account_website || '',
       ownership_percentage: item.ownership_percentage,
       role: item.role,
       address_id: item.address_id ? String(item.address_id) : '',
@@ -262,12 +262,12 @@ export default function BeneficialOwnersPage() {
     job_title: form.job_title.trim() || undefined,
     owner_entity_type: form.owner_entity_type || 'individual',
     ...(form.owner_entity_type === 'corporate' ? {
-      company_name: form.company_name.trim() || undefined,
-      company_type: form.company_type.trim() || undefined,
-      company_country: form.company_country.trim().toUpperCase() || undefined,
-      company_registration_number: form.company_registration_number.trim() || undefined,
-      company_tax_id: form.company_tax_id.trim() || undefined,
-      company_website: form.company_website.trim() || undefined,
+      account_name: form.account_name.trim() || undefined,
+      account_type: form.account_type.trim() || undefined,
+      account_country: form.account_country.trim().toUpperCase() || undefined,
+      account_registration_number: form.account_registration_number.trim() || undefined,
+      account_tax_id: form.account_tax_id.trim() || undefined,
+      account_website: form.account_website.trim() || undefined,
     } : {}),
     ownership_percentage: Number(form.ownership_percentage),
     role: form.role,
@@ -296,12 +296,12 @@ export default function BeneficialOwnersPage() {
     job_title: form.job_title.trim() || undefined,
     owner_entity_type: form.owner_entity_type || 'individual',
     ...(form.owner_entity_type === 'corporate' ? {
-      company_name: form.company_name.trim() || undefined,
-      company_type: form.company_type.trim() || undefined,
-      company_country: form.company_country.trim().toUpperCase() || undefined,
-      company_registration_number: form.company_registration_number.trim() || undefined,
-      company_tax_id: form.company_tax_id.trim() || undefined,
-      company_website: form.company_website.trim() || undefined,
+      account_name: form.account_name.trim() || undefined,
+      account_type: form.account_type.trim() || undefined,
+      account_country: form.account_country.trim().toUpperCase() || undefined,
+      account_registration_number: form.account_registration_number.trim() || undefined,
+      account_tax_id: form.account_tax_id.trim() || undefined,
+      account_website: form.account_website.trim() || undefined,
     } : {}),
     ownership_percentage: Number(form.ownership_percentage),
     role: form.role,
@@ -363,7 +363,7 @@ export default function BeneficialOwnersPage() {
   };
 
   return (
-    <div className="companies-page">
+    <div className="accounts-page">
       <div className="breadcrumb">
         <button className="breadcrumb-link" onClick={() => navigate('/legal-entities')}>Legal Entities</button>
         <span className="breadcrumb-sep">/</span>
@@ -409,12 +409,12 @@ export default function BeneficialOwnersPage() {
             <>
               <h4 className="section-title" style={{ marginTop: '16px', marginBottom: '12px' }}>Corporate Details</h4>
               <div className="form-grid">
-                <div className="form-field"><label className="label">Company Name</label><input className="input" value={form.company_name} onChange={(e) => setForm((p) => ({ ...p, company_name: e.target.value }))} /></div>
-                <div className="form-field"><label className="label">Company Type</label><input className="input" value={form.company_type} onChange={(e) => setForm((p) => ({ ...p, company_type: e.target.value }))} placeholder="e.g. LLC, Corporation" /></div>
-                <div className="form-field"><label className="label">Company Country</label><input className="input ltr-input" dir="ltr" maxLength={2} value={form.company_country} onChange={(e) => setForm((p) => ({ ...p, company_country: e.target.value.toUpperCase() }))} placeholder="ISO 2-letter (e.g. US)" /></div>
-                <div className="form-field"><label className="label">Registration Number</label><input className="input ltr-input" dir="ltr" value={form.company_registration_number} onChange={(e) => setForm((p) => ({ ...p, company_registration_number: e.target.value }))} /></div>
-                <div className="form-field"><label className="label">Tax ID</label><input className="input ltr-input" dir="ltr" value={form.company_tax_id} onChange={(e) => setForm((p) => ({ ...p, company_tax_id: e.target.value }))} /></div>
-                <div className="form-field"><label className="label">Website</label><input className="input ltr-input" dir="ltr" value={form.company_website} onChange={(e) => setForm((p) => ({ ...p, company_website: e.target.value }))} placeholder="https://example.com" /></div>
+                <div className="form-field"><label className="label">Account Name</label><input className="input" value={form.account_name} onChange={(e) => setForm((p) => ({ ...p, account_name: e.target.value }))} /></div>
+                <div className="form-field"><label className="label">Account Type</label><input className="input" value={form.account_type} onChange={(e) => setForm((p) => ({ ...p, account_type: e.target.value }))} placeholder="e.g. LLC, Corporation" /></div>
+                <div className="form-field"><label className="label">Account Country</label><input className="input ltr-input" dir="ltr" maxLength={2} value={form.account_country} onChange={(e) => setForm((p) => ({ ...p, account_country: e.target.value.toUpperCase() }))} placeholder="ISO 2-letter (e.g. US)" /></div>
+                <div className="form-field"><label className="label">Registration Number</label><input className="input ltr-input" dir="ltr" value={form.account_registration_number} onChange={(e) => setForm((p) => ({ ...p, account_registration_number: e.target.value }))} /></div>
+                <div className="form-field"><label className="label">Tax ID</label><input className="input ltr-input" dir="ltr" value={form.account_tax_id} onChange={(e) => setForm((p) => ({ ...p, account_tax_id: e.target.value }))} /></div>
+                <div className="form-field"><label className="label">Website</label><input className="input ltr-input" dir="ltr" value={form.account_website} onChange={(e) => setForm((p) => ({ ...p, account_website: e.target.value }))} placeholder="https://example.com" /></div>
               </div>
             </>
           )}
@@ -443,17 +443,17 @@ export default function BeneficialOwnersPage() {
           <div className="filter-group">
             <select
               className="input"
-              value={selectedCompanyUUID}
+              value={selectedAccountUUID}
               onChange={(e) => {
                 const params = new URLSearchParams(searchParams);
-                if (e.target.value) params.set('company_uuid', e.target.value);
-                else params.delete('company_uuid');
+                if (e.target.value) params.set('account_uuid', e.target.value);
+                else params.delete('account_uuid');
                 if (!routeLegalEntityUUID) params.delete('legal_entity_uuid');
                 setSearchParams(params);
               }}
             >
-              <option value="">Select Company</option>
-              {companies.map((company) => <option key={company.uuid} value={company.uuid}>{company.name}</option>)}
+              <option value="">Select Account</option>
+              {accounts.map((account) => <option key={account.uuid} value={account.uuid}>{account.name}</option>)}
             </select>
           </div>
           <div className="filter-group">
@@ -466,7 +466,7 @@ export default function BeneficialOwnersPage() {
                 else params.delete('legal_entity_uuid');
                 setSearchParams(params);
               }}
-              disabled={!selectedCompanyUUID || !!routeLegalEntityUUID}
+              disabled={!selectedAccountUUID || !!routeLegalEntityUUID}
             >
               <option value="">Select Legal Entity</option>
               {legalEntities.map((le) => <option key={le.uuid} value={le.uuid}>{le.legal_name}</option>)}

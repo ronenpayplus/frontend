@@ -36,7 +36,7 @@ describe('listChannelTypes', () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(url).toContain('/v2/companies/channel-types/list');
+    expect(url).toContain('/v2/accounts/channel-types/list');
     expect(url).toContain('page=1');
     expect(url).toContain('page_size=20');
     expect(result.channel_types).toEqual([]);
@@ -113,7 +113,7 @@ describe('getChannelType', () => {
     const result = await getChannelType('ONLINE');
 
     const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(url).toContain('/v2/companies/channel-types/get/ONLINE');
+    expect(url).toContain('/v2/accounts/channel-types/get/ONLINE');
     expect(result.channel_type.channel_code).toBe('ONLINE');
   });
 
@@ -148,7 +148,7 @@ describe('createChannelType', () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     const [url, opts] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(url).toContain('/v2/companies/channel-types/create');
+    expect(url).toContain('/v2/accounts/channel-types/create');
     expect(opts.method).toBe('POST');
     const body = JSON.parse(opts.body);
     expect(body.channel_code).toBe('ONLINE');
@@ -194,7 +194,7 @@ describe('updateChannelType', () => {
     await updateChannelType('ONLINE', payload);
 
     const [url, opts] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(url).toContain('/v2/companies/channel-types/update/ONLINE');
+    expect(url).toContain('/v2/accounts/channel-types/update/ONLINE');
     expect(opts.method).toBe('PUT');
     const body = JSON.parse(opts.body);
     expect(body.channel_code).toBe('ONLINE');
@@ -251,7 +251,7 @@ describe('deleteChannelType', () => {
     await deleteChannelType('ONLINE');
 
     const [url, opts] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(url).toContain('/v2/companies/channel-types/delete/ONLINE');
+    expect(url).toContain('/v2/accounts/channel-types/delete/ONLINE');
     expect(opts.method).toBe('DELETE');
   });
 

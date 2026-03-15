@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import type {
-  CreateCompanyRequest,
-  UpdateCompanyRequest,
-  Company,
-  CompanyLocalizationInput,
-} from '../types/company';
+  CreateAccountRequest,
+  UpdateAccountRequest,
+  Account,
+  AccountLocalizationInput,
+} from '../types/account';
 import {
-  COMPANY_STATUSES,
-  COMPANY_TYPES,
+  ACCOUNT_STATUSES,
+  ACCOUNT_TYPES,
   BUSINESS_TYPES,
   PLATFORM_ACCOUNT_TYPES,
   CONTRACT_TYPES,
@@ -16,48 +16,48 @@ import {
   AML_STATUSES,
   VOLUME_TIERS,
   STATUS_LABELS,
-  COMPANY_TYPE_LABELS,
+  ACCOUNT_TYPE_LABELS,
   BUSINESS_TYPE_LABELS,
   RISK_PROFILE_LABELS,
   VOLUME_TIER_LABELS,
   MOCK_CURRENCIES,
   MOCK_COUNTRIES,
   MOCK_TIMEZONES,
-} from '../types/company';
-import './CompanyForm.css';
+} from '../types/account';
+import './AccountForm.css';
 
-interface CompanyFormProps {
-  company?: Company;
-  initialLocalizations?: CompanyLocalizationInput[];
-  onSubmit: (data: CreateCompanyRequest | UpdateCompanyRequest) => Promise<void>;
+interface AccountFormProps {
+  account?: Account;
+  initialLocalizations?: AccountLocalizationInput[];
+  onSubmit: (data: CreateAccountRequest | UpdateAccountRequest) => Promise<void>;
   onCancel: () => void;
   isEdit?: boolean;
   loading?: boolean;
 }
 
-export default function CompanyForm({
-  company,
+export default function AccountForm({
+  account,
   initialLocalizations,
   onSubmit,
   onCancel,
   isEdit,
   loading,
-}: CompanyFormProps) {
+}: AccountFormProps) {
   const buildDefaultLocalization = (
-    sourceCompany?: Company,
-  ): CompanyLocalizationInput => ({
+    sourceAccount?: Account,
+  ): AccountLocalizationInput => ({
     lang_code: 'en',
-    display_name: sourceCompany?.name || '',
+    display_name: sourceAccount?.name || '',
     brand_name: '',
     legal_entity_name: '',
     settlement_descriptor: '',
     description: '',
-    website_url: sourceCompany?.website || '',
+    website_url: sourceAccount?.website || '',
     contact_name: '',
     contact_email: '',
     contact_phone: '',
-    support_email: sourceCompany?.support_email || '',
-    support_phone: sourceCompany?.support_phone || '',
+    support_email: sourceAccount?.support_email || '',
+    support_phone: sourceAccount?.support_phone || '',
     receipt_header: '',
     receipt_footer: '',
     invoice_notes: '',
@@ -65,36 +65,36 @@ export default function CompanyForm({
   });
 
   const [form, setForm] = useState({
-    name: company?.name || '',
-    number: company?.number || '',
-    status: company?.status || 'NEW',
-    company_type: company?.company_type || '',
-    business_type: company?.business_type || '',
-    platform_account_type: company?.platform_account_type || '',
-    contract_type: company?.contract_type || '',
-    default_currency: company?.default_currency || '',
-    default_country: company?.default_country || '',
-    timezone: company?.timezone || '',
-    mcc: company?.mcc || '',
-    industry: company?.industry || '',
-    high_risk_merchant: company?.high_risk_merchant || false,
-    is_blocked: company?.is_blocked || false,
-    risk_profile: company?.risk_profile || '',
-    kyc_status: company?.kyc_status || '',
-    aml_status: company?.aml_status || '',
-    website: company?.website || '',
-    support_email: company?.support_email || '',
-    support_phone: company?.support_phone || '',
-    volume_tier: company?.volume_tier || '',
-    monthly_volume_limit: company?.monthly_volume_limit ?? '',
-    message_for_client: company?.message_for_client || '',
+    name: account?.name || '',
+    number: account?.number || '',
+    status: account?.status || 'NEW',
+    account_type: account?.account_type || '',
+    business_type: account?.business_type || '',
+    platform_account_type: account?.platform_account_type || '',
+    contract_type: account?.contract_type || '',
+    default_currency: account?.default_currency || '',
+    default_country: account?.default_country || '',
+    timezone: account?.timezone || '',
+    mcc: account?.mcc || '',
+    industry: account?.industry || '',
+    high_risk_merchant: account?.high_risk_merchant || false,
+    is_blocked: account?.is_blocked || false,
+    risk_profile: account?.risk_profile || '',
+    kyc_status: account?.kyc_status || '',
+    aml_status: account?.aml_status || '',
+    website: account?.website || '',
+    support_email: account?.support_email || '',
+    support_phone: account?.support_phone || '',
+    volume_tier: account?.volume_tier || '',
+    monthly_volume_limit: account?.monthly_volume_limit ?? '',
+    message_for_client: account?.message_for_client || '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [localizations, setLocalizations] = useState<CompanyLocalizationInput[]>(
+  const [localizations, setLocalizations] = useState<AccountLocalizationInput[]>(
     initialLocalizations && initialLocalizations.length > 0
       ? initialLocalizations
-      : [buildDefaultLocalization(company)],
+      : [buildDefaultLocalization(account)],
   );
 
   useEffect(() => {
@@ -102,17 +102,17 @@ export default function CompanyForm({
       setLocalizations(initialLocalizations);
       return;
     }
-    setLocalizations([buildDefaultLocalization(company)]);
-  }, [initialLocalizations, company]);
+    setLocalizations([buildDefaultLocalization(account)]);
+  }, [initialLocalizations, account]);
 
   const autoFill = () => {
     const rand = Math.floor(Math.random() * 9000) + 1000;
     setForm({
-      name: `Test Company ${rand}`,
+      name: `Test Account ${rand}`,
       number: `TST-${rand}`,
       status: 'NEW',
-      company_type: 'operating_company',
-      business_type: 'company',
+      account_type: 'operating_account',
+      business_type: 'account',
       platform_account_type: 'standard',
       contract_type: 'direct',
       default_currency: 'ILS',
@@ -136,7 +136,7 @@ export default function CompanyForm({
     setLocalizations([
       {
         lang_code: 'en',
-        display_name: `Test Company ${rand}`,
+        display_name: `Test Account ${rand}`,
         brand_name: `Test Brand ${rand}`,
         legal_entity_name: '',
         settlement_descriptor: '',
@@ -187,8 +187,8 @@ export default function CompanyForm({
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
     if (!form.name.trim()) errs.name = 'Name is required';
-    if (!form.number.trim()) errs.number = 'Company number is required';
-    if (!form.company_type) errs.company_type = 'Company type is required';
+    if (!form.number.trim()) errs.number = 'Account number is required';
+    if (!form.account_type) errs.account_type = 'Account type is required';
     if (!form.default_currency) errs.default_currency = 'Currency is required';
     if (!form.default_country) errs.default_country = 'Country is required';
     if (!form.timezone) errs.timezone = 'Timezone is required';
@@ -248,7 +248,7 @@ export default function CompanyForm({
     }));
 
     await onSubmit({
-      ...(data as unknown as CreateCompanyRequest | UpdateCompanyRequest),
+      ...(data as unknown as CreateAccountRequest | UpdateAccountRequest),
       localizations: sanitizedLocalizations,
     });
   };
@@ -288,14 +288,14 @@ export default function CompanyForm({
     });
   };
 
-  const setLocalizationValue = (index: number, field: keyof CompanyLocalizationInput, value: string | boolean) => {
+  const setLocalizationValue = (index: number, field: keyof AccountLocalizationInput, value: string | boolean) => {
     setLocalizations((prev) =>
       prev.map((loc, i) => {
         if (i !== index) return loc;
         if (field === 'is_default' && value === true) {
           return { ...loc, is_default: true };
         }
-        return { ...loc, [field]: value } as CompanyLocalizationInput;
+        return { ...loc, [field]: value } as AccountLocalizationInput;
       }).map((loc, i) => {
         if (field === 'is_default' && value === true && i !== index) return { ...loc, is_default: false };
         return loc;
@@ -304,7 +304,7 @@ export default function CompanyForm({
   };
 
   return (
-    <form className="company-form" onSubmit={handleSubmit}>
+    <form className="account-form" onSubmit={handleSubmit}>
       {!isEdit && (
         <div className="auto-fill-bar">
           <button type="button" className="btn btn-auto-fill" onClick={autoFill}>
@@ -317,26 +317,26 @@ export default function CompanyForm({
       )}
 
       <div className="form-section">
-        <h3 className="section-title">Company Details</h3>
+        <h3 className="section-title">Account Details</h3>
         <div className="form-grid">
           <div className={`form-field ${errors.name ? 'has-error' : ''}`}>
-            <label className="label">Company Name *</label>
+            <label className="label">Account Name *</label>
             <input
               className="input"
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
-              placeholder="Enter company name"
+              placeholder="Enter account name"
             />
             {errors.name && <span className="field-error">{errors.name}</span>}
           </div>
 
           <div className={`form-field ${errors.number ? 'has-error' : ''}`}>
-            <label className="label">Company Number *</label>
+            <label className="label">Account Number *</label>
             <input
               className="input"
               value={form.number}
               onChange={(e) => set('number', e.target.value)}
-              placeholder="Enter company number"
+              placeholder="Enter account number"
             />
             {errors.number && <span className="field-error">{errors.number}</span>}
           </div>
@@ -345,22 +345,22 @@ export default function CompanyForm({
             <div className="form-field">
               <label className="label">Status</label>
               <select className="input" value={form.status} onChange={(e) => set('status', e.target.value)}>
-                {COMPANY_STATUSES.map((s) => (
+                {ACCOUNT_STATUSES.map((s) => (
                   <option key={s} value={s}>{STATUS_LABELS[s] || s}</option>
                 ))}
               </select>
             </div>
           )}
 
-          <div className={`form-field ${errors.company_type ? 'has-error' : ''}`}>
-            <label className="label">Company Type *</label>
-            <select className="input" value={form.company_type} onChange={(e) => set('company_type', e.target.value)}>
-              <option value="">Select company type</option>
-              {COMPANY_TYPES.map((t) => (
-                <option key={t} value={t}>{COMPANY_TYPE_LABELS[t] || t}</option>
+          <div className={`form-field ${errors.account_type ? 'has-error' : ''}`}>
+            <label className="label">Account Type *</label>
+            <select className="input" value={form.account_type} onChange={(e) => set('account_type', e.target.value)}>
+              <option value="">Select account type</option>
+              {ACCOUNT_TYPES.map((t) => (
+                <option key={t} value={t}>{ACCOUNT_TYPE_LABELS[t] || t}</option>
               ))}
             </select>
-            {errors.company_type && <span className="field-error">{errors.company_type}</span>}
+            {errors.account_type && <span className="field-error">{errors.account_type}</span>}
           </div>
 
           <div className="form-field">
@@ -612,7 +612,7 @@ export default function CompanyForm({
                 className="input"
                 value={loc.display_name}
                 onChange={(e) => setLocalizationValue(index, 'display_name', e.target.value)}
-                placeholder="Company name in this language"
+                placeholder="Account name in this language"
               />
               {errors[`localizations.${index}.display_name`] ? <span className="field-error">{errors[`localizations.${index}.display_name`]}</span> : null}
             </div>

@@ -1,24 +1,24 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { listCompanies, deleteCompany } from '../api/companies';
-import type { Company, Pagination, ListCompaniesParams } from '../types/company';
+import { listAccounts, deleteAccount } from '../api/accounts';
+import type { Account, Pagination, ListAccountsParams } from '../types/account';
 import {
-  COMPANY_STATUSES,
-  COMPANY_TYPES,
+  ACCOUNT_STATUSES,
+  ACCOUNT_TYPES,
   STATUS_LABELS,
-  COMPANY_TYPE_LABELS,
-} from '../types/company';
+  ACCOUNT_TYPE_LABELS,
+} from '../types/account';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import './CompaniesList.css';
+import './AccountsList.css';
 
-export default function CompaniesList() {
+export default function AccountsList() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
     page_size: 10,
@@ -28,28 +28,28 @@ export default function CompaniesList() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
-  const [typeFilter, setTypeFilter] = useState(searchParams.get('company_type') || '');
-  const [deleteTarget, setDeleteTarget] = useState<Company | null>(null);
+  const [typeFilter, setTypeFilter] = useState(searchParams.get('account_type') || '');
+  const [deleteTarget, setDeleteTarget] = useState<Account | null>(null);
   const { toasts, addToast, removeToast } = useToast();
 
   const page = Number(searchParams.get('page')) || 1;
 
-  const fetchCompanies = useCallback(async () => {
+  const fetchAccounts = useCallback(async () => {
     setLoading(true);
     try {
-      const params: ListCompaniesParams = {
+      const params: ListAccountsParams = {
         page,
         page_size: 10,
       };
       if (search) params.search = search;
       if (statusFilter) params.status = statusFilter;
-      if (typeFilter) params.company_type = typeFilter;
+      if (typeFilter) params.account_type = typeFilter;
 
-      const data = await listCompanies(params);
-      setCompanies(data.companies || []);
+      const data = await listAccounts(params);
+      setAccounts(data.accounts || []);
       setPagination(data.pagination);
     } catch (err) {
-      addToast('Failed to load companies', 'error');
+      addToast('Failed to load accounts', 'error');
       console.error(err);
     } finally {
       setLoading(false);
@@ -57,15 +57,15 @@ export default function CompaniesList() {
   }, [page, search, statusFilter, typeFilter, addToast]);
 
   useEffect(() => {
-    fetchCompanies();
-  }, [fetchCompanies]);
+    fetchAccounts();
+  }, [fetchAccounts]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
     if (search) params.set('search', search);
     if (statusFilter) params.set('status', statusFilter);
-    if (typeFilter) params.set('company_type', typeFilter);
+    if (typeFilter) params.set('account_type', typeFilter);
     params.set('page', '1');
     setSearchParams(params);
   };
@@ -79,12 +79,12 @@ export default function CompaniesList() {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
-      await deleteCompany(deleteTarget.uuid);
-      addToast(`Company "${deleteTarget.name}" deleted successfully`, 'success');
+      await deleteAccount(deleteTarget.uuid);
+      addToast(`Account "${deleteTarget.name}" deleted successfully`, 'success');
       setDeleteTarget(null);
-      fetchCompanies();
+      fetchAccounts();
     } catch {
-      addToast('Failed to delete company', 'error');
+      addToast('Failed to delete account', 'error');
     }
   };
 
@@ -98,18 +98,18 @@ export default function CompaniesList() {
   const hasFilters = search || statusFilter || typeFilter;
 
   return (
-    <div className="companies-page">
+    <div className="accounts-page">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Companies</h1>
-          <p className="page-subtitle">Manage companies</p>
+          <h1 className="page-title">Accounts</h1>
+          <p className="page-subtitle">Manage accounts</p>
         </div>
-        <button className="btn btn-primary" onClick={() => navigate('/companies/new')}>
+        <button className="btn btn-primary" onClick={() => navigate('/accounts/new')}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          New Company
+          New Account
         </button>
       </div>
 
@@ -131,7 +131,7 @@ export default function CompaniesList() {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="">All statuses</option>
-              {COMPANY_STATUSES.map((s) => (
+              {ACCOUNT_STATUSES.map((s) => (
                 <option key={s} value={s}>{STATUS_LABELS[s] || s}</option>
               ))}
             </select>
@@ -143,8 +143,8 @@ export default function CompaniesList() {
               onChange={(e) => setTypeFilter(e.target.value)}
             >
               <option value="">All types</option>
-              {COMPANY_TYPES.map((t) => (
-                <option key={t} value={t}>{COMPANY_TYPE_LABELS[t] || t}</option>
+              {ACCOUNT_TYPES.map((t) => (
+                <option key={t} value={t}>{ACCOUNT_TYPE_LABELS[t] || t}</option>
               ))}
             </select>
           </div>
@@ -159,15 +159,15 @@ export default function CompaniesList() {
         {loading ? (
           <div className="loading-state">
             <div className="spinner" />
-            <span>Loading companies...</span>
+            <span>Loading accounts...</span>
           </div>
-        ) : companies.length === 0 ? (
+        ) : accounts.length === 0 ? (
           <div className="empty-state">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="1.5">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
               <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
-            <p>No companies found</p>
+            <p>No accounts found</p>
             {hasFilters && (
               <button className="btn btn-ghost" onClick={clearFilters}>Clear filters</button>
             )}
@@ -189,26 +189,26 @@ export default function CompaniesList() {
                   </tr>
                 </thead>
                 <tbody>
-                  {companies.map((company) => (
+                  {accounts.map((account) => (
                     <tr
-                      key={company.uuid}
+                      key={account.uuid}
                       className="table-row"
-                      onClick={() => navigate(`/companies/${company.uuid}`)}
+                      onClick={() => navigate(`/accounts/${account.uuid}`)}
                     >
-                      <td className="cell-name">{company.name}</td>
-                      <td className="cell-mono">{company.number}</td>
-                      <td>{COMPANY_TYPE_LABELS[company.company_type] || company.company_type}</td>
-                      <td><StatusBadge status={company.status} /></td>
-                      <td className="cell-mono">{company.default_currency}</td>
-                      <td className="cell-mono">{company.default_country}</td>
+                      <td className="cell-name">{account.name}</td>
+                      <td className="cell-mono">{account.number}</td>
+                      <td>{ACCOUNT_TYPE_LABELS[account.account_type] || account.account_type}</td>
+                      <td><StatusBadge status={account.status} /></td>
+                      <td className="cell-mono">{account.default_currency}</td>
+                      <td className="cell-mono">{account.default_country}</td>
                       <td className="cell-date">
-                        {new Date(company.created_at).toLocaleDateString('he-IL')}
+                        {new Date(account.created_at).toLocaleDateString('he-IL')}
                       </td>
                       <td className="cell-actions" onClick={(e) => e.stopPropagation()}>
                         <button
                           className="action-btn edit"
                           title="Edit"
-                          onClick={() => navigate(`/companies/${company.uuid}/edit`)}
+                          onClick={() => navigate(`/accounts/${account.uuid}/edit`)}
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -218,7 +218,7 @@ export default function CompaniesList() {
                         <button
                           className="action-btn delete"
                           title="Delete"
-                          onClick={() => setDeleteTarget(company)}
+                          onClick={() => setDeleteTarget(account)}
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <polyline points="3 6 5 6 21 6" />
@@ -274,7 +274,7 @@ export default function CompaniesList() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="Delete Company"
+        title="Delete Account"
         message={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
         confirmLabel="Delete"
         onConfirm={handleDelete}

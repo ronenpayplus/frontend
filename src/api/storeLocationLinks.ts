@@ -4,7 +4,7 @@ import type {
   ListStoreLocationLinksResponse,
 } from '../types/storeLocationLink';
 
-const API_BASE = '/v2/companies/store-location-links';
+const API_BASE = '/v2/accounts/store-location-links';
 
 interface ApiEnvelope<T> {
   results: { status: string; code: number; description: string; message: unknown };

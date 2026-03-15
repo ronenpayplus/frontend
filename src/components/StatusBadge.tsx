@@ -1,4 +1,4 @@
-import { STATUS_LABELS } from '../types/company';
+import { STATUS_LABELS } from '../types/account';
 import './StatusBadge.css';
 
 interface StatusBadgeProps {

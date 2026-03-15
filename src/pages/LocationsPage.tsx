@@ -6,8 +6,8 @@ import {
   listLocations,
   updateLocation,
 } from '../api/locations';
-import { listCompanies } from '../api/companies';
-import type { Company } from '../types/company';
+import { listAccounts } from '../api/accounts';
+import type { Account } from '../types/account';
 import type { Location, CreateLocationRequest, UpdateLocationRequest } from '../types/location';
 import {
   LOCATION_TYPES,
@@ -17,8 +17,8 @@ import {
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import './CompaniesList.css';
-import './CompanyCreate.css';
+import './AccountsList.css';
+import './AccountCreate.css';
 
 type LocationFormState = {
   location_type: string;
@@ -46,8 +46,8 @@ export default function LocationsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toasts, addToast, removeToast } = useToast();
 
-  const selectedCompanyUUID = searchParams.get('company_uuid') || '';
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const selectedAccountUUID = searchParams.get('account_uuid') || '';
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [items, setItems] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -59,13 +59,13 @@ export default function LocationsPage() {
   const [form, setForm] = useState<LocationFormState>(defaultForm);
 
   useEffect(() => {
-    listCompanies({ page: 1, page_size: 300 })
-      .then((data) => setCompanies(data.companies || []))
-      .catch(() => setCompanies([]));
+    listAccounts({ page: 1, page_size: 300 })
+      .then((data) => setAccounts(data.accounts || []))
+      .catch(() => setAccounts([]));
   }, []);
 
   const fetchItems = useCallback(async () => {
-    if (!selectedCompanyUUID) {
+    if (!selectedAccountUUID) {
       setItems([]);
       setLoading(false);
       return;
@@ -73,7 +73,7 @@ export default function LocationsPage() {
     setLoading(true);
     try {
       const data = await listLocations({
-        company_uuid: selectedCompanyUUID,
+        account_uuid: selectedAccountUUID,
         location_type: typeFilter || undefined,
         search: search || undefined,
         page: 1,
@@ -86,16 +86,16 @@ export default function LocationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCompanyUUID, typeFilter, search, addToast]);
+  }, [selectedAccountUUID, typeFilter, search, addToast]);
 
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
 
-  const selectedCompanyName = useMemo(() => {
-    const c = companies.find((co) => co.uuid === selectedCompanyUUID);
+  const selectedAccountName = useMemo(() => {
+    const c = accounts.find((co) => co.uuid === selectedAccountUUID);
     return c?.name || '';
-  }, [companies, selectedCompanyUUID]);
+  }, [accounts, selectedAccountUUID]);
 
   const resetForm = () => setForm(defaultForm);
 
@@ -129,8 +129,8 @@ export default function LocationsPage() {
   };
 
   const save = async () => {
-    if (!selectedCompanyUUID || !form.name || !form.location_type) {
-      addToast('Select a company and fill required fields', 'error');
+    if (!selectedAccountUUID || !form.name || !form.location_type) {
+      addToast('Select a account and fill required fields', 'error');
       return;
     }
     setSaving(true);
@@ -158,7 +158,7 @@ export default function LocationsPage() {
         setEditing(null);
       } else {
         const payload: CreateLocationRequest = {
-          company_uuid: selectedCompanyUUID,
+          account_uuid: selectedAccountUUID,
           location_type: form.location_type,
           name: form.name.trim(),
           status: form.status || undefined,
@@ -197,17 +197,17 @@ export default function LocationsPage() {
   };
 
   return (
-    <div className="companies-page">
+    <div className="accounts-page">
       <div className="page-header">
         <div>
           <h1 className="page-title">Locations</h1>
           <p className="page-subtitle">
-            {selectedCompanyName ? `Company: ${selectedCompanyName}` : 'Select a company to manage locations'}
+            {selectedAccountName ? `Account: ${selectedAccountName}` : 'Select a account to manage locations'}
           </p>
         </div>
         <button
           className="btn btn-primary"
-          disabled={!selectedCompanyUUID}
+          disabled={!selectedAccountUUID}
           onClick={() => { setShowCreate((v) => !v); setEditing(null); resetForm(); }}
         >
           {showCreate ? 'Close Form' : 'New Location'}
@@ -240,13 +240,13 @@ export default function LocationsPage() {
       <div className="card filters-card">
         <form className="filters-form" onSubmit={(e) => { e.preventDefault(); fetchItems(); }}>
           <div className="filter-group">
-            <select className="input" value={selectedCompanyUUID} onChange={(e) => {
+            <select className="input" value={selectedAccountUUID} onChange={(e) => {
               const params = new URLSearchParams(searchParams);
-              if (e.target.value) params.set('company_uuid', e.target.value); else params.delete('company_uuid');
+              if (e.target.value) params.set('account_uuid', e.target.value); else params.delete('account_uuid');
               setSearchParams(params);
             }}>
-              <option value="">Select Company</option>
-              {companies.map((c) => <option key={c.uuid} value={c.uuid}>{c.name}</option>)}
+              <option value="">Select Account</option>
+              {accounts.map((c) => <option key={c.uuid} value={c.uuid}>{c.name}</option>)}
             </select>
           </div>
           <div className="filter-group">

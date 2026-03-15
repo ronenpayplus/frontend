@@ -6,7 +6,7 @@ import {
   listLegalEntities,
   updateLegalEntityWithLocalizations,
 } from '../api/legalEntities';
-import { listCompanies } from '../api/companies';
+import { listAccounts } from '../api/accounts';
 import { listOrgEntityLocalizations } from '../api/orgEntityLocalizations';
 import type {
   CreateLegalEntityRequest,
@@ -19,22 +19,22 @@ import {
   LEGAL_ENTITY_STATUS_LABELS,
   LEGAL_ENTITY_TYPE_LABELS,
 } from '../types/legalEntity';
-import type { Company, Pagination } from '../types/company';
+import type { Account, Pagination } from '../types/account';
 import LegalEntityForm from '../components/LegalEntityForm';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import './CompaniesList.css';
-import './CompanyCreate.css';
+import './AccountsList.css';
+import './AccountCreate.css';
 
-export default function CompanyLegalEntities() {
+export default function AccountLegalEntities() {
   const navigate = useNavigate();
-  const { uuid: routeCompanyUUID } = useParams<{ uuid: string }>();
+  const { uuid: routeAccountUUID } = useParams<{ uuid: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { toasts, addToast, removeToast } = useToast();
 
-  const selectedCompanyUUID = searchParams.get('company_uuid') || routeCompanyUUID || '';
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const selectedAccountUUID = searchParams.get('account_uuid') || routeAccountUUID || '';
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [items, setItems] = useState<LegalEntity[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -54,42 +54,42 @@ export default function CompanyLegalEntities() {
   const page = Number(searchParams.get('page')) || 1;
 
   const headerTitle = useMemo(() => 'Legal Entities', []);
-  const selectedCompanyName = useMemo(
-    () => companies.find((c) => c.uuid === selectedCompanyUUID)?.name || '',
-    [companies, selectedCompanyUUID],
+  const selectedAccountName = useMemo(
+    () => accounts.find((c) => c.uuid === selectedAccountUUID)?.name || '',
+    [accounts, selectedAccountUUID],
   );
 
   useEffect(() => {
-    listCompanies({ page: 1, page_size: 200 })
-      .then((data) => setCompanies(data.companies || []))
+    listAccounts({ page: 1, page_size: 200 })
+      .then((data) => setAccounts(data.accounts || []))
       .catch((error) => {
         console.error(error);
       });
   }, []);
 
   const fetchEntities = useCallback(async () => {
-    let companyUUIDForQuery = selectedCompanyUUID;
+    let accountUUIDForQuery = selectedAccountUUID;
     let legalEntitySearch = search || undefined;
     const searchTerm = search.trim();
 
-    if (!companyUUIDForQuery && searchTerm) {
+    if (!accountUUIDForQuery && searchTerm) {
       try {
-        const companiesData = await listCompanies({
+        const accountsData = await listAccounts({
           search: searchTerm,
           page: 1,
           page_size: 50,
         });
-        const resolvedCompany =
-          companiesData.companies.find((company) => company.number === searchTerm)
-          || companiesData.companies.find((company) => company.name === searchTerm)
-          || companiesData.companies[0];
+        const resolvedAccount =
+          accountsData.accounts.find((account) => account.number === searchTerm)
+          || accountsData.accounts.find((account) => account.name === searchTerm)
+          || accountsData.accounts[0];
 
-        if (resolvedCompany?.uuid) {
-          companyUUIDForQuery = resolvedCompany.uuid;
-          // When search is used to resolve company context, do not also filter legal entities by the same term.
+        if (resolvedAccount?.uuid) {
+          accountUUIDForQuery = resolvedAccount.uuid;
+          // When search is used to resolve account context, do not also filter legal entities by the same term.
           legalEntitySearch = undefined;
           const params = new URLSearchParams(searchParams);
-          params.set('company_uuid', resolvedCompany.uuid);
+          params.set('account_uuid', resolvedAccount.uuid);
           params.set('page', String(page));
           if (searchTerm) params.set('search', searchTerm);
           if (params.toString() !== searchParams.toString()) {
@@ -101,7 +101,7 @@ export default function CompanyLegalEntities() {
       }
     }
 
-    if (!companyUUIDForQuery) {
+    if (!accountUUIDForQuery) {
       setItems([]);
       setLoading(false);
       return;
@@ -110,7 +110,7 @@ export default function CompanyLegalEntities() {
     setLoading(true);
     try {
       const data = await listLegalEntities({
-        company_uuid: companyUUIDForQuery,
+        account_uuid: accountUUIDForQuery,
         search: legalEntitySearch,
         page,
         page_size: 10,
@@ -123,7 +123,7 @@ export default function CompanyLegalEntities() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCompanyUUID, search, page, addToast, searchParams, setSearchParams]);
+  }, [selectedAccountUUID, search, page, addToast, searchParams, setSearchParams]);
 
   useEffect(() => {
     fetchEntities();
@@ -144,14 +144,14 @@ export default function CompanyLegalEntities() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams(searchParams);
-    if (selectedCompanyUUID) params.set('company_uuid', selectedCompanyUUID);
+    if (selectedAccountUUID) params.set('account_uuid', selectedAccountUUID);
     if (search) params.set('search', search);
     params.set('page', '1');
     setSearchParams(params);
   };
 
   const handleCreate = async (payload: CreateLegalEntityRequest | UpdateLegalEntityRequest) => {
-    if (!selectedCompanyUUID) return;
+    if (!selectedAccountUUID) return;
     setSaving(true);
     try {
       const data = payload as CreateLegalEntityRequest;
@@ -225,21 +225,21 @@ export default function CompanyLegalEntities() {
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams);
-    if (selectedCompanyUUID) params.set('company_uuid', selectedCompanyUUID);
+    if (selectedAccountUUID) params.set('account_uuid', selectedAccountUUID);
     params.set('page', String(newPage));
     setSearchParams(params);
   };
 
-  const handleCompanyChange = (value: string) => {
+  const handleAccountChange = (value: string) => {
     const params = new URLSearchParams(searchParams);
     params.set('page', '1');
     params.delete('edit_uuid');
     if (value) {
-      params.set('company_uuid', value);
+      params.set('account_uuid', value);
     } else {
-      params.delete('company_uuid');
+      params.delete('account_uuid');
     }
-    if (routeCompanyUUID) {
+    if (routeAccountUUID) {
       const query = params.toString();
       navigate(query ? `/legal-entities?${query}` : '/legal-entities');
     } else {
@@ -258,19 +258,19 @@ export default function CompanyLegalEntities() {
   };
 
   return (
-    <div className="companies-page">
+    <div className="accounts-page">
       <div className="breadcrumb">
-        <button className="breadcrumb-link" onClick={() => navigate('/companies')}>
-          Companies
+        <button className="breadcrumb-link" onClick={() => navigate('/accounts')}>
+          Accounts
         </button>
-        {selectedCompanyUUID ? (
+        {selectedAccountUUID ? (
           <>
             <span className="breadcrumb-sep">/</span>
             <button
               className="breadcrumb-link"
-              onClick={() => navigate(`/companies/${selectedCompanyUUID}`)}
+              onClick={() => navigate(`/accounts/${selectedAccountUUID}`)}
             >
-              {selectedCompanyName || 'Company Details'}
+              {selectedAccountName || 'Account Details'}
             </button>
             <span className="breadcrumb-sep">/</span>
           </>
@@ -282,15 +282,15 @@ export default function CompanyLegalEntities() {
         <div>
           <h1 className="page-title">{headerTitle}</h1>
           <p className="page-subtitle">
-            {selectedCompanyUUID
-              ? `Selected company: ${selectedCompanyName || selectedCompanyUUID}`
-              : 'Select a company to manage its legal entities'}
+            {selectedAccountUUID
+              ? `Selected account: ${selectedAccountName || selectedAccountUUID}`
+              : 'Select a account to manage its legal entities'}
           </p>
         </div>
         <button
           className="btn btn-primary"
           onClick={() => setShowCreate((prev) => !prev)}
-          disabled={!selectedCompanyUUID}
+          disabled={!selectedAccountUUID}
         >
           {showCreate ? 'Close Form' : 'New Entity'}
         </button>
@@ -298,7 +298,7 @@ export default function CompanyLegalEntities() {
 
       {showCreate ? (
         <LegalEntityForm
-          companyUUID={selectedCompanyUUID}
+          accountUUID={selectedAccountUUID}
           mode="create"
           loading={saving}
           onSubmit={handleCreate}
@@ -308,7 +308,7 @@ export default function CompanyLegalEntities() {
 
       {editing ? (
         <LegalEntityForm
-          companyUUID={selectedCompanyUUID}
+          accountUUID={selectedAccountUUID}
           mode="edit"
           loading={saving}
           initial={editing}
@@ -323,13 +323,13 @@ export default function CompanyLegalEntities() {
           <div className="filter-group">
             <select
               className="input"
-              value={selectedCompanyUUID}
-              onChange={(e) => handleCompanyChange(e.target.value)}
+              value={selectedAccountUUID}
+              onChange={(e) => handleAccountChange(e.target.value)}
             >
-              <option value="">Select Company</option>
-              {companies.map((company) => (
-                <option key={company.uuid} value={company.uuid}>
-                  {company.name}
+              <option value="">Select Account</option>
+              {accounts.map((account) => (
+                <option key={account.uuid} value={account.uuid}>
+                  {account.name}
                 </option>
               ))}
             </select>
@@ -393,7 +393,7 @@ export default function CompanyLegalEntities() {
                           title="Manage compliance documents"
                           onClick={() =>
                             navigate(
-                              `/legal-entities/${entity.uuid}/compliance-documents?company_uuid=${selectedCompanyUUID}`,
+                              `/legal-entities/${entity.uuid}/compliance-documents?account_uuid=${selectedAccountUUID}`,
                             )
                           }
                         >
@@ -404,7 +404,7 @@ export default function CompanyLegalEntities() {
                           title="Manage beneficial owners"
                           onClick={() =>
                             navigate(
-                              `/legal-entities/${entity.uuid}/beneficial-owners?company_uuid=${selectedCompanyUUID}`,
+                              `/legal-entities/${entity.uuid}/beneficial-owners?account_uuid=${selectedAccountUUID}`,
                             )
                           }
                         >
@@ -415,7 +415,7 @@ export default function CompanyLegalEntities() {
                           title="Manage merchants"
                           onClick={() =>
                             navigate(
-                              `/legal-entities/${entity.uuid}/merchants?company_uuid=${selectedCompanyUUID}`,
+                              `/legal-entities/${entity.uuid}/merchants?account_uuid=${selectedAccountUUID}`,
                             )
                           }
                         >

@@ -1,37 +1,37 @@
-# PayPlus Companies Service — Data Model Reference
+# PayPlus Accounts Service — Data Model Reference
 
 ## Overview
 
-The Companies service manages the full organizational structure for a payment platform — from top-level companies down to individual payment terminals. It also handles compliance (KYC/AML), onboarding, settlement accounts, and localization. All entities live under `subservices/companies/internal/domain/models/`.
+The Accounts service manages the full organizational structure for a payment platform — from top-level accounts down to individual payment terminals. It also handles compliance (KYC/AML), onboarding, settlement accounts, and localization. All entities live under `subservices/accounts/internal/domain/models/`.
 
 ---
 
 ## Entity Hierarchy (Primary Tree)
 
 ```
-Company  (self-referential tree via ParentCompanyID)
-├── CompanyContact          (1:N)
-├── CompanyBankAccount      (polymorphic, OwnerType = "company")
+Account  (self-referential tree via ParentAccountID)
+├── AccountContact          (1:N)
+├── AccountBankAccount      (polymorphic, OwnerType = "account")
 ├── Location                (1:N, each has an Address)
 │   └── StoreLocationLink   (M:N junction → Store)
 ├── OnboardingApplication   (1:N, optional links)
-├── OrgEntityLocalization   (polymorphic, OwnerType = "company")
+├── OrgEntityLocalization   (polymorphic, OwnerType = "account")
 │
-└── CompanyLegalEntity      (1:N)
+└── AccountLegalEntity      (1:N)
     ├── BeneficialOwner     (1:N)
     │   └── ComplianceDocument (optional, via BeneficialOwnerID)
     ├── ComplianceDocument  (1:N, via LegalEntityID)
-    ├── CompanyBankAccount  (polymorphic, OwnerType = "legal_entity")
+    ├── AccountBankAccount  (polymorphic, OwnerType = "legal_entity")
     │
     └── Merchant            (1:N)
-        └── MerchantAccount (1:N, also refs Company + LegalEntity)
+        └── MerchantAccount (1:N, also refs Account + LegalEntity)
             ├── Store                   (1:N)
             │   └── TerminalGroup       (1:N)
             │       └── Terminal        (1:N)
             ├── SubMerchantAccount      (1:N, also refs Merchant)
             ├── ApiCredential           (1:N)
             ├── ProviderMerchantID      (1:N)
-            ├── CompanyBankAccount      (polymorphic, OwnerType = "merchant_account")
+            ├── AccountBankAccount      (polymorphic, OwnerType = "merchant_account")
             └── OrgEntityLocalization   (polymorphic)
 ```
 
@@ -39,23 +39,23 @@ Company  (self-referential tree via ParentCompanyID)
 
 ## Entities Detail
 
-### 1. Company
+### 1. Account
 
-The root organizational entity. Supports a **self-referential tree** for holding-company / subsidiary structures.
+The root organizational entity. Supports a **self-referential tree** for holding-account / subsidiary structures.
 
 | Field | Type | Description |
 |---|---|---|
 | ID | int64 | Primary key |
 | Uuid | string | Public identifier |
-| ParentCompanyID | *int64 | FK → Company (nullable for root) |
-| RootCompanyID | int64 | FK → Company (top of the tree) |
+| ParentAccountID | *int64 | FK → Account (nullable for root) |
+| RootAccountID | int64 | FK → Account (top of the tree) |
 | Depth | int16 | Level in the hierarchy (0 = root) |
 | Path | string | Materialized path for tree queries |
 | Name | string | Display name |
-| Number | string | Internal company number |
+| Number | string | Internal account number |
 | Status | string | `NEW`, `PENDING_KYC`, `ACTIVE`, `RESTRICTED`, `SUSPENDED`, `CLOSED`, `TERMINATED` |
-| CompanyType | string | `holding_company`, `operating_company`, `single_entity` |
-| BusinessType | string | `individual`, `company`, `non_profit`, `government_entity` |
+| AccountType | string | `holding_account`, `operating_account`, `single_entity` |
+| BusinessType | string | `individual`, `account`, `non_profit`, `government_entity` |
 | PlatformAccountType | string | `standard`, `express`, `custom` |
 | ContractType | string | `direct`, `aggregator`, `marketplace`, `payfac`, `mixed` |
 | DefaultCurrency | string | ISO 4217 alpha-3 (e.g., `USD`) |
@@ -63,7 +63,7 @@ The root organizational entity. Supports a **self-referential tree** for holding
 | Timezone | string | IANA timezone |
 | MCC | string | Default Merchant Category Code |
 | HighRiskMerchant | bool | High-risk flag |
-| IsBlocked | bool | Company blocked |
+| IsBlocked | bool | Account blocked |
 | RiskProfile | string | `low`, `medium`, `high`, `critical`, `custom` |
 | KycStatus | string | `not_started`, `pending`, `in_review`, `verified`, `failed`, `expired` |
 | AmlStatus | string | `pending`, `clear`, `review`, `blocked` |
@@ -79,19 +79,19 @@ The root organizational entity. Supports a **self-referential tree** for holding
 | CreatedBy / UpdatedBy / DeletedBy | string | Audit trail |
 
 **Relationships:**
-- **Self-referential tree** → `ParentCompanyID` references another Company
-- **Children:** CompanyLegalEntity, CompanyContact, Location, OnboardingApplication, CompanyBankAccount (polymorphic), OrgEntityLocalization (polymorphic)
+- **Self-referential tree** → `ParentAccountID` references another Account
+- **Children:** AccountLegalEntity, AccountContact, Location, OnboardingApplication, AccountBankAccount (polymorphic), OrgEntityLocalization (polymorphic)
 
 ---
 
-### 2. CompanyLegalEntity
+### 2. AccountLegalEntity
 
-The legal registration of a company in a specific jurisdiction.
+The legal registration of a account in a specific jurisdiction.
 
 | Field | Type | Description |
 |---|---|---|
 | ID / Uuid | int64 / string | Keys |
-| CompanyID | int64 | **FK → Company** |
+| AccountID | int64 | **FK → Account** |
 | LegalName | string | Official legal name |
 | EntityType | string | `corporation`, `llc`, `limited`, `sole_proprietor`, `partnership`, `non_profit`, `government` |
 | TaxID | string | Tax identifier |
@@ -107,7 +107,7 @@ The legal registration of a company in a specific jurisdiction.
 | Status | string | `active`, `pending_verification`, `verified`, `suspended`, `dissolved` |
 
 **Relationships:**
-- **Parent:** Company (via CompanyID)
+- **Parent:** Account (via AccountID)
 - **Children:** Merchant, BeneficialOwner, ComplianceDocument
 - **References:** Address (RegisteredAddressID, OperatingAddressID)
 
@@ -120,35 +120,35 @@ A business entity that accepts payments, belonging to a legal entity.
 | Field | Type | Description |
 |---|---|---|
 | ID / Uuid | int64 / string | Keys |
-| LegalEntityID | int64 | **FK → CompanyLegalEntity** |
+| LegalEntityID | int64 | **FK → AccountLegalEntity** |
 | MerchantIDExternal | string | External system identifier |
 | Name | string | |
 | MerchantCode | string | Unique merchant code |
 | CategoryCode | string | Industry category |
 | MCCDefault | string | Default MCC (4 digits) |
 | BusinessModel | string | `retail`, `ecommerce`, `marketplace`, `saas`, `subscription`, `professional_services` |
-| Status | string | Same lifecycle as Company |
+| Status | string | Same lifecycle as Account |
 | Website / ContactEmail / ContactPhone | string | |
 | AddressID | *int64 | **FK → Address** (optional) |
 | Notes | string | |
 | Metadata | []byte | |
 
 **Relationships:**
-- **Parent:** CompanyLegalEntity (via LegalEntityID)
+- **Parent:** AccountLegalEntity (via LegalEntityID)
 - **Children:** MerchantAccount, SubMerchantAccount (indirect)
 
 ---
 
 ### 4. MerchantAccount
 
-The operational payment-processing account. Central entity tying merchant, company, and legal entity together.
+The operational payment-processing account. Central entity tying merchant, account, and legal entity together.
 
 | Field | Type | Description |
 |---|---|---|
 | ID / Uuid | int64 / string | Keys |
 | MerchantID | int64 | **FK → Merchant** |
-| CompanyID | int64 | **FK → Company** |
-| LegalEntityID | int64 | **FK → CompanyLegalEntity** |
+| AccountID | int64 | **FK → Account** |
+| LegalEntityID | int64 | **FK → AccountLegalEntity** |
 | MerchantIDExternal | string | |
 | Name / MerchantCode | string | |
 | MCC | string | 4-digit code |
@@ -159,7 +159,7 @@ The operational payment-processing account. Central entity tying merchant, compa
 | Country | string | ISO alpha-2 |
 | Currency | string | ISO alpha-3 |
 | Timezone | string | IANA |
-| SettlementAccountID | *int64 | **FK → CompanyBankAccount** |
+| SettlementAccountID | *int64 | **FK → AccountBankAccount** |
 | Descriptor | string | Statement descriptor |
 | SettlementType | string | `gross`, `net` |
 | SettlementDelayDays | *int32 | |
@@ -180,9 +180,9 @@ The operational payment-processing account. Central entity tying merchant, compa
 | ActivatedAt | *time.Time | |
 
 **Relationships:**
-- **Parents:** Merchant, Company, CompanyLegalEntity
+- **Parents:** Merchant, Account, AccountLegalEntity
 - **Children:** Store, SubMerchantAccount, ApiCredential, ProviderMerchantID
-- **References:** CompanyBankAccount (SettlementAccountID)
+- **References:** AccountBankAccount (SettlementAccountID)
 
 ---
 
@@ -195,11 +195,11 @@ Sub-merchants under a platform/marketplace model (PayFac). Rich KYC, fee, and vo
 | ID / Uuid | int64 / string | Keys |
 | MerchantAccountID | int64 | **FK → MerchantAccount** |
 | MerchantID | int64 | **FK → Merchant** |
-| CompanyID | *int64 | **FK → Company** (optional) |
-| LegalEntityID | *int64 | **FK → CompanyLegalEntity** (optional) |
+| AccountID | *int64 | **FK → Account** (optional) |
+| LegalEntityID | *int64 | **FK → AccountLegalEntity** (optional) |
 | PlatformID | *int64 | Reference to platform |
 | Name / SubMerchantCode / ExternalReferenceID | string | |
-| EntityType | string | `individual`, `sole_proprietor`, `company`, `non_profit` |
+| EntityType | string | `individual`, `sole_proprietor`, `account`, `non_profit` |
 | FirstName / LastName / DateOfBirth / NationalID | string | For individual sellers |
 | SellerModel | string | `PLATFORM_MOR`, `SELLER_MOR` |
 | CategoryCode / MCCDefault | string | |
@@ -213,7 +213,7 @@ Sub-merchants under a platform/marketplace model (PayFac). Rich KYC, fee, and vo
 | PaymentsEnabled / PayoutsEnabled | bool | |
 | Country / Currency / Timezone | string | |
 | AddressID | *int64 | **FK → Address** |
-| SettlementAccountID | *int64 | **FK → CompanyBankAccount** |
+| SettlementAccountID | *int64 | **FK → AccountBankAccount** |
 | PayoutSchedule / PayoutDelayDays / PayoutMethod | string / *int32 | |
 | UsesParentSettlement | bool | Inherits parent settlement |
 | PlatformFeePercentage / PlatformFeeFixed | *float64 / *int64 | Platform fees |
@@ -233,8 +233,8 @@ Sub-merchants under a platform/marketplace model (PayFac). Rich KYC, fee, and vo
 
 **Relationships:**
 - **Parents:** MerchantAccount, Merchant
-- **Optional Parents:** Company, CompanyLegalEntity
-- **References:** Address, CompanyBankAccount (SettlementAccountID)
+- **Optional Parents:** Account, AccountLegalEntity
+- **References:** Address, AccountBankAccount (SettlementAccountID)
 
 ---
 
@@ -310,14 +310,14 @@ A specific payment terminal (physical POS, virtual, or SoftPOS).
 
 ---
 
-### 9. CompanyContact
+### 9. AccountContact
 
-Contact persons associated with a company.
+Contact persons associated with a account.
 
 | Field | Type | Description |
 |---|---|---|
 | ID / Uuid | int64 / string | Keys |
-| CompanyID | int64 | **FK → Company** |
+| AccountID | int64 | **FK → Account** |
 | ContactType | string | `general`, `technical`, `billing`, `compliance`, `support`, `legal` |
 | FirstName / LastName / FullName | string | |
 | Email / Phone / Mobile | string | |
@@ -326,7 +326,7 @@ Contact persons associated with a company.
 | IsDefault / IsPrimary | bool | |
 
 **Relationships:**
-- **Parent:** Company (via CompanyID)
+- **Parent:** Account (via AccountID)
 
 ---
 
@@ -337,7 +337,7 @@ Natural persons who own or control a legal entity (KYC requirement).
 | Field | Type | Description |
 |---|---|---|
 | ID / Uuid | int64 / string | Keys |
-| LegalEntityID | int64 | **FK → CompanyLegalEntity** |
+| LegalEntityID | int64 | **FK → AccountLegalEntity** |
 | FirstName / LastName | string | |
 | DateOfBirth | time.Time | |
 | Nationality | string | ISO alpha-2 |
@@ -351,7 +351,7 @@ Natural persons who own or control a legal entity (KYC requirement).
 | VerifiedAt | *time.Time | |
 
 **Relationships:**
-- **Parent:** CompanyLegalEntity (via LegalEntityID)
+- **Parent:** AccountLegalEntity (via LegalEntityID)
 - **Children:** ComplianceDocument (optional)
 - **References:** Address
 
@@ -364,7 +364,7 @@ KYC/KYB documents uploaded for verification.
 | Field | Type | Description |
 |---|---|---|
 | ID / Uuid | int64 / string | Keys |
-| LegalEntityID | int64 | **FK → CompanyLegalEntity** |
+| LegalEntityID | int64 | **FK → AccountLegalEntity** |
 | BeneficialOwnerID | *int64 | **FK → BeneficialOwner** (optional) |
 | DocumentType | string | `incorporation_certificate`, `business_license`, `tax_registration`, `proof_of_address`, `bank_statement`, `government_id_front`, `government_id_back`, `selfie`, `articles_of_association`, `shareholder_register`, `financial_statement`, `power_of_attorney`, `other` |
 | DocumentName / FileReference / FileType | string | |
@@ -376,19 +376,19 @@ KYC/KYB documents uploaded for verification.
 | VerifiedAt / VerifiedBy | *time.Time / string | |
 
 **Relationships:**
-- **Parent:** CompanyLegalEntity (via LegalEntityID)
+- **Parent:** AccountLegalEntity (via LegalEntityID)
 - **Optional Parent:** BeneficialOwner (via BeneficialOwnerID)
 
 ---
 
-### 12. CompanyBankAccount
+### 12. AccountBankAccount
 
 Settlement/payout bank accounts. **Polymorphic** — can belong to different owner types.
 
 | Field | Type | Description |
 |---|---|---|
 | ID / Uuid | int64 / string | Keys |
-| OwnerType | string | **`company`**, **`legal_entity`**, **`merchant_account`**, **`sub_merchant`** |
+| OwnerType | string | **`account`**, **`legal_entity`**, **`merchant_account`**, **`sub_merchant`** |
 | OwnerID | int64 | FK to the owner entity (by OwnerType) |
 | OwnerUUID | string | UUID of the owner entity |
 | AccountHolderName | string | |
@@ -403,19 +403,19 @@ Settlement/payout bank accounts. **Polymorphic** — can belong to different own
 | IsDefault / IsActive | bool | |
 
 **Relationships (polymorphic):**
-- **Owner:** Company OR CompanyLegalEntity OR MerchantAccount OR SubMerchantAccount
+- **Owner:** Account OR AccountLegalEntity OR MerchantAccount OR SubMerchantAccount
 - Referenced by MerchantAccount.SettlementAccountID, SubMerchantAccount.SettlementAccountID
 
 ---
 
 ### 13. Location
 
-Physical or logical locations belonging to a company.
+Physical or logical locations belonging to a account.
 
 | Field | Type | Description |
 |---|---|---|
 | ID / Uuid | int64 / string | Keys |
-| CompanyID | int64 | **FK → Company** |
+| AccountID | int64 | **FK → Account** |
 | LocationType | string | `BRANCH`, `WAREHOUSE`, `HQ`, `PICKUP_POINT`, `OFFICE` |
 | Name | string | |
 | AddressID | int64 | **FK → Address** |
@@ -424,7 +424,7 @@ Physical or logical locations belonging to a company.
 | Metadata | []byte | |
 
 **Relationships:**
-- **Parent:** Company (via CompanyID)
+- **Parent:** Account (via AccountID)
 - **References:** Address (required)
 - **M:N:** Store (via StoreLocationLink)
 
@@ -489,15 +489,15 @@ Maps a merchant account to external payment provider identifiers (acquirers, PSP
 
 ### 17. OnboardingApplication
 
-Merchant/company onboarding requests with KYB/KYC/underwriting workflow.
+Merchant/account onboarding requests with KYB/KYC/underwriting workflow.
 
 | Field | Type | Description |
 |---|---|---|
 | ID / Uuid | int64 / string | Keys |
 | RequestedMode | string | `GATEWAY`, `PROCESSOR`, `PAYFAC` |
 | ApplicantName / ApplicantEmail / ApplicantPhone | string | |
-| CompanyID | *int64 | **FK → Company** (optional, set after approval) |
-| LegalEntityID | *int64 | **FK → CompanyLegalEntity** (optional) |
+| AccountID | *int64 | **FK → Account** (optional, set after approval) |
+| LegalEntityID | *int64 | **FK → AccountLegalEntity** (optional) |
 | MerchantID | *int64 | **FK → Merchant** (optional) |
 | MerchantAccountID | *int64 | **FK → MerchantAccount** (optional) |
 | SubMerchantID | *int64 | **FK → SubMerchantAccount** (optional) |
@@ -511,7 +511,7 @@ Merchant/company onboarding requests with KYB/KYC/underwriting workflow.
 | SubmittedAt / ReviewedAt / DecidedAt / ActivatedAt / ExpiresAt | *time.Time | Workflow timestamps |
 
 **Relationships:**
-- **Optional links** to Company, CompanyLegalEntity, Merchant, MerchantAccount, SubMerchantAccount (populated as onboarding progresses)
+- **Optional links** to Account, AccountLegalEntity, Merchant, MerchantAccount, SubMerchantAccount (populated as onboarding progresses)
 
 ---
 
@@ -522,7 +522,7 @@ Localized display names, branding, and contact info. **Polymorphic** — can bel
 | Field | Type | Description |
 |---|---|---|
 | ID / Uuid | int64 / string | Keys |
-| OwnerType | string | Entity type (e.g., `company`, `merchant_account`, etc.) |
+| OwnerType | string | Entity type (e.g., `account`, `merchant_account`, etc.) |
 | OwnerUUID | string | UUID of the owner entity |
 | LangCode | string | ISO language code |
 | DisplayName / BrandName / LegalEntityName | string | Localized names |
@@ -535,7 +535,7 @@ Localized display names, branding, and contact info. **Polymorphic** — can bel
 | IsDefault | bool | Default locale for the entity |
 
 **Relationships (polymorphic):**
-- **Owner:** Any organizational entity (Company, MerchantAccount, SubMerchantAccount, etc.)
+- **Owner:** Any organizational entity (Account, MerchantAccount, SubMerchantAccount, etc.)
 
 ---
 
@@ -550,13 +550,13 @@ Standalone address entity referenced by many other entities.
 | CountryCode | string | ISO alpha-2 |
 | State / City / District / PostalCode | string | |
 | Line1 / Line2 / Line3 | string | |
-| CompanyName / ContactName / Phone | string | |
+| AccountName / ContactName / Phone | string | |
 | Latitude / Longitude | *float64 | Geocoordinates |
 | Validated | bool | |
 | ValidatedAt | *time.Time | |
 | ValidationSource | string | `MANUAL`, `GOOGLE_PLACES`, `GOVERNMENT_REGISTRY`, `BANK_VERIFIED` |
 
-**Referenced by:** CompanyLegalEntity (registered/operating), Merchant, Store, BeneficialOwner, SubMerchantAccount, Location
+**Referenced by:** AccountLegalEntity (registered/operating), Merchant, Store, BeneficialOwner, SubMerchantAccount, Location
 
 ---
 
@@ -665,29 +665,29 @@ Configurable reference data with self-referential domain hierarchy.
         ↕ (referenced by value, not FK)
 
 ┌─────────────────────────────────────────────────────────────────────────┐
-│  Company (self-referential tree)                                        │
-│  ├── CompanyContact (1:N)                                               │
+│  Account (self-referential tree)                                        │
+│  ├── AccountContact (1:N)                                               │
 │  ├── Location (1:N) ──→ Address                                         │
 │  │     └──[StoreLocationLink]──→ Store                                  │
 │  ├── OnboardingApplication (1:N, optional FKs)                          │
-│  ├── CompanyBankAccount (polymorphic: owner_type="company")             │
+│  ├── AccountBankAccount (polymorphic: owner_type="account")             │
 │  ├── OrgEntityLocalization (polymorphic)                                │
 │  │                                                                      │
-│  └── CompanyLegalEntity (1:N) ──→ Address (registered, operating)       │
+│  └── AccountLegalEntity (1:N) ──→ Address (registered, operating)       │
 │        ├── BeneficialOwner (1:N) ──→ Address                            │
 │        │     └── ComplianceDocument (optional)                          │
 │        ├── ComplianceDocument (1:N)                                     │
-│        ├── CompanyBankAccount (polymorphic: owner_type="legal_entity")  │
+│        ├── AccountBankAccount (polymorphic: owner_type="legal_entity")  │
 │        │                                                                │
 │        └── Merchant (1:N)                                               │
-│              └── MerchantAccount (1:N) ──→ Company, LegalEntity         │
+│              └── MerchantAccount (1:N) ──→ Account, LegalEntity         │
 │                    ├── Store (1:N) ──→ Address                           │
 │                    │     └── TerminalGroup (1:N)                         │
 │                    │           └── Terminal (1:N)                        │
 │                    ├── SubMerchantAccount (1:N) ──→ Address, BankAcct   │
 │                    ├── ApiCredential (1:N)                               │
 │                    ├── ProviderMerchantID (1:N)                          │
-│                    ├── CompanyBankAccount (polymorphic: "merchant_acct") │
+│                    ├── AccountBankAccount (polymorphic: "merchant_acct") │
 │                    └── OrgEntityLocalization (polymorphic)               │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -698,8 +698,8 @@ Configurable reference data with self-referential domain hierarchy.
 
 | Pattern | Details |
 |---|---|
-| **Materialized Path Tree** | Company uses `ParentCompanyID`, `RootCompanyID`, `Depth`, and `Path` for hierarchical queries |
-| **Polymorphic Ownership** | CompanyBankAccount and OrgEntityLocalization use `OwnerType` + `OwnerID`/`OwnerUUID` to belong to different entity types |
+| **Materialized Path Tree** | Account uses `ParentAccountID`, `RootAccountID`, `Depth`, and `Path` for hierarchical queries |
+| **Polymorphic Ownership** | AccountBankAccount and OrgEntityLocalization use `OwnerType` + `OwnerID`/`OwnerUUID` to belong to different entity types |
 | **Junction Table** | StoreLocationLink provides M:N between Store and Location with role and priority |
 | **Soft Delete** | Most entities have `DeletedAt` + `DeletedBy` for soft deletion |
 | **Audit Trail** | `CreatedBy`, `UpdatedBy`, `DeletedBy` on all mutable entities |
@@ -714,17 +714,17 @@ Configurable reference data with self-referential domain hierarchy.
 
 Cross-checking `pay-plus-skeleton.postman_collection.json` confirms the same parent-child chain and adds explicit API dependency constraints:
 
-- `LegalEntity` requires `company_uuid`
+- `LegalEntity` requires `account_uuid`
 - `BeneficialOwner` requires `legal_entity_uuid`
 - `ComplianceDocument` requires `legal_entity_uuid` and optionally `beneficial_owner_uuid`
 - `Merchant` requires `legal_entity_uuid`
-- `MerchantAccount` requires `merchant_uuid`, `company_uuid`, `legal_entity_uuid`
+- `MerchantAccount` requires `merchant_uuid`, `account_uuid`, `legal_entity_uuid`
 - `SubMerchantAccount` requires `merchant_account_uuid` and `merchant_uuid`
 - `Store` requires `merchant_account_uuid`
 - `TerminalGroup` requires `store_uuid`
 - `Terminal` requires `terminal_group_uuid`
-- `Location` requires `company_uuid`
-- `CompanyBankAccount` requires polymorphic pair: `owner_type` + `owner_uuid`
+- `Location` requires `account_uuid`
+- `AccountBankAccount` requires polymorphic pair: `owner_type` + `owner_uuid`
 - `ApiCredential` and `ProviderMerchantID` require `merchant_account_uuid`
 - `StoreLocationLink` requires `store_uuid` + `location_uuid` + `role` (composite identity)
 - `OrgEntityLocalization` requires polymorphic pair: `owner_type` + `owner_uuid`
@@ -755,6 +755,6 @@ Notable exceptions and nuances:
 
 ## Source-of-Truth Notes
 
-- **Entity structure and relationships source of truth:** domain models + DTOs under `subservices/companies/internal/`.
+- **Entity structure and relationships source of truth:** domain models + DTOs under `subservices/accounts/internal/`.
 - **Endpoint payload examples and workflow constraints:** Postman collection.
 - There are a few naming/value drifts in Postman examples (for example, some sample enums/field names differ from DTO validations), but the relationship graph itself is consistent with the backend model.

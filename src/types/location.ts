@@ -1,9 +1,9 @@
-import type { Pagination } from './company';
+import type { Pagination } from './account';
 import type { AddressInput } from './address';
 
 export interface Location {
   uuid: string;
-  company_uuid: string;
+  account_uuid: string;
   location_type: string;
   name: string;
   address_id: number;
@@ -14,7 +14,7 @@ export interface Location {
 }
 
 export interface ListLocationsParams {
-  company_uuid?: string;
+  account_uuid?: string;
   location_type?: string;
   status?: string;
   search?: string;
@@ -28,7 +28,7 @@ export interface ListLocationsResponse {
 }
 
 export interface CreateLocationRequest {
-  company_uuid: string;
+  account_uuid: string;
   location_type: string;
   name: string;
   address_id?: number;

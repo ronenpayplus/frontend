@@ -3,12 +3,12 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { createTerminalGroup, deleteTerminalGroup, listTerminalGroups, updateTerminalGroup } from '../api/terminalGroups';
 import { getStore, listStores } from '../api/stores';
 import { listMerchantAccounts } from '../api/merchantAccounts';
-import { listCompanies } from '../api/companies';
+import { listAccounts } from '../api/accounts';
 import { listLegalEntities } from '../api/legalEntities';
 import { listMerchants } from '../api/merchants';
 import type { Store } from '../types/store';
 import type { MerchantAccount } from '../types/merchantAccount';
-import type { Company } from '../types/company';
+import type { Account } from '../types/account';
 import type { LegalEntity } from '../types/legalEntity';
 import type { Merchant } from '../types/merchant';
 import type { CreateTerminalGroupRequest, TerminalGroup, UpdateTerminalGroupRequest } from '../types/terminalGroup';
@@ -16,8 +16,8 @@ import { TERMINAL_GROUP_STATUSES } from '../types/terminalGroup';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import './CompaniesList.css';
-import './CompanyCreate.css';
+import './AccountsList.css';
+import './AccountCreate.css';
 
 export default function TerminalGroupsPage() {
   const navigate = useNavigate();
@@ -25,12 +25,12 @@ export default function TerminalGroupsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toasts, addToast, removeToast } = useToast();
 
-  const selectedCompanyUUID = searchParams.get('company_uuid') || '';
+  const selectedAccountUUID = searchParams.get('account_uuid') || '';
   const selectedLegalEntityUUID = searchParams.get('legal_entity_uuid') || '';
   const selectedMerchantUUID = searchParams.get('merchant_uuid') || '';
   const selectedMerchantAccountUUID = searchParams.get('merchant_account_uuid') || '';
   const selectedStoreUUID = routeStoreUUID || searchParams.get('store_uuid') || '';
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [allMerchantAccounts, setAllMerchantAccounts] = useState<MerchantAccount[]>([]);
@@ -46,32 +46,32 @@ export default function TerminalGroupsPage() {
   const merchantAccounts = useMemo(
     () =>
       allMerchantAccounts.filter((account) => {
-        if (selectedCompanyUUID && account.company_uuid !== selectedCompanyUUID) return false;
+        if (selectedAccountUUID && account.account_uuid !== selectedAccountUUID) return false;
         if (selectedLegalEntityUUID && account.legal_entity_uuid !== selectedLegalEntityUUID) return false;
         if (selectedMerchantUUID && account.merchant_uuid !== selectedMerchantUUID) return false;
         return true;
       }),
-    [allMerchantAccounts, selectedCompanyUUID, selectedLegalEntityUUID, selectedMerchantUUID],
+    [allMerchantAccounts, selectedAccountUUID, selectedLegalEntityUUID, selectedMerchantUUID],
   );
   const selectedStore = stores.find((s) => s.uuid === selectedStoreUUID) || null;
   const selectedStoreAccount =
     allMerchantAccounts.find((a) => a.uuid === (selectedStore?.merchant_account_uuid || selectedMerchantAccountUUID)) || null;
 
   useEffect(() => {
-    listCompanies({ page: 1, page_size: 300 })
-      .then((data) => setCompanies(data.companies || []))
-      .catch(() => setCompanies([]));
+    listAccounts({ page: 1, page_size: 300 })
+      .then((data) => setAccounts(data.accounts || []))
+      .catch(() => setAccounts([]));
   }, []);
 
   useEffect(() => {
-    if (!selectedCompanyUUID) {
+    if (!selectedAccountUUID) {
       setLegalEntities([]);
       return;
     }
-    listLegalEntities({ company_uuid: selectedCompanyUUID, page: 1, page_size: 300 })
+    listLegalEntities({ account_uuid: selectedAccountUUID, page: 1, page_size: 300 })
       .then((data) => setLegalEntities(data.legal_entities || []))
       .catch(() => setLegalEntities([]));
-  }, [selectedCompanyUUID]);
+  }, [selectedAccountUUID]);
 
   useEffect(() => {
     if (!selectedLegalEntityUUID) {
@@ -122,7 +122,7 @@ export default function TerminalGroupsPage() {
   useEffect(() => {
     if (!selectedStore || !selectedStoreAccount) return;
     const params = new URLSearchParams(searchParams);
-    if (selectedStoreAccount.company_uuid) params.set('company_uuid', selectedStoreAccount.company_uuid);
+    if (selectedStoreAccount.account_uuid) params.set('account_uuid', selectedStoreAccount.account_uuid);
     if (selectedStoreAccount.legal_entity_uuid) params.set('legal_entity_uuid', selectedStoreAccount.legal_entity_uuid);
     if (selectedStoreAccount.merchant_uuid) params.set('merchant_uuid', selectedStoreAccount.merchant_uuid);
     params.set('merchant_account_uuid', selectedStoreAccount.uuid);
@@ -235,7 +235,7 @@ export default function TerminalGroupsPage() {
   };
 
   return (
-    <div className="companies-page">
+    <div className="accounts-page">
       <div className="breadcrumb">
         <button className="breadcrumb-link" onClick={() => navigate('/stores')}>Stores</button>
         <span className="breadcrumb-sep">/</span>
@@ -275,17 +275,17 @@ export default function TerminalGroupsPage() {
       <div className="card filters-card">
         <form className="filters-form" onSubmit={(e) => { e.preventDefault(); fetchItems(); }}>
           <div className="filter-group">
-            <select className="input" value={selectedCompanyUUID} onChange={(e) => {
+            <select className="input" value={selectedAccountUUID} onChange={(e) => {
               const params = new URLSearchParams(searchParams);
-              if (e.target.value) params.set('company_uuid', e.target.value); else params.delete('company_uuid');
+              if (e.target.value) params.set('account_uuid', e.target.value); else params.delete('account_uuid');
               params.delete('legal_entity_uuid');
               params.delete('merchant_uuid');
               params.delete('merchant_account_uuid');
               if (!routeStoreUUID) params.delete('store_uuid');
               setSearchParams(params);
             }}>
-              <option value="">Select Company</option>
-              {companies.map((company) => <option key={company.uuid} value={company.uuid}>{company.name}</option>)}
+              <option value="">Select Account</option>
+              {accounts.map((account) => <option key={account.uuid} value={account.uuid}>{account.name}</option>)}
             </select>
           </div>
           <div className="filter-group">
@@ -296,7 +296,7 @@ export default function TerminalGroupsPage() {
               params.delete('merchant_account_uuid');
               if (!routeStoreUUID) params.delete('store_uuid');
               setSearchParams(params);
-            }} disabled={!selectedCompanyUUID}>
+            }} disabled={!selectedAccountUUID}>
               <option value="">Select Legal Entity</option>
               {legalEntities.map((entity) => <option key={entity.uuid} value={entity.uuid}>{entity.legal_name}</option>)}
             </select>

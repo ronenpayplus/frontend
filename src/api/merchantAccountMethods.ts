@@ -4,7 +4,7 @@ import type {
   SetMerchantAccountMethodsResponse,
 } from '../types/merchantAccountMethod';
 
-const API_BASE = '/v2/companies/merchant-account-methods';
+const API_BASE = '/v2/accounts/merchant-account-methods';
 
 interface ApiEnvelope<T> {
   results: {

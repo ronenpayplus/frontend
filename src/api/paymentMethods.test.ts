@@ -36,7 +36,7 @@ describe('listPaymentMethods', () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(url).toContain('/v2/companies/payment-methods/list');
+    expect(url).toContain('/v2/accounts/payment-methods/list');
     expect(url).toContain('page=1');
     expect(url).toContain('page_size=20');
     expect(result.payment_methods).toEqual([]);
@@ -114,7 +114,7 @@ describe('getPaymentMethod', () => {
     const result = await getPaymentMethod('APPLE_PAY');
 
     const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(url).toContain('/v2/companies/payment-methods/get/APPLE_PAY');
+    expect(url).toContain('/v2/accounts/payment-methods/get/APPLE_PAY');
     expect(result.payment_method.method_code).toBe('APPLE_PAY');
   });
 
@@ -149,7 +149,7 @@ describe('createPaymentMethod', () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     const [url, opts] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(url).toContain('/v2/companies/payment-methods/create');
+    expect(url).toContain('/v2/accounts/payment-methods/create');
     expect(opts.method).toBe('POST');
     const body = JSON.parse(opts.body);
     expect(body.method_code).toBe('VISA');
@@ -199,7 +199,7 @@ describe('updatePaymentMethod', () => {
     await updatePaymentMethod('VISA', payload);
 
     const [url, opts] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(url).toContain('/v2/companies/payment-methods/update/VISA');
+    expect(url).toContain('/v2/accounts/payment-methods/update/VISA');
     expect(opts.method).toBe('PUT');
     const body = JSON.parse(opts.body);
     expect(body.method_code).toBe('VISA');
@@ -258,7 +258,7 @@ describe('deletePaymentMethod', () => {
     await deletePaymentMethod('VISA');
 
     const [url, opts] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(url).toContain('/v2/companies/payment-methods/delete/VISA');
+    expect(url).toContain('/v2/accounts/payment-methods/delete/VISA');
     expect(opts.method).toBe('DELETE');
   });
 

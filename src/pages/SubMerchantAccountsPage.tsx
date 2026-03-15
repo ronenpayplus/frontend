@@ -12,7 +12,7 @@ import {
 import { listSubMerchantMethods, setSubMerchantMethods } from '../api/subMerchantMethods';
 import { listSubMerchantChannels, setSubMerchantChannels } from '../api/subMerchantChannels';
 import { getMerchantAccount, listMerchantAccounts } from '../api/merchantAccounts';
-import { listCompanies } from '../api/companies';
+import { listAccounts } from '../api/accounts';
 import { listLegalEntities } from '../api/legalEntities';
 import { getMerchant, listMerchants } from '../api/merchants';
 import {
@@ -23,7 +23,7 @@ import {
 } from '../api/subMerchantAccounts';
 import type { MerchantAccount } from '../types/merchantAccount';
 import type { Merchant } from '../types/merchant';
-import type { Company } from '../types/company';
+import type { Account } from '../types/account';
 import type { LegalEntity } from '../types/legalEntity';
 import type { Currency } from '../types/currency';
 import type { PaymentMethod } from '../types/paymentMethod';
@@ -41,15 +41,15 @@ import {
   SUB_MERCHANT_SELLER_MODELS,
   SUB_MERCHANT_STATUSES,
 } from '../types/subMerchantAccount';
-import { MOCK_COUNTRIES, MOCK_TIMEZONES } from '../types/company';
+import { MOCK_COUNTRIES, MOCK_TIMEZONES } from '../types/account';
 import ConfirmDialog from '../components/ConfirmDialog';
 import DualListSelector from '../components/DualListSelector';
 import type { DualListItem } from '../components/DualListSelector';
 import LocalizationsEditor, { ensureAtLeastOneLocalization } from '../components/LocalizationsEditor';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import './CompaniesList.css';
-import './CompanyCreate.css';
+import './AccountsList.css';
+import './AccountCreate.css';
 
 export default function SubMerchantAccountsPage() {
   const navigate = useNavigate();
@@ -57,11 +57,11 @@ export default function SubMerchantAccountsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toasts, addToast, removeToast } = useToast();
 
-  const selectedCompanyUUID = searchParams.get('company_uuid') || '';
+  const selectedAccountUUID = searchParams.get('account_uuid') || '';
   const selectedLegalEntityUUID = searchParams.get('legal_entity_uuid') || '';
   const selectedMerchantAccountUUID = routeMerchantAccountUUID || searchParams.get('merchant_account_uuid') || '';
   const selectedMerchantUUID = searchParams.get('merchant_uuid') || '';
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
   const [allMerchantAccounts, setAllMerchantAccounts] = useState<MerchantAccount[]>([]);
   const [merchantAccountCurrencies, setMerchantAccountCurrencies] = useState<string[]>([]);
@@ -93,12 +93,12 @@ export default function SubMerchantAccountsPage() {
   const merchantAccounts = useMemo(
     () =>
       allMerchantAccounts.filter((account) => {
-        if (selectedCompanyUUID && account.company_uuid && account.company_uuid !== selectedCompanyUUID) return false;
+        if (selectedAccountUUID && account.account_uuid && account.account_uuid !== selectedAccountUUID) return false;
         if (selectedLegalEntityUUID && account.legal_entity_uuid && account.legal_entity_uuid !== selectedLegalEntityUUID) return false;
         if (selectedMerchantUUID && account.merchant_uuid && account.merchant_uuid !== selectedMerchantUUID) return false;
         return true;
       }),
-    [allMerchantAccounts, selectedCompanyUUID, selectedLegalEntityUUID, selectedMerchantUUID],
+    [allMerchantAccounts, selectedAccountUUID, selectedLegalEntityUUID, selectedMerchantUUID],
   );
   const selectedMerchantAccount =
     merchantAccounts.find((m) => m.uuid === selectedMerchantAccountUUID)
@@ -130,7 +130,7 @@ export default function SubMerchantAccountsPage() {
   const [form, setForm] = useState({
     name: '',
     sub_merchant_code: '',
-    entity_type: 'company',
+    entity_type: 'account',
     seller_model: 'PLATFORM_MOR',
     category_code: '5411',
     mcc_default: '5411',
@@ -147,9 +147,9 @@ export default function SubMerchantAccountsPage() {
   });
 
   useEffect(() => {
-    listCompanies({ page: 1, page_size: 300 })
-      .then((data) => setCompanies(data.companies || []))
-      .catch(() => setCompanies([]));
+    listAccounts({ page: 1, page_size: 300 })
+      .then((data) => setAccounts(data.accounts || []))
+      .catch(() => setAccounts([]));
   }, []);
 
   useEffect(() => {
@@ -186,14 +186,14 @@ export default function SubMerchantAccountsPage() {
   }, []);
 
   useEffect(() => {
-    if (!selectedCompanyUUID) {
+    if (!selectedAccountUUID) {
       setLegalEntities([]);
       return;
     }
-    listLegalEntities({ company_uuid: selectedCompanyUUID, page: 1, page_size: 300 })
+    listLegalEntities({ account_uuid: selectedAccountUUID, page: 1, page_size: 300 })
       .then((data) => setLegalEntities(data.legal_entities || []))
       .catch(() => setLegalEntities([]));
-  }, [selectedCompanyUUID]);
+  }, [selectedAccountUUID]);
 
   useEffect(() => {
     if (!selectedLegalEntityUUID) {
@@ -300,7 +300,7 @@ export default function SubMerchantAccountsPage() {
         const local = allMerchantAccounts.find((account) => account.uuid === accountUUIDToResolve);
         const account = local || (await getMerchantAccount(accountUUIDToResolve)).merchant_account;
         if (!account) return;
-        if (account.company_uuid) params.set('company_uuid', account.company_uuid);
+        if (account.account_uuid) params.set('account_uuid', account.account_uuid);
         if (account.legal_entity_uuid) params.set('legal_entity_uuid', account.legal_entity_uuid);
         if (account.merchant_uuid) {
           params.set('merchant_uuid', account.merchant_uuid);
@@ -388,7 +388,7 @@ export default function SubMerchantAccountsPage() {
     setForm({
       name: '',
       sub_merchant_code: '',
-      entity_type: 'company',
+      entity_type: 'account',
       seller_model: 'PLATFORM_MOR',
       category_code: '5411',
       mcc_default: '5411',
@@ -424,7 +424,7 @@ export default function SubMerchantAccountsPage() {
     setForm({
       name: `Sub Merchant ${rand}`,
       sub_merchant_code: `SUB-${rand}`,
-      entity_type: 'company',
+      entity_type: 'account',
       seller_model: 'PLATFORM_MOR',
       category_code: '5411',
       mcc_default: '5411',
@@ -467,7 +467,7 @@ export default function SubMerchantAccountsPage() {
     setForm({
       name: item.name,
       sub_merchant_code: item.sub_merchant_code || '',
-      entity_type: item.entity_type || 'company',
+      entity_type: item.entity_type || 'account',
       seller_model: item.seller_model,
       category_code: item.category_code,
       mcc_default: item.mcc_default || '',
@@ -626,7 +626,7 @@ export default function SubMerchantAccountsPage() {
   };
 
   return (
-    <div className="companies-page">
+    <div className="accounts-page">
       <div className="breadcrumb">
         <button className="breadcrumb-link" onClick={() => navigate('/merchant-accounts')}>Merchant Accounts</button>
         <span className="breadcrumb-sep">/</span>
@@ -726,16 +726,16 @@ export default function SubMerchantAccountsPage() {
       <div className="card filters-card">
         <form className="filters-form" onSubmit={(e) => { e.preventDefault(); fetchItems(); }}>
           <div className="filter-group">
-            <select className="input" value={selectedCompanyUUID} onChange={(e) => {
+            <select className="input" value={selectedAccountUUID} onChange={(e) => {
               const params = new URLSearchParams(searchParams);
-              if (e.target.value) params.set('company_uuid', e.target.value); else params.delete('company_uuid');
+              if (e.target.value) params.set('account_uuid', e.target.value); else params.delete('account_uuid');
               params.delete('legal_entity_uuid');
               params.delete('merchant_uuid');
               if (!routeMerchantAccountUUID) params.delete('merchant_account_uuid');
               setSearchParams(params);
             }}>
-              <option value="">Select Company</option>
-              {companies.map((company) => <option key={company.uuid} value={company.uuid}>{company.name}</option>)}
+              <option value="">Select Account</option>
+              {accounts.map((account) => <option key={account.uuid} value={account.uuid}>{account.name}</option>)}
             </select>
           </div>
           <div className="filter-group">
@@ -749,7 +749,7 @@ export default function SubMerchantAccountsPage() {
                 if (!routeMerchantAccountUUID) params.delete('merchant_account_uuid');
                 setSearchParams(params);
               }}
-              disabled={!selectedCompanyUUID}
+              disabled={!selectedAccountUUID}
             >
               <option value="">Select Legal Entity</option>
               {legalEntities.map((entity) => <option key={entity.uuid} value={entity.uuid}>{entity.legal_name}</option>)}

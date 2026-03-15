@@ -1,4 +1,4 @@
-import type { Pagination } from './company';
+import type { Pagination } from './account';
 import type { LocalizationInput } from './orgEntityLocalization';
 
 export interface MerchantAccountCurrencyInput {
@@ -18,7 +18,7 @@ export interface MerchantAccountChannelInput {
 export interface MerchantAccount {
   uuid: string;
   merchant_uuid: string;
-  company_uuid: string;
+  account_uuid: string;
   legal_entity_uuid: string;
   merchant_id_external?: string;
   name: string;
@@ -53,7 +53,7 @@ export interface MerchantAccount {
 
 export interface ListMerchantAccountsParams {
   merchant_uuid?: string;
-  company_uuid?: string;
+  account_uuid?: string;
   legal_entity_uuid?: string;
   status?: string;
   search?: string;
@@ -68,7 +68,7 @@ export interface ListMerchantAccountsResponse {
 
 export interface CreateMerchantAccountRequest {
   merchant_uuid: string;
-  company_uuid: string;
+  account_uuid: string;
   legal_entity_uuid: string;
   name: string;
   merchant_code: string;

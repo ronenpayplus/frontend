@@ -6,7 +6,7 @@ import type {
   UpdateTimezoneRequest,
 } from '../types/timezoneRef';
 
-const API_BASE = '/v2/companies/timezones';
+const API_BASE = '/v2/accounts/timezones';
 
 interface ApiEnvelope<T> {
   results: {

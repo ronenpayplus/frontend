@@ -1,4 +1,4 @@
-import type { Pagination } from './company';
+import type { Pagination } from './account';
 import type { AddressInput } from './address';
 
 export interface BeneficialOwner {
@@ -13,12 +13,12 @@ export interface BeneficialOwner {
   email?: string;
   job_title?: string;
   owner_entity_type?: string;
-  company_name?: string;
-  company_type?: string;
-  company_country?: string;
-  company_registration_number?: string;
-  company_tax_id?: string;
-  company_website?: string;
+  account_name?: string;
+  account_type?: string;
+  account_country?: string;
+  account_registration_number?: string;
+  account_tax_id?: string;
+  account_website?: string;
   ownership_percentage: number;
   role: string;
   address_id?: number;
@@ -57,12 +57,12 @@ export interface CreateBeneficialOwnerRequest {
   email?: string;
   job_title?: string;
   owner_entity_type?: string;
-  company_name?: string;
-  company_type?: string;
-  company_country?: string;
-  company_registration_number?: string;
-  company_tax_id?: string;
-  company_website?: string;
+  account_name?: string;
+  account_type?: string;
+  account_country?: string;
+  account_registration_number?: string;
+  account_tax_id?: string;
+  account_website?: string;
   ownership_percentage: number;
   role: string;
   address_id?: number;
@@ -81,12 +81,12 @@ export interface UpdateBeneficialOwnerRequest {
   email?: string;
   job_title?: string;
   owner_entity_type?: string;
-  company_name?: string;
-  company_type?: string;
-  company_country?: string;
-  company_registration_number?: string;
-  company_tax_id?: string;
-  company_website?: string;
+  account_name?: string;
+  account_type?: string;
+  account_country?: string;
+  account_registration_number?: string;
+  account_tax_id?: string;
+  account_website?: string;
   ownership_percentage: number;
   role: string;
   address_id?: number;

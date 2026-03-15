@@ -1,10 +1,10 @@
-import type { Pagination } from './company';
+import type { Pagination } from './account';
 import type { LocalizationInput } from './orgEntityLocalization';
 import type { AddressInput } from './address';
 
 export interface LegalEntity {
   uuid: string;
-  company_uuid: string;
+  account_uuid: string;
   legal_name: string;
   entity_type: string;
   tax_id: string;
@@ -22,7 +22,7 @@ export interface LegalEntity {
 }
 
 export interface ListLegalEntitiesParams {
-  company_uuid: string;
+  account_uuid: string;
   search?: string;
   status?: string;
   entity_type?: string;
@@ -38,7 +38,7 @@ export interface ListLegalEntitiesResponse {
 }
 
 export interface CreateLegalEntityRequest {
-  company_uuid: string;
+  account_uuid: string;
   legal_name: string;
   entity_type: string;
   tax_id: string;
@@ -113,7 +113,7 @@ export const LEGAL_ENTITY_STATUSES = [
 export const LEGAL_ENTITY_TYPE_LABELS: Record<string, string> = {
   corporation: 'Corporation',
   llc: 'LLC',
-  limited: 'Limited Company',
+  limited: 'Limited Account',
   sole_proprietor: 'Sole Proprietor',
   partnership: 'Partnership',
   non_profit: 'Non-profit',

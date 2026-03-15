@@ -4,11 +4,11 @@ New fields were added to 4 entities across all backend layers (HTTP/gRPC/DB). Al
 
 ---
 
-## 1. Company — 1 new field
+## 1. Account — 1 new field
 
-### Type file: `src/types/company.ts`
+### Type file: `src/types/account.ts`
 
-Add to `Company`, `CreateCompanyRequest`, and `UpdateCompanyRequest`:
+Add to `Account`, `CreateAccountRequest`, and `UpdateAccountRequest`:
 
 ```typescript
 industry?: string;  // Free-text, max 100 chars (e.g., "fintech", "retail", "healthcare")
@@ -36,16 +36,16 @@ job_title?: string;        // Job title (e.g., "CEO", "CFO")
 owner_entity_type?: string; // "individual" (default) | "corporate"
 
 // Corporate UBO fields (only relevant when owner_entity_type === "corporate")
-company_name?: string;                // Corporate entity name
-company_type?: string;                // Corporate entity type
-company_country?: string;             // ISO 2-letter country code (e.g., "US", "IL")
-company_registration_number?: string; // Registration/incorporation number
-company_tax_id?: string;              // Tax identification number
-company_website?: string;             // Full URL
+account_name?: string;                // Corporate entity name
+account_type?: string;                // Corporate entity type
+account_country?: string;             // ISO 2-letter country code (e.g., "US", "IL")
+account_registration_number?: string; // Registration/incorporation number
+account_tax_id?: string;              // Tax identification number
+account_website?: string;             // Full URL
 ```
 
 ### JSON keys:
-`"email"`, `"job_title"`, `"owner_entity_type"`, `"company_name"`, `"company_type"`, `"company_country"`, `"company_registration_number"`, `"company_tax_id"`, `"company_website"`
+`"email"`, `"job_title"`, `"owner_entity_type"`, `"account_name"`, `"account_type"`, `"account_country"`, `"account_registration_number"`, `"account_tax_id"`, `"account_website"`
 
 ### New constants to add:
 
@@ -61,12 +61,12 @@ export const OWNER_ENTITY_TYPE_LABELS: Record<string, string> = {
 ### Validation rules from backend:
 - `email`: valid email format
 - `owner_entity_type`: must be `"individual"` or `"corporate"` (defaults to `"individual"` if empty)
-- `company_country`: exactly 2 characters (ISO alpha-2)
-- `company_website`: valid URL format
+- `account_country`: exactly 2 characters (ISO alpha-2)
+- `account_website`: valid URL format
 
 ### UI implementation notes:
 - Add an `owner_entity_type` toggle/select at the top of the form (default: "individual")
-- When `owner_entity_type === "corporate"`, show a **"Corporate Details"** section with the 5 `company_*` fields
+- When `owner_entity_type === "corporate"`, show a **"Corporate Details"** section with the 5 `account_*` fields
 - When `owner_entity_type === "individual"`, hide the corporate fields
 - `email` and `job_title` are shown for both entity types
 - This supports EU AML5 directive requirements for corporate beneficial ownership
@@ -97,16 +97,16 @@ Place directly after the existing `descriptor` field. Add a character counter or
 ### New fields for create, update, get, and list:
 
 ```typescript
-// KYB Company Information
-kyb_company_name?: string;           // Legal company name for KYB
-kyb_company_type?: string;           // e.g., "LLC", "Corporation", "Partnership"
-kyb_registration_number?: string;    // Company registration number
+// KYB Account Information
+kyb_account_name?: string;           // Legal account name for KYB
+kyb_account_type?: string;           // e.g., "LLC", "Corporation", "Partnership"
+kyb_registration_number?: string;    // Account registration number
 kyb_tax_id?: string;                 // Tax ID / VAT number
 kyb_incorporation_date?: string;     // Date string "YYYY-MM-DD"
 kyb_incorporation_country?: string;  // ISO 2-letter country code
 kyb_business_description?: string;   // Free-text business description
 kyb_industry?: string;               // Industry classification
-kyb_website?: string;                // Company website URL
+kyb_website?: string;                // Account website URL
 
 // KYB Financial Information
 kyb_annual_revenue?: number;              // Annual revenue in minor units (cents)
@@ -127,7 +127,7 @@ All prefixed with `kyb_` — see field names above.
 ### UI implementation notes:
 - These 17 fields form a **KYB Questionnaire** section within the onboarding application form
 - Group into logical sub-sections:
-  1. **Company Information** (name, type, registration, tax_id, incorporation date/country, description, industry, website)
+  1. **Account Information** (name, type, registration, tax_id, incorporation date/country, description, industry, website)
   2. **Financial Information** (annual revenue, employee count, expected volume, expected avg transaction)
   3. **Processing History** (products/services, source of funds, previous processing toggle + processor name)
 - `kyb_has_previous_processing_history` is a boolean toggle — when `true`, show `kyb_previous_processor_name` input
@@ -141,19 +141,19 @@ All prefixed with `kyb_` — see field names above.
 
 | Entity | Field | JSON Key | Type | Notes |
 |--------|-------|----------|------|-------|
-| Company | industry | `industry` | string | Max 100 chars |
+| Account | industry | `industry` | string | Max 100 chars |
 | Beneficial Owner | email | `email` | string | Valid email |
 | Beneficial Owner | job_title | `job_title` | string | Free text |
 | Beneficial Owner | owner_entity_type | `owner_entity_type` | string | `"individual"` \| `"corporate"` |
-| Beneficial Owner | company_name | `company_name` | string | Corporate UBO only |
-| Beneficial Owner | company_type | `company_type` | string | Corporate UBO only |
-| Beneficial Owner | company_country | `company_country` | string | 2-char ISO code |
-| Beneficial Owner | company_registration_number | `company_registration_number` | string | Corporate UBO only |
-| Beneficial Owner | company_tax_id | `company_tax_id` | string | Corporate UBO only |
-| Beneficial Owner | company_website | `company_website` | string | Valid URL |
+| Beneficial Owner | account_name | `account_name` | string | Corporate UBO only |
+| Beneficial Owner | account_type | `account_type` | string | Corporate UBO only |
+| Beneficial Owner | account_country | `account_country` | string | 2-char ISO code |
+| Beneficial Owner | account_registration_number | `account_registration_number` | string | Corporate UBO only |
+| Beneficial Owner | account_tax_id | `account_tax_id` | string | Corporate UBO only |
+| Beneficial Owner | account_website | `account_website` | string | Valid URL |
 | Merchant Account | short_descriptor | `short_descriptor` | string | Max 25 chars |
-| Onboarding App | kyb_company_name | `kyb_company_name` | string | KYB questionnaire |
-| Onboarding App | kyb_company_type | `kyb_company_type` | string | KYB questionnaire |
+| Onboarding App | kyb_account_name | `kyb_account_name` | string | KYB questionnaire |
+| Onboarding App | kyb_account_type | `kyb_account_type` | string | KYB questionnaire |
 | Onboarding App | kyb_registration_number | `kyb_registration_number` | string | KYB questionnaire |
 | Onboarding App | kyb_tax_id | `kyb_tax_id` | string | KYB questionnaire |
 | Onboarding App | kyb_incorporation_date | `kyb_incorporation_date` | string | `YYYY-MM-DD` format |
@@ -174,10 +174,10 @@ All prefixed with `kyb_` — see field names above.
 
 ## Files to update:
 
-1. **`src/types/company.ts`** — Add `industry` to `Company`, `CreateCompanyRequest`, `UpdateCompanyRequest`
+1. **`src/types/account.ts`** — Add `industry` to `Account`, `CreateAccountRequest`, `UpdateAccountRequest`
 2. **`src/types/beneficialOwner.ts`** — Add 9 fields + new constants for `OWNER_ENTITY_TYPES`
 3. **`src/types/merchantAccount.ts`** — Add `short_descriptor` to all 3 interfaces
-4. **`src/pages/CompaniesPage.tsx`** (or equivalent) — Add `industry` field to create/edit forms and detail view
+4. **`src/pages/AccountsPage.tsx`** (or equivalent) — Add `industry` field to create/edit forms and detail view
 5. **`src/pages/BeneficialOwnersPage.tsx`** — Add entity type selector, email, job_title, conditional corporate section
 6. **`src/pages/MerchantAccountsPage.tsx`** — Add `short_descriptor` input next to `descriptor`
 7. **Create `src/types/onboardingApplication.ts`** if implementing onboarding (17 KYB fields)
@@ -189,11 +189,11 @@ No API endpoint URLs changed for existing entities. No breaking changes — all 
 ## 5. Station — NEW entity (child of Store)
 
 ### Endpoints:
-- `POST /v2/companies/stations/create-with-address-and-location` — Create station (with inline address)
-- `GET /v2/companies/stations/list?store_uuid=...&station_type=...&status=...&search=...&page=1&page_size=20` — List
-- `GET /v2/companies/stations/get/:uuid` — Get by UUID
-- `PUT /v2/companies/stations/update-with-address-and-location` — Update (body includes `uuid`)
-- `DELETE /v2/companies/stations/delete/:uuid` — Delete
+- `POST /v2/accounts/stations/create-with-address-and-location` — Create station (with inline address)
+- `GET /v2/accounts/stations/list?store_uuid=...&station_type=...&status=...&search=...&page=1&page_size=20` — List
+- `GET /v2/accounts/stations/get/:uuid` — Get by UUID
+- `PUT /v2/accounts/stations/update-with-address-and-location` — Update (body includes `uuid`)
+- `DELETE /v2/accounts/stations/delete/:uuid` — Delete
 
 ### Type file: `src/types/station.ts` (NEW)
 ### API file: `src/api/stations.ts` (NEW)

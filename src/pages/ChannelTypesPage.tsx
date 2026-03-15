@@ -4,9 +4,9 @@ import type { ChannelType, CreateChannelTypeRequest, UpdateChannelTypeRequest } 
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import './CompaniesList.css';
-import './CompanyCreate.css';
-import '../components/CompanyForm.css';
+import './AccountsList.css';
+import './AccountCreate.css';
+import '../components/AccountForm.css';
 
 type ChannelTypeFormState = {
   channel_code: string;
@@ -151,7 +151,7 @@ export default function ChannelTypesPage() {
   };
 
   return (
-    <div className="companies-page">
+    <div className="accounts-page">
       <div className="page-header">
         <div>
           <h1 className="page-title">Channel Types</h1>

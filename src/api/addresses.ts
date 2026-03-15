@@ -6,7 +6,7 @@ import type {
   UpdateAddressRequest,
 } from '../types/addressEntity';
 
-const API_BASE = '/v2/companies/addresses';
+const API_BASE = '/v2/accounts/addresses';
 
 interface ApiEnvelope<T> {
   results: {

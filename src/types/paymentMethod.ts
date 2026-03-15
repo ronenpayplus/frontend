@@ -1,4 +1,4 @@
-import type { Pagination } from './company';
+import type { Pagination } from './account';
 
 export type PaymentMethodCategory =
   | 'CARD'
