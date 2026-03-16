@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getAccount, deleteAccount } from '../api/accounts';
 import type { Account } from '../types/account';
 import {
-  ACCOUNT_TYPE_LABELS,
   BUSINESS_TYPE_LABELS,
   RISK_PROFILE_LABELS,
   VOLUME_TIER_LABELS,
@@ -111,8 +110,14 @@ export default function AccountDetail() {
           <h3 className="section-title">Account Details</h3>
           <div className="detail-grid">
             <DetailItem label="Number" value={account.number} mono />
-            <DetailItem label="Account Type" value={ACCOUNT_TYPE_LABELS[account.account_type] || account.account_type} />
+            <DetailItem label="Account Type" value={account.account_type} />
             <DetailItem label="Business Type" value={BUSINESS_TYPE_LABELS[account.business_type || ''] || account.business_type} />
+            {account.business_type === 'individual' && (
+              <>
+                <DetailItem label="First Name" value={account.first_name} />
+                <DetailItem label="Last Name" value={account.last_name} />
+              </>
+            )}
             <DetailItem label="Industry" value={account.industry} />
             <DetailItem label="Platform Account Type" value={account.platform_account_type} />
             <DetailItem label="Contract Type" value={account.contract_type} />

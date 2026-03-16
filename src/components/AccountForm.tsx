@@ -7,7 +7,6 @@ import type {
 } from '../types/account';
 import {
   ACCOUNT_STATUSES,
-  ACCOUNT_TYPES,
   BUSINESS_TYPES,
   PLATFORM_ACCOUNT_TYPES,
   CONTRACT_TYPES,
@@ -16,7 +15,6 @@ import {
   AML_STATUSES,
   VOLUME_TIERS,
   STATUS_LABELS,
-  ACCOUNT_TYPE_LABELS,
   BUSINESS_TYPE_LABELS,
   RISK_PROFILE_LABELS,
   VOLUME_TIER_LABELS,
@@ -66,6 +64,8 @@ export default function AccountForm({
 
   const [form, setForm] = useState({
     name: account?.name || '',
+    first_name: account?.first_name || '',
+    last_name: account?.last_name || '',
     number: account?.number || '',
     status: account?.status || 'NEW',
     account_type: account?.account_type || '',
@@ -109,10 +109,12 @@ export default function AccountForm({
     const rand = Math.floor(Math.random() * 9000) + 1000;
     setForm({
       name: `Test Account ${rand}`,
+      first_name: '',
+      last_name: '',
       number: `TST-${rand}`,
       status: 'NEW',
       account_type: 'operating_account',
-      business_type: 'account',
+      business_type: 'company',
       platform_account_type: 'standard',
       contract_type: 'direct',
       default_currency: 'ILS',
@@ -187,6 +189,10 @@ export default function AccountForm({
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
     if (!form.name.trim()) errs.name = 'Name is required';
+    if (form.business_type === 'individual') {
+      if (!form.first_name.trim()) errs.first_name = 'First name is required for individuals';
+      if (!form.last_name.trim()) errs.last_name = 'Last name is required for individuals';
+    }
     if (!form.number.trim()) errs.number = 'Account number is required';
     if (!form.account_type) errs.account_type = 'Account type is required';
     if (!form.default_currency) errs.default_currency = 'Currency is required';
@@ -354,12 +360,12 @@ export default function AccountForm({
 
           <div className={`form-field ${errors.account_type ? 'has-error' : ''}`}>
             <label className="label">Account Type *</label>
-            <select className="input" value={form.account_type} onChange={(e) => set('account_type', e.target.value)}>
-              <option value="">Select account type</option>
-              {ACCOUNT_TYPES.map((t) => (
-                <option key={t} value={t}>{ACCOUNT_TYPE_LABELS[t] || t}</option>
-              ))}
-            </select>
+            <input
+              className="input"
+              value={form.account_type}
+              onChange={(e) => set('account_type', e.target.value)}
+              placeholder="e.g. operating_account, holding_account"
+            />
             {errors.account_type && <span className="field-error">{errors.account_type}</span>}
           </div>
 
@@ -372,6 +378,32 @@ export default function AccountForm({
               ))}
             </select>
           </div>
+
+          {form.business_type === 'individual' && (
+            <>
+              <div className={`form-field ${errors.first_name ? 'has-error' : ''}`}>
+                <label className="label">First Name *</label>
+                <input
+                  className="input"
+                  value={form.first_name}
+                  onChange={(e) => set('first_name', e.target.value)}
+                  placeholder="Enter first name"
+                />
+                {errors.first_name && <span className="field-error">{errors.first_name}</span>}
+              </div>
+
+              <div className={`form-field ${errors.last_name ? 'has-error' : ''}`}>
+                <label className="label">Last Name *</label>
+                <input
+                  className="input"
+                  value={form.last_name}
+                  onChange={(e) => set('last_name', e.target.value)}
+                  placeholder="Enter last name"
+                />
+                {errors.last_name && <span className="field-error">{errors.last_name}</span>}
+              </div>
+            </>
+          )}
 
           <div className="form-field">
             <label className="label">Platform Account Type</label>

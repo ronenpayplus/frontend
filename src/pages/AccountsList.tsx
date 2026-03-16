@@ -4,9 +4,7 @@ import { listAccounts, deleteAccount } from '../api/accounts';
 import type { Account, Pagination, ListAccountsParams } from '../types/account';
 import {
   ACCOUNT_STATUSES,
-  ACCOUNT_TYPES,
   STATUS_LABELS,
-  ACCOUNT_TYPE_LABELS,
 } from '../types/account';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -137,16 +135,13 @@ export default function AccountsList() {
             </select>
           </div>
           <div className="filter-group">
-            <select
+            <input
+              type="text"
               className="input"
+              placeholder="Filter by account type..."
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="">All types</option>
-              {ACCOUNT_TYPES.map((t) => (
-                <option key={t} value={t}>{ACCOUNT_TYPE_LABELS[t] || t}</option>
-              ))}
-            </select>
+            />
           </div>
           <button type="submit" className="btn btn-primary">Search</button>
           {hasFilters && (
@@ -197,7 +192,7 @@ export default function AccountsList() {
                     >
                       <td className="cell-name">{account.name}</td>
                       <td className="cell-mono">{account.number}</td>
-                      <td>{ACCOUNT_TYPE_LABELS[account.account_type] || account.account_type}</td>
+                      <td>{account.account_type}</td>
                       <td><StatusBadge status={account.status} /></td>
                       <td className="cell-mono">{account.default_currency}</td>
                       <td className="cell-mono">{account.default_country}</td>

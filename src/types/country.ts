@@ -10,6 +10,7 @@ export interface Country {
   region?: string;
   sub_region?: string;
   phone_prefix?: string;
+  default_lang_code?: string;
   is_active: boolean;
   is_sanctioned: boolean;
   created_at: string;
@@ -39,6 +40,7 @@ export interface CreateCountryRequest {
   region?: string;
   sub_region?: string;
   phone_prefix?: string;
+  default_lang_code?: string;
   is_active: boolean;
   is_sanctioned: boolean;
 }

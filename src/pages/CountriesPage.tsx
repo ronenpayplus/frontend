@@ -16,6 +16,7 @@ type CountryFormState = {
   region: string;
   sub_region: string;
   phone_prefix: string;
+  default_lang_code: string;
   is_active: boolean;
   is_sanctioned: boolean;
 };
@@ -29,6 +30,7 @@ const defaultForm: CountryFormState = {
   region: '',
   sub_region: '',
   phone_prefix: '',
+  default_lang_code: 'en',
   is_active: true,
   is_sanctioned: false,
 };
@@ -75,9 +77,9 @@ export default function CountriesPage() {
 
   const autoFillForm = () => {
     const sample = [
-      { alpha2: 'FR', alpha3: 'FRA', numeric_code: '250', name: 'France', official_name: 'French Republic', region: 'Europe', sub_region: 'Western Europe', phone_prefix: '+33' },
-      { alpha2: 'DE', alpha3: 'DEU', numeric_code: '276', name: 'Germany', official_name: 'Federal Republic of Germany', region: 'Europe', sub_region: 'Western Europe', phone_prefix: '+49' },
-      { alpha2: 'ES', alpha3: 'ESP', numeric_code: '724', name: 'Spain', official_name: 'Kingdom of Spain', region: 'Europe', sub_region: 'Southern Europe', phone_prefix: '+34' },
+      { alpha2: 'FR', alpha3: 'FRA', numeric_code: '250', name: 'France', official_name: 'French Republic', region: 'Europe', sub_region: 'Western Europe', phone_prefix: '+33', default_lang_code: 'fr' },
+      { alpha2: 'DE', alpha3: 'DEU', numeric_code: '276', name: 'Germany', official_name: 'Federal Republic of Germany', region: 'Europe', sub_region: 'Western Europe', phone_prefix: '+49', default_lang_code: 'de' },
+      { alpha2: 'ES', alpha3: 'ESP', numeric_code: '724', name: 'Spain', official_name: 'Kingdom of Spain', region: 'Europe', sub_region: 'Southern Europe', phone_prefix: '+34', default_lang_code: 'es' },
     ];
     const pick = sample[Math.floor(Math.random() * sample.length)];
     setForm({
@@ -105,6 +107,7 @@ export default function CountriesPage() {
       region: country.region || '',
       sub_region: country.sub_region || '',
       phone_prefix: country.phone_prefix || '',
+      default_lang_code: country.default_lang_code || 'en',
       is_active: country.is_active,
       is_sanctioned: country.is_sanctioned,
     });
@@ -119,6 +122,7 @@ export default function CountriesPage() {
     region: form.region.trim() || undefined,
     sub_region: form.sub_region.trim() || undefined,
     phone_prefix: form.phone_prefix.trim() || undefined,
+    default_lang_code: form.default_lang_code.trim() || undefined,
     is_active: form.is_active,
     is_sanctioned: form.is_sanctioned,
   });
@@ -211,6 +215,7 @@ export default function CountriesPage() {
             <div className="form-field"><label className="label">Region</label><input className="input ltr-input" dir="ltr" value={form.region} onChange={(e) => setForm((p) => ({ ...p, region: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Sub Region</label><input className="input ltr-input" dir="ltr" value={form.sub_region} onChange={(e) => setForm((p) => ({ ...p, sub_region: e.target.value }))} /></div>
             <div className="form-field"><label className="label">Phone Prefix</label><input className="input ltr-input" dir="ltr" value={form.phone_prefix} onChange={(e) => setForm((p) => ({ ...p, phone_prefix: e.target.value }))} /></div>
+            <div className="form-field"><label className="label">Default Language</label><input className="input ltr-input" dir="ltr" maxLength={10} value={form.default_lang_code} onChange={(e) => setForm((p) => ({ ...p, default_lang_code: e.target.value }))} placeholder="e.g. en, he, fr" /></div>
             <div className="form-field"><label className="label">Active</label><select className="input" value={form.is_active ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, is_active: e.target.value === 'true' }))}><option value="true">Yes</option><option value="false">No</option></select></div>
             <div className="form-field"><label className="label">Sanctioned</label><select className="input" value={form.is_sanctioned ? 'true' : 'false'} onChange={(e) => setForm((p) => ({ ...p, is_sanctioned: e.target.value === 'true' }))}><option value="false">No</option><option value="true">Yes</option></select></div>
           </div>
@@ -258,6 +263,7 @@ export default function CountriesPage() {
                   <th>Alpha3</th>
                   <th>Numeric</th>
                   <th>Region</th>
+                  <th>Lang</th>
                   <th>Active</th>
                   <th>Sanctioned</th>
                   <th>Actions</th>
@@ -271,6 +277,7 @@ export default function CountriesPage() {
                     <td className="cell-mono">{country.alpha3}</td>
                     <td className="cell-mono">{country.numeric_code}</td>
                     <td>{country.region || '-'}</td>
+                    <td className="cell-mono">{country.default_lang_code || '-'}</td>
                     <td>{country.is_active ? 'Yes' : 'No'}</td>
                     <td>{country.is_sanctioned ? 'Yes' : 'No'}</td>
                     <td className="cell-actions">

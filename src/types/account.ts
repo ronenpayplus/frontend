@@ -1,6 +1,8 @@
 export interface Account {
   uuid: string;
   name: string;
+  first_name?: string;
+  last_name?: string;
   number: string;
   status: string;
   account_type: string;
@@ -58,6 +60,8 @@ export interface AccountLocalization extends AccountLocalizationInput {
 
 export interface CreateAccountRequest {
   name: string;
+  first_name?: string;
+  last_name?: string;
   number: string;
   account_type: string;
   business_type?: string;
@@ -83,6 +87,8 @@ export interface CreateAccountRequest {
 
 export interface UpdateAccountRequest {
   name: string;
+  first_name?: string;
+  last_name?: string;
   number: string;
   status: string;
   account_type: string;
@@ -136,12 +142,8 @@ export const ACCOUNT_STATUSES = [
   'NEW', 'PENDING_KYC', 'ACTIVE', 'RESTRICTED', 'SUSPENDED', 'CLOSED', 'TERMINATED',
 ] as const;
 
-export const ACCOUNT_TYPES = [
-  'holding_account', 'operating_account', 'single_entity',
-] as const;
-
 export const BUSINESS_TYPES = [
-  'individual', 'account', 'non_profit', 'government_entity',
+  'company', 'individual',
 ] as const;
 
 export const PLATFORM_ACCOUNT_TYPES = [
@@ -178,17 +180,9 @@ export const STATUS_LABELS: Record<string, string> = {
   TERMINATED: 'Terminated',
 };
 
-export const ACCOUNT_TYPE_LABELS: Record<string, string> = {
-  holding_account: 'Holding Account',
-  operating_account: 'Operating Account',
-  single_entity: 'Single Entity',
-};
-
 export const BUSINESS_TYPE_LABELS: Record<string, string> = {
+  company: 'Company',
   individual: 'Individual',
-  account: 'Account',
-  non_profit: 'Non-profit',
-  government_entity: 'Government Entity',
 };
 
 export const RISK_PROFILE_LABELS: Record<string, string> = {
