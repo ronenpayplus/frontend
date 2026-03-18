@@ -113,7 +113,7 @@ export default function AccountForm({
       last_name: '',
       number: `TST-${rand}`,
       status: 'NEW',
-      account_type: 'operating_account',
+      account_type: 'llc',
       business_type: 'company',
       platform_account_type: 'standard',
       contract_type: 'direct',

@@ -38,6 +38,8 @@ export interface MerchantAccount {
   descriptor?: string;
   short_descriptor?: string;
   settlement_type?: string;
+  settlement_delay_days?: number;
+  settlement_currency_mode?: string;
   payout_schedule?: string;
   phone?: string;
   email?: string;
@@ -46,7 +48,11 @@ export interface MerchantAccount {
   integration_mode?: string;
   default_payment_flow?: string;
   default_acquiring_model: string;
+  reserve_rate?: number;
+  monthly_volume_limit?: number;
+  pricing_plan_id?: string;
   notes?: string;
+  activated_at?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -56,6 +62,10 @@ export interface ListMerchantAccountsParams {
   account_uuid?: string;
   legal_entity_uuid?: string;
   status?: string;
+  kyc_status?: string;
+  aml_status?: string;
+  country?: string;
+  currency?: string;
   search?: string;
   page?: number;
   page_size?: number;
@@ -70,6 +80,7 @@ export interface CreateMerchantAccountRequest {
   merchant_uuid: string;
   account_uuid: string;
   legal_entity_uuid: string;
+  merchant_id_external?: string;
   name: string;
   merchant_code: string;
   mcc: string;
@@ -87,6 +98,8 @@ export interface CreateMerchantAccountRequest {
   descriptor?: string;
   short_descriptor?: string;
   settlement_type?: string;
+  settlement_delay_days?: number;
+  settlement_currency_mode?: string;
   payout_schedule?: string;
   phone?: string;
   email?: string;
@@ -95,6 +108,9 @@ export interface CreateMerchantAccountRequest {
   integration_mode?: string;
   default_payment_flow?: string;
   default_acquiring_model?: string;
+  reserve_rate?: number;
+  monthly_volume_limit?: number;
+  pricing_plan_id?: string;
   notes?: string;
   localizations?: LocalizationInput[];
   currencies?: MerchantAccountCurrencyInput[];
@@ -104,6 +120,7 @@ export interface CreateMerchantAccountRequest {
 
 export interface UpdateMerchantAccountRequest {
   uuid?: string;
+  merchant_id_external?: string;
   name: string;
   merchant_code: string;
   mcc: string;
@@ -121,6 +138,8 @@ export interface UpdateMerchantAccountRequest {
   descriptor?: string;
   short_descriptor?: string;
   settlement_type?: string;
+  settlement_delay_days?: number;
+  settlement_currency_mode?: string;
   payout_schedule?: string;
   phone?: string;
   email?: string;
@@ -129,6 +148,9 @@ export interface UpdateMerchantAccountRequest {
   integration_mode?: string;
   default_payment_flow?: string;
   default_acquiring_model?: string;
+  reserve_rate?: number;
+  monthly_volume_limit?: number;
+  pricing_plan_id?: string;
   notes?: string;
   localizations?: LocalizationInput[];
   currencies?: MerchantAccountCurrencyInput[];
