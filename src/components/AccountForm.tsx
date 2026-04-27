@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type {
   CreateAccountRequest,
   UpdateAccountRequest,
@@ -22,6 +22,10 @@ import {
   MOCK_COUNTRIES,
   MOCK_TIMEZONES,
 } from '../types/account';
+import type { AccountType } from '../types/accountType';
+import type { Industry } from '../types/industry';
+import { listAccountTypes } from '../api/accountTypes';
+import { listIndustries } from '../api/industries';
 import './AccountForm.css';
 
 interface AccountFormProps {
@@ -97,6 +101,26 @@ export default function AccountForm({
       : [buildDefaultLocalization(account)],
   );
 
+  const [accountTypes, setAccountTypes] = useState<AccountType[]>([]);
+  const [industries, setIndustries] = useState<Industry[]>([]);
+
+  const fetchReferenceData = useCallback(async () => {
+    try {
+      const [atData, indData] = await Promise.all([
+        listAccountTypes({ is_active: 'true' }),
+        listIndustries({ is_active: 'true' }),
+      ]);
+      setAccountTypes(atData.account_types || []);
+      setIndustries(indData.industries || []);
+    } catch (err) {
+      console.error('Failed to load reference data', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchReferenceData();
+  }, [fetchReferenceData]);
+
   useEffect(() => {
     if (initialLocalizations && initialLocalizations.length > 0) {
       setLocalizations(initialLocalizations);
@@ -121,7 +145,7 @@ export default function AccountForm({
       default_country: 'IL',
       timezone: 'Asia/Jerusalem',
       mcc: '5411',
-      industry: 'fintech',
+      industry: 'FIN-001',
       high_risk_merchant: false,
       is_blocked: false,
       risk_profile: 'low',
@@ -360,12 +384,12 @@ export default function AccountForm({
 
           <div className={`form-field ${errors.account_type ? 'has-error' : ''}`}>
             <label className="label">Account Type *</label>
-            <input
-              className="input"
-              value={form.account_type}
-              onChange={(e) => set('account_type', e.target.value)}
-              placeholder="e.g. operating_account, holding_account"
-            />
+            <select className="input" value={form.account_type} onChange={(e) => set('account_type', e.target.value)}>
+              <option value="">Select account type</option>
+              {accountTypes.map((at) => (
+                <option key={at.slug} value={at.slug}>{at.description} ({at.slug})</option>
+              ))}
+            </select>
             {errors.account_type && <span className="field-error">{errors.account_type}</span>}
           </div>
 
@@ -475,13 +499,12 @@ export default function AccountForm({
 
           <div className="form-field">
             <label className="label">Industry</label>
-            <input
-              className="input"
-              value={form.industry}
-              onChange={(e) => set('industry', e.target.value)}
-              placeholder="e.g. fintech, retail, healthcare"
-              maxLength={100}
-            />
+            <select className="input" value={form.industry} onChange={(e) => set('industry', e.target.value)}>
+              <option value="">Select industry</option>
+              {industries.map((ind) => (
+                <option key={ind.code} value={ind.code}>{ind.description} ({ind.code})</option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
